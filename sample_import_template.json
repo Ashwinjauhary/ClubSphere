@@ -1,0 +1,73 @@
+{
+    "title": "TechFest 2024 - Innovation Summit",
+    "date": "2024-12-15",
+    "venue": "Main Auditorium & Computer Labs, Engineering Block",
+    "clubName": "Computer Science & Engineering Club",
+    "academicYear": "2024-2025",
+    "detailLevel": "detailed",
+    "posterUrl": "",
+    "objectives": [
+        "To introduce students to cutting-edge technologies in AI and Cloud Computing",
+        "To provide hands-on experience with modern development tools and frameworks",
+        "To foster innovation and problem-solving skills through competitive hackathon",
+        "To create networking opportunities between students and industry professionals",
+        "To enhance practical knowledge beyond classroom curriculum"
+    ],
+    "poMapping": {
+        "PO1": true,
+        "PO2": true,
+        "PO3": true,
+        "PO5": true,
+        "PO9": true,
+        "PO10": true,
+        "PO12": true
+    },
+    "eventFlow": [
+        {
+            "title": "Opening Ceremony & Keynote Address",
+            "description": "Event commenced with welcome address by Dean of Engineering. Chief Guest Dr. Rajesh Kumar (Google Cloud Architect) delivered inspiring keynote on 'Future of AI in Industry 4.0'. Discussed real-world applications, career opportunities, and emerging trends. Students actively participated in Q&A session."
+        },
+        {
+            "title": "Hands-on Workshop - Cloud Native Development",
+            "description": "Interactive workshop conducted in Computer Lab A & B. Students learned Docker containerization, Kubernetes orchestration, and CI/CD pipelines. Divided into teams of 5, participants built and deployed microservices. Industry mentors provided guidance and best practices."
+        },
+        {
+            "title": "24-Hour Innovation Hackathon",
+            "description": "Intense coding competition with theme 'Smart Campus Solutions'. 90 teams registered, working on problems like attendance automation, resource optimization, and campus navigation. Judging criteria included innovation, technical implementation, and presentation. Winners announced in closing ceremony."
+        }
+    ],
+    "outcomes": {
+        "participants": 450,
+        "winners": [
+            {
+                "position": "1st Prize - Best Innovation",
+                "name": "Team AlphaCode (Priya Sharma, Rahul Verma, Ankit Singh)",
+                "class": "3rd Year CSE"
+            },
+            {
+                "position": "2nd Prize - Best Technical Implementation",
+                "name": "Team ByteBuilders (Sneha Patel, Karan Mehta)",
+                "class": "2nd Year IT"
+            },
+            {
+                "position": "3rd Prize - Best Presentation",
+                "name": "Team CodeCrafters (Amit Kumar, Divya Reddy, Rohan Das)",
+                "class": "4th Year CSE"
+            }
+        ]
+    },
+    "customSections": [
+        {
+            "title": "Budget Breakdown",
+            "content": "Total budget allocated: ₹2,50,000. Venue & Equipment: ₹80,000. Guest Speaker Honorarium: ₹50,000. Refreshments & Meals: ₹60,000. Prizes & Certificates: ₹40,000. Marketing & Promotion: ₹20,000. Remaining balance returned to college fund."
+        },
+        {
+            "title": "Guest Speakers & Industry Mentors",
+            "content": "Dr. Rajesh Kumar (Google Cloud Architect, 15+ years experience). Ms. Priya Nair (Microsoft Azure Solutions Architect). Mr. Vikram Desai (AWS Certified Solutions Architect). Prof. Suresh Iyer (IIT Bombay, AI Research). All mentors provided valuable industry insights and career guidance."
+        },
+        {
+            "title": "Media Coverage & Social Impact",
+            "content": "Event featured in Times of India Education section. Coverage by local TV news channel. 5000+ social media impressions across Instagram, LinkedIn, Twitter. Student testimonials highlighted practical learning experience. Alumni network praised initiative for bridging academia-industry gap."
+        }
+    ]
+}
