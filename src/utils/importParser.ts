@@ -1,4 +1,4 @@
-import type { ReportData } from '../types';
+// Import parser utilities for handling JSON, Markdown, and Text file formats
 
 export interface ImportedData {
     basicInfo: {
