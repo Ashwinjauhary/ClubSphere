@@ -19,13 +19,15 @@ import { clsx } from 'clsx';
 
 interface SidebarLinkProps {
     to: string;
-    icon: React.ElementType;
+    icon: React.ComponentType<{ className?: string }>;
     label: string;
+    onClose?: () => void;
 }
 
-const SidebarLink = ({ to, icon: Icon, label }: SidebarLinkProps) => (
+const SidebarLink = ({ to, icon: Icon, label, onClose }: SidebarLinkProps) => (
     <NavLink
         to={to}
+        onClick={onClose}
         className={({ isActive }) =>
             clsx(
                 'group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors',
@@ -68,11 +70,11 @@ export const Sidebar = ({ onClose }: SidebarProps) => {
                         <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-4 pl-3">
                             Student
                         </div>
-                        <SidebarLink to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
-                        <SidebarLink to="/clubs" icon={Users} label="Clubs" />
-                        <SidebarLink to="/wall" icon={Users} label="Clubs Wall" />
-                        <SidebarLink to="/events" icon={Calendar} label="Events" />
-                        <SidebarLink to="/applications" icon={FileText} label="My Applications" />
+                        <SidebarLink to="/dashboard" icon={LayoutDashboard} label="Dashboard" onClose={onClose} />
+                        <SidebarLink to="/clubs" icon={Users} label="Clubs" onClose={onClose} />
+                        <SidebarLink to="/wall" icon={Users} label="Clubs Wall" onClose={onClose} />
+                        <SidebarLink to="/events" icon={Calendar} label="Events" onClose={onClose} />
+                        <SidebarLink to="/applications" icon={FileText} label="My Applications" onClose={onClose} />
                     </>
                 )}
 
@@ -81,11 +83,11 @@ export const Sidebar = ({ onClose }: SidebarProps) => {
                         <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-4 pl-3">
                             General
                         </div>
-                        <SidebarLink to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
-                        <SidebarLink to="/events" icon={Calendar} label="Events" />
-                        <SidebarLink to="/clubs" icon={Users} label="Clubs" />
-                        <SidebarLink to="/wall" icon={Users} label="Clubs Wall" />
-                        <SidebarLink to="/analytics" icon={BarChart} label="Analytics" />
+                        <SidebarLink to="/dashboard" icon={LayoutDashboard} label="Dashboard" onClose={onClose} />
+                        <SidebarLink to="/events" icon={Calendar} label="Events" onClose={onClose} />
+                        <SidebarLink to="/clubs" icon={Users} label="Clubs" onClose={onClose} />
+                        <SidebarLink to="/wall" icon={Users} label="Clubs Wall" onClose={onClose} />
+                        <SidebarLink to="/analytics" icon={BarChart} label="Analytics" onClose={onClose} />
                     </>
                 )}
 
@@ -94,17 +96,17 @@ export const Sidebar = ({ onClose }: SidebarProps) => {
                         <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-4 pl-3">
                             Admin
                         </div>
-                        <SidebarLink to="/proposals" icon={FileText} label="Proposals" />
-                        <SidebarLink to="/applications" icon={ClipboardList} label="Applications" />
+                        <SidebarLink to="/proposals" icon={FileText} label="Proposals" onClose={onClose} />
+                        <SidebarLink to="/applications" icon={ClipboardList} label="Applications" onClose={onClose} />
 
                         {managedClubId ? (
-                            <SidebarLink to={`/clubs/${managedClubId}`} icon={Building} label="My Club" />
+                            <SidebarLink to={`/clubs/${managedClubId}`} icon={Building} label="My Club" onClose={onClose} />
                         ) : (
                             // Fallback if they are admin but not assigned yet
-                            <SidebarLink to="/clubs" icon={Building} label="My Club (Unassigned)" />
+                            <SidebarLink to="/clubs" icon={Building} label="My Club (Unassigned)" onClose={onClose} />
                         )}
-                        <SidebarLink to="/reports" icon={ClipboardList} label="Event Reports" />
-                        <SidebarLink to="/members" icon={Users} label="Manage Team" />
+                        <SidebarLink to="/reports" icon={ClipboardList} label="Event Reports" onClose={onClose} />
+                        <SidebarLink to="/members" icon={Users} label="Manage Team" onClose={onClose} />
                     </>
                 )}
 
@@ -113,10 +115,10 @@ export const Sidebar = ({ onClose }: SidebarProps) => {
                         <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-4 pl-3">
                             Dean's Desk
                         </div>
-                        <SidebarLink to="/approvals" icon={CheckSquare} label="Approvals" />
-                        <SidebarLink to="/clubs/new" icon={Plus} label="Create Club" />
-                        <SidebarLink to="/analytics" icon={BarChart} label="Analytics" />
-                        <SidebarLink to="/reports" icon={FileText} label="System Reports" />
+                        <SidebarLink to="/approvals" icon={CheckSquare} label="Approvals" onClose={onClose} />
+                        <SidebarLink to="/clubs/new" icon={Plus} label="Create Club" onClose={onClose} />
+                        <SidebarLink to="/analytics" icon={BarChart} label="Analytics" onClose={onClose} />
+                        <SidebarLink to="/reports" icon={FileText} label="System Reports" onClose={onClose} />
                     </>
                 )}
 
@@ -125,15 +127,15 @@ export const Sidebar = ({ onClose }: SidebarProps) => {
                         <div className="text-xs font-semibold text-red-400 uppercase tracking-wider mb-2 mt-4 pl-3">
                             🔒 Super Admin
                         </div>
-                        <SidebarLink to="/super-admin" icon={CheckSquare} label="Super Admin Panel" />
+                        <SidebarLink to="/super-admin" icon={CheckSquare} label="Super Admin Panel" onClose={onClose} />
                         <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-4 pl-3">
                             General Access
                         </div>
-                        <SidebarLink to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
-                        <SidebarLink to="/events" icon={Calendar} label="Events" />
-                        <SidebarLink to="/clubs" icon={Users} label="Clubs" />
-                        <SidebarLink to="/wall" icon={Users} label="Clubs Wall" />
-                        <SidebarLink to="/analytics" icon={BarChart} label="Analytics" />
+                        <SidebarLink to="/dashboard" icon={LayoutDashboard} label="Dashboard" onClose={onClose} />
+                        <SidebarLink to="/events" icon={Calendar} label="Events" onClose={onClose} />
+                        <SidebarLink to="/clubs" icon={Users} label="Clubs" onClose={onClose} />
+                        <SidebarLink to="/wall" icon={Users} label="Clubs Wall" onClose={onClose} />
+                        <SidebarLink to="/analytics" icon={BarChart} label="Analytics" onClose={onClose} />
                     </>
                 )}
             </nav>
@@ -141,7 +143,7 @@ export const Sidebar = ({ onClose }: SidebarProps) => {
 
 
             <div className="mt-auto pt-4 border-t border-gray-200 p-4 space-y-2">
-                <SidebarLink to="/profile" icon={User} label="My Profile" />
+                <SidebarLink to="/profile" icon={User} label="My Profile" onClose={onClose} />
 
                 <div className="flex items-center justify-between px-2 pt-2">
                     <span className="text-xs text-gray-400 uppercase font-semibold">Alerts</span>

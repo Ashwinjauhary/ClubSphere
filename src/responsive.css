@@ -1,13 +1,20 @@
 /* Responsive Design Utilities */
 
-/* Hide scrollbar but keep functionality */
+/* Hide scrollbar but keep functionality - Works on all browsers */
 .scrollbar-hide {
     -ms-overflow-style: none;
+    /* IE and Edge */
     scrollbar-width: none;
+    /* Firefox */
+    overflow: -moz-scrollbars-none;
+    /* Old Firefox */
 }
 
 .scrollbar-hide::-webkit-scrollbar {
     display: none;
+    /* Chrome, Safari, Opera */
+    width: 0;
+    height: 0;
 }
 
 /* Touch-friendly tap targets */
@@ -27,6 +34,11 @@ html {
     -webkit-text-size-adjust: 100%;
     -moz-text-size-adjust: 100%;
     -ms-text-size-adjust: 100%;
+    overflow-x: hidden;
+}
+
+body {
+    overflow-x: hidden;
 }
 
 /* Smooth scrolling */

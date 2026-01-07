@@ -147,7 +147,7 @@ export const ClubDetailPage = () => {
     const pastEvents = events.filter(e => new Date(e.end_time) < new Date());
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500">
+        <div className="space-y-8 animate-in fade-in duration-500 overflow-x-hidden">
             {/* Back Link */}
             <Link to="/clubs" className="inline-flex items-center text-sm text-gray-500 hover:text-brand-600">
                 <ChevronLeft className="mr-1 h-4 w-4" />
@@ -156,7 +156,7 @@ export const ClubDetailPage = () => {
 
             {/* Header Section with Banner */}
             <div className="relative rounded-2xl overflow-hidden bg-white shadow-sm border border-gray-200">
-                <div className="h-48 w-full bg-gray-200">
+                <div className="h-48 w-full bg-gray-200 overflow-hidden">
                     {club.banner_url && (
                         <img
                             src={club.banner_url}
@@ -165,32 +165,32 @@ export const ClubDetailPage = () => {
                         />
                     )}
                 </div>
-                <div className="px-8 pb-8">
-                    <div className="relative -mt-12 mb-6 flex justify-between items-end">
-                        <div className="rounded-2xl border-4 border-white bg-white shadow-lg overflow-hidden h-32 w-32 bg-gray-100 flex items-center justify-center">
+                <div className="px-4 sm:px-8 pb-6 sm:pb-8">
+                    <div className="relative -mt-12 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+                        <div className="rounded-2xl border-4 border-white bg-white shadow-lg overflow-hidden h-24 w-24 sm:h-32 sm:w-32 bg-gray-100 flex items-center justify-center flex-shrink-0">
                             {club.logo_url ? (
                                 <img src={club.logo_url} alt="Logo" className="h-full w-full object-cover" />
                             ) : (
                                 <Users className="h-12 w-12 text-gray-300" />
                             )}
                         </div>
-                        <div className="flex gap-3 mb-2">
-                            <Button onClick={() => navigate(`/clubs/${id}/highlights`)} variant="outline">
+                        <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto sm:mb-2">
+                            <Button onClick={() => navigate(`/clubs/${id}/highlights`)} variant="outline" className="flex-1 sm:flex-none">
                                 <Award className="h-4 w-4 mr-2" />
                                 Highlights
                             </Button>
                             {isAuthorizedToEdit ? (
-                                <Button onClick={() => navigate(`/clubs/${id}/edit`)} variant="outline">
+                                <Button onClick={() => navigate(`/clubs/${id}/edit`)} variant="outline" className="flex-1 sm:flex-none">
                                     <Pen className="h-4 w-4 mr-2" />
                                     Edit Profile
                                 </Button>
                             ) : role === 'student' ? (
                                 hasApplied ? (
-                                    <Button variant="outline" disabled>
+                                    <Button variant="outline" disabled className="flex-1 sm:flex-none">
                                         {applicationStatus === 'approved' ? 'Member' : 'Application Pending'}
                                     </Button>
                                 ) : (
-                                    <Button onClick={handleApply} loading={applying}>
+                                    <Button onClick={handleApply} loading={applying} className="flex-1 sm:flex-none">
                                         Apply to Join
                                     </Button>
                                 )
@@ -199,16 +199,16 @@ export const ClubDetailPage = () => {
                     </div>
 
                     <div>
-                        <div className="flex items-center gap-3 mb-2">
-                            <h1 className="text-3xl font-bold text-gray-900">{club.name}</h1>
+                        <div className="flex items-center gap-3 mb-2 flex-wrap">
+                            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{club.name}</h1>
                             <span className="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-700">
                                 {club.category}
                             </span>
                         </div>
-                        <p className="text-gray-600 max-w-3xl leading-relaxed">{club.description}</p>
+                        <p className="text-gray-600 max-w-3xl leading-relaxed text-sm sm:text-base">{club.description}</p>
                     </div>
 
-                    <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-6 border-t border-gray-100 pt-8">
+                    <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 border-t border-gray-100 pt-6 sm:pt-8">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
                                 <Users className="h-5 w-5" />
