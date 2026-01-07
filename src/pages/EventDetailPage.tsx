@@ -33,55 +33,50 @@ export const EventDetailPage = () => {
     const [registrationCount, setRegistrationCount] = useState(0);
     const [registering, setRegistering] = useState(false);
     const [ticketData, setTicketData] = useState<any>(null);
+    const [profileName, setProfileName] = useState<string>(''); // For accurate name display
 
     useEffect(() => {
         if (id) {
             fetchEventDetails();
             if (user) {
-                checkRegistration();
+                checkRegistrationAndProfile();
                 fetchRegistrationCount();
             }
         }
     }, [id, user]);
 
-    const fetchEventDetails = async () => {
-        try {
-            setLoading(true);
-            const { data, error } = await supabase
-                .from('events')
-                .select(`
-                    *,
-                    clubs ( name, logo_url )
-                `)
-                .eq('id', id)
-                .single();
+    // ... (fetchEventDetails)
 
-            if (error) throw error;
-            // @ts-ignore
-            setEvent(data);
-        } catch (error) {
-            console.error('Error fetching event details:', error);
-            navigate('/events'); // Redirect if not found
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const checkRegistration = async () => {
+    const checkRegistrationAndProfile = async () => {
         if (!user || !id) return;
-        const { data } = await supabase
-            .from('event_registrations')
-            .select('*')
-            .eq('event_id', id)
-            .eq('user_id', user.id)
-            .maybeSingle();
 
-        if (data) {
+        // Parallel check for registration and profile name
+        const [regResponse, profileResponse] = await Promise.all([
+            supabase
+                .from('event_registrations')
+                .select('*')
+                .eq('event_id', id)
+                .eq('user_id', user.id)
+                .maybeSingle(),
+            supabase
+                .from('profiles')
+                .select('full_name')
+                .eq('id', user.id)
+                .single()
+        ]);
+
+        if (regResponse.data) {
             setIsRegistered(true);
-            setTicketData(data);
+            setTicketData(regResponse.data);
         } else {
             setIsRegistered(false);
             setTicketData(null);
+        }
+
+        if (profileResponse.data) {
+            setProfileName(profileResponse.data.full_name || user.email || 'Student');
+        } else {
+            setProfileName(user.user_metadata?.full_name || user.email || 'Student');
         }
     };
 
@@ -284,7 +279,7 @@ export const EventDetailPage = () => {
                             <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">Your Event Ticket</h3>
                             <TicketCard
                                 eventName={event.title}
-                                studentName={user.user_metadata?.full_name || user.email || 'Student'}
+                                studentName={profileName || user.user_metadata?.full_name || 'Student'}
                                 studentId={user.email || ''}
                                 ticketCode={ticketData.ticket_code}
                                 qrHash={ticketData.qr_code_hash}
