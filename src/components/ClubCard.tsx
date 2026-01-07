@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Building2, Users, Calendar, ArrowRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 
 interface Club {
     id: string;
@@ -18,6 +20,22 @@ interface ClubCardProps {
 
 export const ClubCard = ({ club }: ClubCardProps) => {
     const navigate = useNavigate();
+    const [memberCount, setMemberCount] = useState<number>(0);
+
+    useEffect(() => {
+        fetchMemberCount();
+    }, [club.id]);
+
+    const fetchMemberCount = async () => {
+        const { count, error } = await supabase
+            .from('club_members')
+            .select('*', { count: 'exact', head: true })
+            .eq('club_id', club.id);
+
+        if (!error && count !== null) {
+            setMemberCount(count);
+        }
+    };
 
     return (
         <div
@@ -87,7 +105,7 @@ export const ClubCard = ({ club }: ClubCardProps) => {
                         )}
                         <div className="flex items-center gap-1">
                             <Users className="h-4 w-4" />
-                            <span>Members</span>
+                            <span>{memberCount} {memberCount === 1 ? 'Member' : 'Members'}</span>
                         </div>
                     </div>
 

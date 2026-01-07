@@ -42,13 +42,26 @@ export const ClubDetailPage = () => {
     const [hasApplied, setHasApplied] = useState(false);
     const [applicationStatus, setApplicationStatus] = useState<string | null>(null);
     const [applying, setApplying] = useState(false);
+    const [memberCount, setMemberCount] = useState<number>(0);
 
     useEffect(() => {
         if (!id) return;
         fetchClubDetails();
         fetchClubEvents();
+        fetchMemberCount();
         if (user) checkApplicationStatus();
     }, [id, user]);
+
+    const fetchMemberCount = async () => {
+        const { count, error } = await supabase
+            .from('club_members')
+            .select('*', { count: 'exact', head: true })
+            .eq('club_id', id);
+
+        if (!error && count !== null) {
+            setMemberCount(count);
+        }
+    };
 
     const checkApplicationStatus = async () => {
         const { data } = await supabase
@@ -127,9 +140,6 @@ export const ClubDetailPage = () => {
     if (loading) return <div className="text-center py-12">Loading club details...</div>;
     if (!club) return <div className="text-center py-12">Club not found</div>;
 
-    // Mock member count for now
-    const memberCount = Math.floor(Math.random() * 100) + 20;
-
     // Determine if the current user is authorized to edit (Admin of this club OR Dean)
     const isAuthorizedToEdit = (user && club && user.id === club.admin_id) || role === 'dean';
 
@@ -204,8 +214,8 @@ export const ClubDetailPage = () => {
                                 <Users className="h-5 w-5" />
                             </div>
                             <div>
-                                <p className="text-sm font-medium text-gray-900">{memberCount} Members</p>
-                                <p className="text-xs text-gray-500">Active Community</p>
+                                <p className="text-sm font-medium text-gray-900">{memberCount} {memberCount === 1 ? 'Member' : 'Members'}</p>
+                                <p className="text-xs text-gray-500">Total Members</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
