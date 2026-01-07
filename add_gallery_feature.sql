@@ -48,6 +48,12 @@ CREATE TABLE IF NOT EXISTS public.club_gallery (
 ALTER TABLE public.club_gallery ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for club_gallery
+
+-- Drop existing policies to avoid conflicts
+DROP POLICY IF EXISTS "Gallery images are viewable by everyone" ON public.club_gallery;
+DROP POLICY IF EXISTS "Club admins can upload gallery images" ON public.club_gallery;
+DROP POLICY IF EXISTS "Club admins can delete gallery images" ON public.club_gallery;
+
 -- Everyone can view gallery images
 CREATE POLICY "Gallery images are viewable by everyone"
     ON public.club_gallery FOR SELECT
