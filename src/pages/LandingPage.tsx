@@ -1,8 +1,18 @@
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Users, Calendar, TrendingUp, Shield } from 'lucide-react';
+import { useAuthStore } from '../store/authStore';
+import { useEffect } from 'react';
 
 export const LandingPage = () => {
     const navigate = useNavigate();
+    const { user } = useAuthStore();
+
+    // Redirect to dashboard if already logged in
+    useEffect(() => {
+        if (user) {
+            navigate('/dashboard');
+        }
+    }, [user, navigate]);
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-brand-50 via-white to-brand-50">
