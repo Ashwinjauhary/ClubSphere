@@ -45,7 +45,28 @@ export const EventDetailPage = () => {
         }
     }, [id, user]);
 
-    // ... (fetchEventDetails)
+    const fetchEventDetails = async () => {
+        try {
+            setLoading(true);
+            const { data, error } = await supabase
+                .from('events')
+                .select(`
+                    *,
+                    clubs ( name, logo_url )
+                `)
+                .eq('id', id)
+                .single();
+
+            if (error) throw error;
+            // @ts-ignore
+            setEvent(data);
+        } catch (error) {
+            console.error('Error fetching event details:', error);
+            navigate('/events'); // Redirect if not found
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const checkRegistrationAndProfile = async () => {
         if (!user || !id) return;
