@@ -81,5 +81,15 @@ CREATE POLICY "Club admins can delete gallery images"
 CREATE INDEX IF NOT EXISTS idx_club_gallery_club_id ON public.club_gallery(club_id);
 CREATE INDEX IF NOT EXISTS idx_club_gallery_created_at ON public.club_gallery(created_at DESC);
 
--- Enable realtime
-ALTER PUBLICATION supabase_realtime ADD TABLE public.club_gallery;
+-- Enable realtime safely
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' 
+    AND schemaname = 'public' 
+    AND tablename = 'club_gallery'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.club_gallery;
+  END IF;
+END $$;
