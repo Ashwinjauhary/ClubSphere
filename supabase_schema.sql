@@ -31,7 +31,7 @@ create extension if not exists "uuid-ossp";
 -- ==========================================
 -- 2. ENUMS & TYPES
 -- ==========================================
-create type app_role as enum ('student', 'admin', 'dean');
+create type app_role as enum ('student', 'admin', 'dean', 'super_admin');
 create type event_status as enum ('draft', 'pending', 'approved', 'rejected', 'completed');
 create type member_role as enum ('member', 'lead');
 create type application_status as enum ('pending', 'approved', 'rejected');
@@ -169,6 +169,17 @@ begin
 end;
 $$ language plpgsql security definer;
 
+-- Helper to check if user is a Super Admin
+create or replace function public.is_super_admin()
+returns boolean as $$
+begin
+  return exists (
+    select 1 from public.profiles
+    where id = auth.uid() and role = 'super_admin'
+  );
+end;
+$$ language plpgsql security definer;
+
 -- ==========================================
 -- 5. ROW LEVEL SECURITY (RLS) POLICIES
 -- ==========================================
@@ -187,81 +198,112 @@ create policy "Public profiles are viewable by everyone"
   on public.profiles for select using (true);
 
 create policy "Users can update their own profile"
-  on public.profiles for update using (auth.uid() = id);
+  on public.profiles for update using (auth.uid() = id or public.is_super_admin());
+
+create policy "Super admins can delete profiles"
+  on public.profiles for delete using (public.is_super_admin());
 
 -- CLUBS
 create policy "Clubs are viewable by everyone"
   on public.clubs for select using (true);
 
-create policy "Deans can insert clubs"
-  on public.clubs for insert with check (public.is_dean());
+create policy "Deans and Super Admins can insert clubs"
+  on public.clubs for insert with check (public.is_dean() or public.is_super_admin());
 
 create policy "Admins can update their own club"
-  on public.clubs for update using (admin_id = auth.uid() or public.is_dean());
+  on public.clubs for update using (admin_id = auth.uid() or public.is_dean() or public.is_super_admin());
+
+create policy "Super admins can delete clubs"
+  on public.clubs for delete using (public.is_super_admin());
 
 -- CLUB MEMBERS
 create policy "Memberships viewable by everyone"
   on public.club_members for select using (true);
 
 create policy "Users can join clubs"
-  on public.club_members for insert with check (auth.uid() = user_id);
+  on public.club_members for insert with check (auth.uid() = user_id or public.is_super_admin());
 
 create policy "Users can leave clubs"
-  on public.club_members for delete using (auth.uid() = user_id);
+  on public.club_members for delete using (auth.uid() = user_id or public.is_super_admin());
+
+create policy "Super admins can update memberships"
+  on public.club_members for update using (public.is_super_admin());
 
 -- CLUB APPLICATIONS
 create policy "Users can view their own applications"
-  on public.club_applications for select using (auth.uid() = user_id);
+  on public.club_applications for select using (auth.uid() = user_id or public.is_super_admin());
 
 create policy "Club Admins can view applications for their club"
-  on public.club_applications for select using (public.is_club_admin(club_id));
+  on public.club_applications for select using (public.is_club_admin(club_id) or public.is_super_admin());
 
 create policy "Users can create applications"
-  on public.club_applications for insert with check (auth.uid() = user_id);
+  on public.club_applications for insert with check (auth.uid() = user_id or public.is_super_admin());
 
 create policy "Club Admins can update application status"
-  on public.club_applications for update using (public.is_club_admin(club_id));
+  on public.club_applications for update using (public.is_club_admin(club_id) or public.is_super_admin());
+
+create policy "Super admins can delete applications"
+  on public.club_applications for delete using (public.is_super_admin());
 
 -- EVENTS
 create policy "Approved events are viewable by everyone"
-  on public.events for select using (status = 'approved' or status = 'completed');
+  on public.events for select using (status = 'approved' or status = 'completed' or public.is_super_admin());
 
 create policy "Club Admins and Deans can view all events for their scope"
   on public.events for select using (
     auth.uid() = created_by 
     or public.is_club_admin(club_id) 
     or public.is_dean()
+    or public.is_super_admin()
   );
 
 create policy "Club Admins can create events"
   on public.events for insert with check (
-    public.is_club_admin(club_id) or public.is_dean()
+    public.is_club_admin(club_id) or public.is_dean() or public.is_super_admin()
   );
 
 create policy "Club Admins can update their pending events"
   on public.events for update using (
     (public.is_club_admin(club_id) and status = 'pending')
     or public.is_dean()
+    or public.is_super_admin()
   );
+
+create policy "Super admins can delete events"
+  on public.events for delete using (public.is_super_admin());
 
 -- REPORTS
 create policy "Deans and Club Admins can view reports"
   on public.reports for select using (
     public.is_dean() 
+    or public.is_super_admin()
     or exists (select 1 from public.events where events.id = reports.event_id and public.is_club_admin(events.club_id))
   );
 
 create policy "Club Admins can create reports"
   on public.reports for insert with check (
-    exists (select 1 from public.events where events.id = reports.event_id and public.is_club_admin(events.club_id))
+    public.is_super_admin()
+    or exists (select 1 from public.events where events.id = reports.event_id and public.is_club_admin(events.club_id))
   );
+
+create policy "Super admins can update reports"
+  on public.reports for update using (public.is_super_admin());
+
+create policy "Super admins can delete reports"
+  on public.reports for delete using (public.is_super_admin());
 
 -- NOTIFICATIONS
 create policy "Users can view their own notifications"
-  on public.notifications for select using (auth.uid() = user_id);
+  on public.notifications for select using (auth.uid() = user_id or public.is_super_admin());
 
 create policy "System/admins can create notifications"
   on public.notifications for insert with check (true); -- Ideally restrict to triggers or admin roles, but keeping flexible for now
+
+create policy "Super admins can update notifications"
+  on public.notifications for update using (public.is_super_admin());
+
+create policy "Super admins can delete notifications"
+  on public.notifications for delete using (public.is_super_admin());
 
 -- ==========================================
 -- 6. REALTIME

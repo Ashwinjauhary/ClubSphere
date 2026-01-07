@@ -4,7 +4,7 @@ import type { User } from '@supabase/supabase-js';
 
 interface AuthState {
     user: User | null;
-    role: 'student' | 'admin' | 'dean' | null;
+    role: 'student' | 'admin' | 'dean' | 'super_admin' | null;
     managedClubId: string | null;
     loading: boolean;
     checkUser: () => Promise<void>;

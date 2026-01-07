@@ -10,7 +10,8 @@ import {
     ClipboardList,
     CheckSquare,
     Plus,
-    User
+    User,
+    X
 } from 'lucide-react';
 import { Notifications } from './Notifications';
 import { useAuthStore } from '../store/authStore';
@@ -39,13 +40,26 @@ const SidebarLink = ({ to, icon: Icon, label }: SidebarLinkProps) => (
     </NavLink>
 );
 
-export const Sidebar = () => {
+interface SidebarProps {
+    onClose?: () => void;
+}
+
+export const Sidebar = ({ onClose }: SidebarProps) => {
     const { role, managedClubId, signOut } = useAuthStore();
 
     return (
         <div className="flex h-screen w-64 flex-col bg-white border-r border-gray-200">
-            <div className="flex items-center justify-center h-16 border-b border-gray-200">
+            <div className="flex items-center justify-between h-16 border-b border-gray-200 px-4">
                 <span className="text-xl font-bold text-brand-600">ClubSphere</span>
+                {onClose && (
+                    <button
+                        onClick={onClose}
+                        className="lg:hidden p-2 rounded-md hover:bg-gray-100 transition-colors"
+                        aria-label="Close menu"
+                    >
+                        <X className="h-5 w-5 text-gray-600" />
+                    </button>
+                )}
             </div>
 
             <nav className="flex-1 space-y-1 px-2 py-4">
@@ -103,6 +117,23 @@ export const Sidebar = () => {
                         <SidebarLink to="/clubs/new" icon={Plus} label="Create Club" />
                         <SidebarLink to="/analytics" icon={BarChart} label="Analytics" />
                         <SidebarLink to="/reports" icon={FileText} label="System Reports" />
+                    </>
+                )}
+
+                {role === 'super_admin' && (
+                    <>
+                        <div className="text-xs font-semibold text-red-400 uppercase tracking-wider mb-2 mt-4 pl-3">
+                            🔒 Super Admin
+                        </div>
+                        <SidebarLink to="/super-admin" icon={CheckSquare} label="Super Admin Panel" />
+                        <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-4 pl-3">
+                            General Access
+                        </div>
+                        <SidebarLink to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
+                        <SidebarLink to="/events" icon={Calendar} label="Events" />
+                        <SidebarLink to="/clubs" icon={Users} label="Clubs" />
+                        <SidebarLink to="/wall" icon={Users} label="Clubs Wall" />
+                        <SidebarLink to="/analytics" icon={BarChart} label="Analytics" />
                     </>
                 )}
             </nav>

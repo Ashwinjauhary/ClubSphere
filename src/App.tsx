@@ -30,6 +30,7 @@ import { ProposalsPage } from './pages/ProposalsPage';
 import { EditEventPage } from './pages/EditEventPage';
 import { ClubsWallPage } from './pages/ClubsWallPage';
 import { ClubHighlightsPage } from './pages/ClubHighlightsPage';
+import { SuperAdminPage } from './pages/SuperAdminPage';
 
 function App() {
   const checkUser = useAuthStore((state) => state.checkUser);
@@ -74,6 +75,7 @@ function App() {
               <Route path="/events/new" element={<CreateEventPage />} />
               <Route path="/members" element={<ClubMembersPage />} />
               <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/super-admin" element={<SuperAdminPage />} />
               {/* Add other protected routes here */}
             </Route>
           </Route>
