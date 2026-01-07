@@ -75,7 +75,7 @@ export const QRScanner = ({ onScan, onClose }: QRScannerProps) => {
         }
     };
 
-    const onScanFailure = (error: any) => {
+    const onScanFailure = (_error: any) => {
         // Handle scan failure, usually better to ignore frame errors to avoid log spam
         // console.warn(`Code scan error = ${error}`);
     };
