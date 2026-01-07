@@ -55,55 +55,55 @@ export const ClubsPage = () => {
             <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600 mx-auto"></div>
-                    <p className="mt-4 text-gray-600">Loading clubs...</p>
+                    <p className="mt-4 text-sm sm:text-base text-gray-600">Loading clubs...</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
             {/* Header */}
-            <div className="flex justify-between items-center mb-8">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">All Clubs</h1>
-                    <p className="text-gray-600 mt-2">Discover and join student clubs</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">All Clubs</h1>
+                    <p className="text-sm sm:text-base text-gray-600 mt-1 sm:mt-2">Discover and join student clubs</p>
                 </div>
                 {(role === 'dean' || role === 'super_admin') && (
                     <button
                         onClick={() => navigate('/clubs/new')}
-                        className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-md hover:bg-brand-700 transition-colors"
+                        className="flex items-center justify-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-md hover:bg-brand-700 transition-colors w-full sm:w-auto text-sm sm:text-base"
                     >
-                        <Plus className="h-5 w-5" />
+                        <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
                         Create Club
                     </button>
                 )}
             </div>
 
             {/* Search */}
-            <div className="mb-8">
+            <div className="mb-6 sm:mb-8">
                 <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                     <input
                         type="text"
-                        placeholder="Search clubs by name, category, or description..."
+                        placeholder="Search clubs..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                        className="w-full pl-9 sm:pl-10 pr-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                     />
                 </div>
             </div>
 
             {/* Clubs Grid */}
             {filteredClubs.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                     {filteredClubs.map((club) => (
                         <ClubCard key={club.id} club={club} />
                     ))}
                 </div>
             ) : (
                 <div className="text-center py-12">
-                    <p className="text-gray-500 text-lg">
+                    <p className="text-gray-500 text-base sm:text-lg">
                         {searchTerm ? 'No clubs found matching your search' : 'No clubs available yet'}
                     </p>
                 </div>
