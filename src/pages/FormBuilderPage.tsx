@@ -240,38 +240,38 @@ export const FormBuilderPage = () => {
     if (loading) return <div className="flex justify-center items-center h-screen"><Loader2 className="animate-spin text-brand-600" /></div>;
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen bg-gray-50 py-4 sm:py-6 lg:py-8 px-3 sm:px-4 lg:px-8">
             <div className="max-w-4xl mx-auto">
-                <div className="flex items-center justify-between mb-8">
-                    <Button variant="ghost" onClick={() => navigate('/forms')}>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-6 sm:mb-8">
+                    <Button variant="ghost" onClick={() => navigate('/forms')} className="text-sm sm:text-base">
                         <ArrowLeft className="h-4 w-4 mr-2" />
-                        Back to Forms
+                        <span className="hidden xs:inline">Back to </span>Forms
                     </Button>
-                    <h1 className="text-2xl font-bold text-gray-900">
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
                         {isNew ? 'Create New Form' : 'Edit Form'}
                     </h1>
                 </div>
 
-                <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl p-6 text-white mb-8 shadow-lg">
-                    <div className="flex items-start gap-4">
-                        <div className="bg-white/20 p-3 rounded-lg backdrop-blur-sm">
-                            <Sparkles className="h-6 w-6 text-white" />
+                <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg sm:rounded-xl p-4 sm:p-6 text-white mb-6 sm:mb-8 shadow-lg">
+                    <div className="flex items-start gap-3 sm:gap-4">
+                        <div className="bg-white/20 p-2 sm:p-3 rounded-lg backdrop-blur-sm flex-shrink-0">
+                            <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                         </div>
-                        <div className="flex-1">
-                            <h2 className="text-lg font-bold mb-2">Magic Form Creator</h2>
-                            <p className="text-purple-100 text-sm mb-4">Describe the form you want, and AI will build it for you.</p>
-                            <div className="flex gap-2">
+                        <div className="flex-1 min-w-0">
+                            <h2 className="text-base sm:text-lg font-bold mb-1 sm:mb-2">Magic Form Creator</h2>
+                            <p className="text-purple-100 text-xs sm:text-sm mb-3 sm:mb-4">Describe the form you want, and AI will build it for you.</p>
+                            <div className="flex flex-col sm:flex-row gap-2">
                                 <input
                                     type="text"
                                     value={prompt}
                                     onChange={(e) => setPrompt(e.target.value)}
-                                    placeholder="e.g. Volunteer registration for Beach Cleanup..."
-                                    className="flex-1 bg-white/10 border border-white/20 rounded-md px-4 py-2 text-white placeholder-purple-200 focus:outline-none focus:ring-2 focus:ring-white/50"
+                                    placeholder="e.g. Volunteer registration..."
+                                    className="flex-1 bg-white/10 border border-white/20 rounded-md px-3 sm:px-4 py-2 text-sm sm:text-base text-white placeholder-purple-200 focus:outline-none focus:ring-2 focus:ring-white/50"
                                 />
                                 <Button
                                     onClick={handleAIGenerate}
                                     disabled={generating || !prompt}
-                                    className="bg-white text-purple-600 hover:bg-purple-50 border-none"
+                                    className="bg-white text-purple-600 hover:bg-purple-50 border-none w-full sm:w-auto"
                                 >
                                     {generating ? <Loader2 className="animate-spin" /> : 'Generate'}
                                 </Button>
