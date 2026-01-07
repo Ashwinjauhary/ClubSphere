@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import { QRScanner } from '../components/QRScanner';
-import { ArrowLeft, CheckCircle, XCircle, Search } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Search } from 'lucide-react';
 import { format } from 'date-fns';
 
 export const EventScannerPage = () => {
@@ -53,7 +53,7 @@ export const EventScannerPage = () => {
     };
 
     const fetchRecentLogs = async () => {
-        const { data } = await supabase
+        await supabase
             .from('event_attendance')
             .select(`
                 *,

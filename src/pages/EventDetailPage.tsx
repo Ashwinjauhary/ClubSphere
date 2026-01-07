@@ -279,13 +279,12 @@ export const EventDetailPage = () => {
                         </div>
                     )}
 
-                    {/* Ticket Display */}
-                    {isRegistered && ticketData && (
+                    {isRegistered && ticketData && user && (
                         <div className="mt-8 border-t border-gray-100 pt-8 animate-in slide-in-from-bottom-4 duration-500">
                             <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">Your Event Ticket</h3>
                             <TicketCard
                                 eventName={event.title}
-                                studentName={user.full_name || 'Student'}
+                                studentName={user.user_metadata?.full_name || user.email || 'Student'}
                                 studentId={user.email || ''}
                                 ticketCode={ticketData.ticket_code}
                                 qrHash={ticketData.qr_code_hash}
