@@ -4,13 +4,20 @@ VALUES ('club-gallery', 'club-gallery', true)
 ON CONFLICT (id) DO NOTHING;
 
 -- Storage Policies for club-gallery bucket
+
+-- 1. Drop existing gallery policies if they exist to avoid conflicts
+DROP POLICY IF EXISTS "Gallery Public Access" ON storage.objects;
+DROP POLICY IF EXISTS "Gallery Club Admin Upload" ON storage.objects;
+DROP POLICY IF EXISTS "Gallery Club Admin Delete" ON storage.objects;
+
+-- 2. Create new policies with specific names
 -- Public access to view images
-CREATE POLICY "Public Access"
+CREATE POLICY "Gallery Public Access"
 ON storage.objects FOR SELECT
 USING ( bucket_id = 'club-gallery' );
 
 -- Club admins/super admins can upload
-CREATE POLICY "Club Admin Upload"
+CREATE POLICY "Gallery Club Admin Upload"
 ON storage.objects FOR INSERT
 WITH CHECK (
     bucket_id = 'club-gallery' 
@@ -18,7 +25,7 @@ WITH CHECK (
 );
 
 -- Club admins/super admins can delete
-CREATE POLICY "Club Admin Delete"
+CREATE POLICY "Gallery Club Admin Delete"
 ON storage.objects FOR DELETE
 USING (
     bucket_id = 'club-gallery'
