@@ -212,37 +212,37 @@ export const AIReportStudioPage = () => {
     };
 
     return (
-        <div className="max-w-5xl mx-auto space-y-8 pb-20">
+        <div className="max-w-5xl mx-auto space-y-6 sm:space-y-8 pb-20 px-4 sm:px-6 lg:px-8">
             <div className="text-center space-y-2">
                 <div className="inline-flex items-center justify-center p-2 bg-indigo-100 rounded-full mb-2">
-                    <Wand2 className="h-6 w-6 text-indigo-600" />
+                    <Wand2 className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-600" />
                 </div>
-                <h1 className="text-3xl font-extrabold text-gray-900">ClubSphere AI Report Studio</h1>
-                <p className="text-gray-500 max-w-2xl mx-auto">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900 px-4">ClubSphere AI Report Studio</h1>
+                <p className="text-sm sm:text-base text-gray-500 max-w-2xl mx-auto px-4">
                     Turn basic event details into a professional, NAAC/IQAC-compliant 15-page report in seconds.
                 </p>
             </div>
 
             {/* Stepper */}
-            <div className="flex justify-center mb-8">
-                <nav className="flex items-center space-x-4" aria-label="Progress">
+            <div className="flex justify-center mb-6 sm:mb-8 overflow-x-auto scrollbar-hide -mx-4 px-4">
+                <nav className="flex items-center space-x-2 sm:space-x-4 min-w-max" aria-label="Progress">
                     {STEPS.map((step, index) => (
                         <div key={step} className="flex items-center">
-                            <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${index <= currentStep ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-gray-300 text-gray-500'
+                            <div className={`flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 flex-shrink-0 ${index <= currentStep ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-gray-300 text-gray-500'
                                 }`}>
-                                {index < currentStep ? <CheckCircle2 className="h-5 w-5" /> : <span className="text-sm font-medium">{index + 1}</span>}
+                                {index < currentStep ? <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5" /> : <span className="text-xs sm:text-sm font-medium">{index + 1}</span>}
                             </div>
-                            <span className={`ml-2 text-sm font-medium ${index <= currentStep ? 'text-indigo-600' : 'text-gray-500'}`}>{step}</span>
+                            <span className={`ml-1.5 sm:ml-2 text-xs sm:text-sm font-medium whitespace-nowrap ${index <= currentStep ? 'text-indigo-600' : 'text-gray-500'} hidden md:inline`}>{step}</span>
                             {index < STEPS.length - 1 && (
-                                <div className="ml-4 w-12 h-0.5 bg-gray-200"></div>
+                                <div className="ml-2 sm:ml-4 w-8 sm:w-12 h-0.5 bg-gray-200"></div>
                             )}
                         </div>
                     ))}
                 </nav>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden min-h-[500px] flex flex-col">
-                <div className="flex-1 p-8">
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border border-gray-200 overflow-hidden min-h-[400px] sm:min-h-[500px] flex flex-col">
+                <div className="flex-1 p-4 sm:p-6 lg:p-8">
                     {currentStep === 0 && (
                         <div className="space-y-6">
                             <div className="flex justify-between items-center pb-4 border-b">
@@ -262,36 +262,36 @@ export const AIReportStudioPage = () => {
 
                     {currentStep === 5 && generatedContent && editableContent && (
                         <div className="animate-in fade-in space-y-6">
-                            <div className="flex items-center justify-between bg-green-50 p-4 rounded-lg border border-green-200">
-                                <div className="flex items-center gap-3">
-                                    <CheckCircle2 className="h-6 w-6 text-green-600" />
+                            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between bg-green-50 p-4 sm:p-5 rounded-lg border border-green-200 gap-4">
+                                <div className="flex items-start sm:items-center gap-3">
+                                    <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 flex-shrink-0 mt-0.5 sm:mt-0" />
                                     <div>
-                                        <h3 className="font-bold text-green-800">Report Generated Successfully!</h3>
-                                        <p className="text-sm text-green-700">
+                                        <h3 className="font-bold text-green-800 text-sm sm:text-base">Report Generated Successfully!</h3>
+                                        <p className="text-xs sm:text-sm text-green-700">
                                             {editMode ? 'Edit the content below, then save or download.' : 'Your professional event document is ready.'}
                                         </p>
                                     </div>
                                 </div>
-                                <div className="flex gap-2">
-                                    <Button onClick={toggleEditMode} variant={editMode ? "primary" : "secondary"}>
+                                <div className="flex flex-col sm:flex-row gap-2 sm:gap-2">
+                                    <Button onClick={toggleEditMode} variant={editMode ? "primary" : "secondary"} className="w-full sm:w-auto text-sm">
                                         {editMode ? '✓ Done Editing' : '✏️ Edit Content'}
                                     </Button>
-                                    <Button onClick={handleSaveReport} variant="secondary" loading={isSaving}>
+                                    <Button onClick={handleSaveReport} variant="secondary" loading={isSaving} className="w-full sm:w-auto text-sm">
                                         <Save className="h-4 w-4 mr-2" />
                                         Save
                                     </Button>
-                                    <Button onClick={downloadWord} variant="secondary">
+                                    <Button onClick={downloadWord} variant="secondary" className="w-full sm:w-auto text-sm">
                                         <Download className="h-4 w-4 mr-2" />
                                         Word
                                     </Button>
-                                    <Button onClick={downloadPDF} className="bg-green-600 hover:bg-green-700">
+                                    <Button onClick={downloadPDF} className="bg-green-600 hover:bg-green-700 w-full sm:w-auto text-sm">
                                         <Download className="h-4 w-4 mr-2" />
                                         PDF
                                     </Button>
                                 </div>
                             </div>
 
-                            <div className="prose max-w-none p-8 border border-gray-100 rounded-xl bg-gray-50/50 shadow-inner h-[600px] overflow-y-auto">
+                            <div className="prose max-w-none p-4 sm:p-6 lg:p-8 border border-gray-100 rounded-xl bg-gray-50/50 shadow-inner h-[400px] sm:h-[500px] lg:h-[600px] overflow-y-auto">
                                 <h1 className="text-3xl font-bold text-center text-gray-900 mb-8 border-b pb-4">{formData.basicInfo.title.toUpperCase()}</h1>
 
                                 <h3 className="text-indigo-800 border-b border-indigo-200 pb-1 mt-6">1. Introduction</h3>
@@ -353,7 +353,7 @@ export const AIReportStudioPage = () => {
                     )}
                 </div>
 
-                <div className="p-6 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+                <div className="p-4 sm:p-6 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
                     <Button
                         variant="ghost"
                         onClick={handleBack}

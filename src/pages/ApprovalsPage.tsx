@@ -114,10 +114,10 @@ export const ApprovalsPage = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-0">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Approvals & Review</h1>
-                    <p className="text-gray-500 mt-1">Authorize content and proposals from clubs.</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Approvals & Review</h1>
+                    <p className="text-sm sm:text-base text-gray-500 mt-1">Authorize content and proposals from clubs.</p>
                 </div>
             </div>
 
@@ -214,30 +214,36 @@ export const ApprovalsPage = () => {
             {/* Event Modal */}
             {selectedEvent && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
-                    <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6">
-                        <div className="flex justify-between mb-4">
-                            <h2 className="text-2xl font-bold">{selectedEvent.title}</h2>
-                            <button onClick={() => setSelectedEvent(null)}><X className="h-6 w-6" /></button>
+                    <div className="bg-white rounded-lg sm:rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+                        <div className="flex justify-between items-start gap-4 mb-4">
+                            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex-1">{selectedEvent.title}</h2>
+                            <button
+                                onClick={() => setSelectedEvent(null)}
+                                className="flex-shrink-0 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+                                aria-label="Close modal"
+                            >
+                                <X className="h-5 w-5 sm:h-6 sm:w-6" />
+                            </button>
                         </div>
                         <div className="space-y-4">
-                            <p className="text-gray-600">{selectedEvent.description}</p>
-                            <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+                            <p className="text-sm sm:text-base text-gray-600">{selectedEvent.description}</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 bg-gray-50 p-3 sm:p-4 rounded-lg">
                                 <div>
                                     <span className="block text-xs font-bold text-gray-500 uppercase">Date</span>
-                                    {format(new Date(selectedEvent.start_time), 'PPp')}
+                                    <p className="text-sm sm:text-base text-gray-900">{format(new Date(selectedEvent.start_time), 'PPp')}</p>
                                 </div>
                                 <div>
                                     <span className="block text-xs font-bold text-gray-500 uppercase">Budget</span>
-                                    ₹{selectedEvent.budget}
+                                    <p className="text-sm sm:text-base text-gray-900">₹{selectedEvent.budget}</p>
                                 </div>
                             </div>
                             {selectedEvent.poster_url && (
                                 <img src={selectedEvent.poster_url} alt="Poster" className="w-full rounded-lg" />
                             )}
                         </div>
-                        <div className="mt-6 flex justify-end gap-3">
-                            <Button variant="danger" onClick={() => handleEventAction(selectedEvent.id, 'reject')}>Reject</Button>
-                            <Button onClick={() => handleEventAction(selectedEvent.id, 'approve')}>Approve Event</Button>
+                        <div className="mt-6 flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
+                            <Button variant="danger" onClick={() => handleEventAction(selectedEvent.id, 'reject')} className="w-full sm:w-auto">Reject</Button>
+                            <Button onClick={() => handleEventAction(selectedEvent.id, 'approve')} className="w-full sm:w-auto">Approve Event</Button>
                         </div>
                     </div>
                 </div>
@@ -246,24 +252,30 @@ export const ApprovalsPage = () => {
             {/* Post Modal */}
             {selectedPost && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
-                    <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6">
-                        <div className="flex justify-between mb-4">
-                            <h2 className="text-2xl font-bold">{selectedPost.title}</h2>
-                            <button onClick={() => setSelectedPost(null)}><X className="h-6 w-6" /></button>
+                    <div className="bg-white rounded-lg sm:rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+                        <div className="flex justify-between items-start gap-4 mb-4">
+                            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex-1">{selectedPost.title}</h2>
+                            <button
+                                onClick={() => setSelectedPost(null)}
+                                className="flex-shrink-0 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+                                aria-label="Close modal"
+                            >
+                                <X className="h-5 w-5 sm:h-6 sm:w-6" />
+                            </button>
                         </div>
                         <div className="space-y-4">
                             {/* @ts-ignore */}
-                            <p className="text-sm text-gray-500">By {selectedPost.author?.full_name}</p>
-                            <div className="prose max-w-none text-gray-800 bg-gray-50 p-4 rounded-lg whitespace-pre-wrap">
+                            <p className="text-xs sm:text-sm text-gray-500">By {selectedPost.author?.full_name}</p>
+                            <div className="prose max-w-none text-sm sm:text-base text-gray-800 bg-gray-50 p-3 sm:p-4 rounded-lg whitespace-pre-wrap">
                                 {selectedPost.content}
                             </div>
                             {selectedPost.image_url && (
                                 <img src={selectedPost.image_url} alt="Post Image" className="w-full rounded-lg" />
                             )}
                         </div>
-                        <div className="mt-6 flex justify-end gap-3">
-                            <Button variant="danger" onClick={() => handlePostAction(selectedPost.id, 'reject')}>Reject</Button>
-                            <Button onClick={() => handlePostAction(selectedPost.id, 'approve')}>Approve Post</Button>
+                        <div className="mt-6 flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
+                            <Button variant="danger" onClick={() => handlePostAction(selectedPost.id, 'reject')} className="w-full sm:w-auto">Reject</Button>
+                            <Button onClick={() => handlePostAction(selectedPost.id, 'approve')} className="w-full sm:w-auto">Approve Post</Button>
                         </div>
                     </div>
                 </div>
