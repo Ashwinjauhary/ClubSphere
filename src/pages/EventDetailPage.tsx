@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { format } from 'date-fns';
-import { Calendar, Clock, MapPin, ArrowLeft, Building, UserCheck, Users as UsersIcon } from 'lucide-react';
+import { Calendar, Clock, MapPin, ArrowLeft, Building, UserCheck, Users as UsersIcon, ScanLine } from 'lucide-react';
 
 import { useAuthStore } from '../store/authStore';
 import { Button } from '../components/ui/Button';
+import { TicketCard } from '../components/TicketCard';
 
 interface EventDetails {
     id: string;
@@ -31,6 +32,7 @@ export const EventDetailPage = () => {
     const [isRegistered, setIsRegistered] = useState(false);
     const [registrationCount, setRegistrationCount] = useState(0);
     const [registering, setRegistering] = useState(false);
+    const [ticketData, setTicketData] = useState<any>(null);
 
     useEffect(() => {
         if (id) {
@@ -69,12 +71,18 @@ export const EventDetailPage = () => {
         if (!user || !id) return;
         const { data } = await supabase
             .from('event_registrations')
-            .select('id')
+            .select('*')
             .eq('event_id', id)
             .eq('user_id', user.id)
-            .eq('status', 'registered')
-            .single();
-        setIsRegistered(!!data);
+            .maybeSingle();
+
+        if (data) {
+            setIsRegistered(true);
+            setTicketData(data);
+        } else {
+            setIsRegistered(false);
+            setTicketData(null);
+        }
     };
 
     const fetchRegistrationCount = async () => {
@@ -93,6 +101,11 @@ export const EventDetailPage = () => {
         try {
             if (isRegistered) {
                 // Unregister
+                if (!confirm('Are you sure you want to cancel your registration? Your ticket will be removed.')) {
+                    setRegistering(false);
+                    return;
+                }
+
                 const { error } = await supabase
                     .from('event_registrations')
                     .delete()
@@ -100,17 +113,27 @@ export const EventDetailPage = () => {
                     .eq('user_id', user.id);
                 if (error) throw error;
                 setIsRegistered(false);
+                setTicketData(null);
                 setRegistrationCount(prev => Math.max(0, prev - 1));
-                alert('✅ Unregistered successfully!');
+                alert('✅ Registration cancelled.');
             } else {
                 // Register
-                const { error } = await supabase
+                const qrHash = crypto.randomUUID();
+                const { data, error } = await supabase
                     .from('event_registrations')
-                    .insert({ event_id: id, user_id: user.id });
+                    .insert({
+                        event_id: id,
+                        user_id: user.id,
+                        qr_code_hash: qrHash
+                    })
+                    .select()
+                    .single();
+
                 if (error) throw error;
                 setIsRegistered(true);
+                setTicketData(data);
                 setRegistrationCount(prev => prev + 1);
-                alert('✅ Registered successfully!');
+                alert('✅ Registered successfully! Your ticket is ready.');
             }
         } catch (error: any) {
             console.error('Registration error:', error);
@@ -184,6 +207,19 @@ export const EventDetailPage = () => {
                         </h1>
                     </div>
 
+                    {/* Admin Actions: Scan Button */}
+                    {user && (role === 'admin' || role === 'super_admin' || role === 'dean') && (
+                        <div className="flex justify-end -mt-4 mb-4">
+                            <Button
+                                onClick={() => navigate(`/events/${id}/scan`)}
+                                className="bg-gray-900 text-white hover:bg-gray-800"
+                            >
+                                <ScanLine className="h-4 w-4 mr-2" />
+                                Scan Tickets
+                            </Button>
+                        </div>
+                    )}
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-6 border-y border-gray-100">
                         <div className="flex items-start gap-3">
                             <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
@@ -240,6 +276,26 @@ export const EventDetailPage = () => {
                                 <UserCheck className="h-5 w-5 mr-2" />
                                 {registering ? 'Processing...' : isRegistered ? 'Unregister from Event' : 'Register for Event'}
                             </Button>
+                        </div>
+                    )}
+
+                    {/* Ticket Display */}
+                    {isRegistered && ticketData && (
+                        <div className="mt-8 border-t border-gray-100 pt-8 animate-in slide-in-from-bottom-4 duration-500">
+                            <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">Your Event Ticket</h3>
+                            <TicketCard
+                                eventName={event.title}
+                                studentName={user.full_name || 'Student'}
+                                studentId={user.email || ''}
+                                ticketCode={ticketData.ticket_code}
+                                qrHash={ticketData.qr_code_hash}
+                                eventDate={event.start_time}
+                                eventLocation={event.location}
+                                status={ticketData.status}
+                            />
+                            <p className="text-center text-sm text-gray-500 mt-4 max-w-sm mx-auto">
+                                Please present this QR code at the registration desk for check-in.
+                            </p>
                         </div>
                     )}
 

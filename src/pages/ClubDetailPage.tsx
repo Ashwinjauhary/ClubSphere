@@ -60,7 +60,7 @@ export const ClubDetailPage = () => {
             .select('id, image_url, caption')
             .eq('club_id', id)
             .order('created_at', { ascending: false })
-            .limit(6);
+            .limit(7);
 
         if (!error && data) {
             setGalleryImages(data);
@@ -321,22 +321,32 @@ export const ClubDetailPage = () => {
                         )}
                     </div>
                     {galleryImages.length > 0 ? (
-                        <div className="grid grid-cols-2 gap-2">
-                            {galleryImages.map((image) => (
-                                <div key={image.id} className="aspect-square bg-gray-200 rounded-lg overflow-hidden group relative">
-                                    <img
-                                        src={image.image_url}
-                                        alt={image.caption || 'Gallery image'}
-                                        className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                    />
-                                    {image.caption && (
-                                        <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-2">
-                                            {image.caption}
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
+                        <>
+                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
+                                {galleryImages.slice(0, 6).map((image) => (
+                                    <div key={image.id} className="aspect-square bg-gray-200 rounded-lg overflow-hidden group relative">
+                                        <img
+                                            src={image.image_url}
+                                            alt={image.caption || 'Gallery image'}
+                                            className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                        />
+                                        {image.caption && (
+                                            <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-2 truncate">
+                                                {image.caption}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                            {galleryImages.length > 6 && (
+                                <button
+                                    onClick={() => navigate(`/clubs/${id}/gallery`)}
+                                    className="w-full py-2 bg-gray-50 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors border border-gray-200"
+                                >
+                                    View All Photos
+                                </button>
+                            )}
+                        </>
                     ) : (
                         <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
                             <p className="text-gray-500 text-sm">No gallery images yet</p>

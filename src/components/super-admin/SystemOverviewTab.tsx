@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Users, Building2, Calendar, FileText, Activity } from 'lucide-react';
+import { Users, Building2, Calendar, FileText, Activity, Download, Loader2 } from 'lucide-react';
+import { fetchFullBackup, downloadBackup } from '../../services/backupService';
 
 interface SystemStats {
     totalUsers: number;
@@ -31,6 +32,7 @@ export const SystemOverviewTab = () => {
         eventsByStatus: { pending: 0, approved: 0, rejected: 0, completed: 0 }
     });
     const [loading, setLoading] = useState(true);
+    const [backingUp, setBackingUp] = useState(false);
 
     useEffect(() => {
         fetchSystemStats();
@@ -79,6 +81,22 @@ export const SystemOverviewTab = () => {
         }
 
         setLoading(false);
+    };
+
+    const handleBackup = async () => {
+        if (backingUp) return;
+
+        try {
+            setBackingUp(true);
+            const data = await fetchFullBackup();
+            downloadBackup(data);
+            alert('Backup downloaded successfully!');
+        } catch (error) {
+            console.error('Backup failed:', error);
+            alert('Failed to generate backup. Please try again.');
+        } finally {
+            setBackingUp(false);
+        }
     };
 
     if (loading) {
@@ -213,19 +231,30 @@ export const SystemOverviewTab = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <button
                         onClick={() => fetchSystemStats()}
-                        className="px-4 py-3 bg-brand-50 text-brand-600 rounded-lg hover:bg-brand-100 font-medium"
+                        className="px-4 py-3 bg-brand-50 text-brand-600 rounded-lg hover:bg-brand-100 font-medium transition-colors"
                     >
                         Refresh Statistics
                     </button>
                     <button
-                        onClick={() => alert('Database backup feature coming soon')}
-                        className="px-4 py-3 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-medium"
+                        onClick={handleBackup}
+                        disabled={backingUp}
+                        className="px-4 py-3 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-medium transition-colors flex items-center justify-center gap-2"
                     >
-                        Backup Database
+                        {backingUp ? (
+                            <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Backing Up...
+                            </>
+                        ) : (
+                            <>
+                                <Download className="h-4 w-4" />
+                                Backup Database
+                            </>
+                        )}
                     </button>
                     <button
                         onClick={() => alert('System logs viewer coming soon')}
-                        className="px-4 py-3 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 font-medium"
+                        className="px-4 py-3 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 font-medium transition-colors"
                     >
                         View System Logs
                     </button>
@@ -234,3 +263,4 @@ export const SystemOverviewTab = () => {
         </div>
     );
 };
+
