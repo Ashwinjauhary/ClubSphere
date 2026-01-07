@@ -170,14 +170,14 @@ export const EventDetailPage = () => {
     if (!event) return null;
 
     return (
-        <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500 pb-10">
+        <div className="max-w-4xl mx-auto px-3 sm:px-4 space-y-6 sm:space-y-8 animate-in fade-in duration-500 pb-10">
             {/* Back Button */}
             <button
                 onClick={() => navigate(-1)}
-                className="flex items-center text-gray-500 hover:text-gray-900 transition-colors"
+                className="flex items-center text-sm sm:text-base text-gray-500 hover:text-gray-900 transition-colors"
             >
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Events
+                <span className="hidden xs:inline">Back to </span>Events
             </button>
 
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -202,49 +202,49 @@ export const EventDetailPage = () => {
                 </div>
 
                 {/* Content */}
-                <div className="p-6 md:p-8 space-y-6">
+                <div className="p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6">
                     <div>
-                        <div className="flex items-center gap-3 mb-4">
+                        <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
                             {event.clubs.logo_url ? (
-                                <img src={event.clubs.logo_url} className="h-10 w-10 rounded-full border border-gray-200" />
+                                <img src={event.clubs.logo_url} className="h-8 w-8 sm:h-10 sm:w-10 rounded-full border border-gray-200" />
                             ) : (
-                                <div className="h-10 w-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-600">
-                                    <Building className="h-5 w-5" />
+                                <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-600">
+                                    <Building className="h-4 w-4 sm:h-5 sm:w-5" />
                                 </div>
                             )}
                             <div>
-                                <h3 className="text-sm font-bold text-gray-900">{event.clubs.name}</h3>
+                                <h3 className="text-xs sm:text-sm font-bold text-gray-900">{event.clubs.name}</h3>
                                 <p className="text-xs text-gray-500">Organizer</p>
                             </div>
                         </div>
 
-                        <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight leading-tight">
+                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight leading-tight">
                             {event.title}
                         </h1>
                     </div>
 
                     {/* Admin Actions: Scan Button */}
                     {user && (role === 'admin' || role === 'super_admin' || role === 'dean') && (
-                        <div className="flex justify-end gap-3 -mt-4 mb-4">
+                        <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 -mt-4 mb-4">
                             <Button
                                 onClick={() => navigate(`/events/${id}/feedback-stats`)}
                                 variant="outline"
-                                className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                                className="border-gray-300 text-gray-700 hover:bg-gray-50 text-sm sm:text-base w-full sm:w-auto"
                             >
                                 <span className="mr-2">📊</span>
-                                View Responses
+                                <span className="hidden xs:inline">View </span>Responses
                             </Button>
                             <Button
                                 onClick={() => navigate(`/events/${id}/feedback-builder`)}
                                 variant="outline"
-                                className="border-purple-200 text-purple-700 hover:bg-purple-50"
+                                className="border-purple-200 text-purple-700 hover:bg-purple-50 text-sm sm:text-base w-full sm:w-auto"
                             >
                                 <span className="mr-2">✨</span>
                                 Dynamic Form
                             </Button>
                             <Button
                                 onClick={() => navigate(`/events/${id}/scan`)}
-                                className="bg-gray-900 text-white hover:bg-gray-800"
+                                className="bg-gray-900 text-white hover:bg-gray-800 text-sm sm:text-base w-full sm:w-auto"
                             >
                                 <ScanLine className="h-4 w-4 mr-2" />
                                 Scan Tickets
