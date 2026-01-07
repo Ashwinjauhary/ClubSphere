@@ -225,13 +225,43 @@ export const EventDetailPage = () => {
 
                     {/* Admin Actions: Scan Button */}
                     {user && (role === 'admin' || role === 'super_admin' || role === 'dean') && (
-                        <div className="flex justify-end -mt-4 mb-4">
+                        <div className="flex justify-end gap-3 -mt-4 mb-4">
+                            <Button
+                                onClick={() => navigate(`/events/${id}/feedback-stats`)}
+                                variant="outline"
+                                className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                            >
+                                <span className="mr-2">📊</span>
+                                View Responses
+                            </Button>
+                            <Button
+                                onClick={() => navigate(`/events/${id}/feedback-builder`)}
+                                variant="outline"
+                                className="border-purple-200 text-purple-700 hover:bg-purple-50"
+                            >
+                                <span className="mr-2">✨</span>
+                                Dynamic Form
+                            </Button>
                             <Button
                                 onClick={() => navigate(`/events/${id}/scan`)}
                                 className="bg-gray-900 text-white hover:bg-gray-800"
                             >
                                 <ScanLine className="h-4 w-4 mr-2" />
                                 Scan Tickets
+                            </Button>
+                        </div>
+                    )}
+
+                    {/* Feedback Button for Attendees (Visible if event has started) */}
+                    {(!user || role === 'student') && new Date(event.start_time) <= new Date() && (
+                        <div className="flex justify-end -mt-4 mb-4">
+                            <Button
+                                onClick={() => navigate(`/events/${id}/feedback`)}
+                                variant="outline"
+                                className="border-brand-200 text-brand-700 hover:bg-brand-50"
+                            >
+                                <span className="mr-2">📝</span>
+                                Give Feedback
                             </Button>
                         </div>
                     )}

@@ -11,7 +11,8 @@ import {
     CheckSquare,
     Plus,
     User,
-    X
+    X,
+    Sparkles
 } from 'lucide-react';
 import { Notifications } from './Notifications';
 import { useAuthStore } from '../store/authStore';
@@ -105,7 +106,9 @@ export const Sidebar = ({ onClose }: SidebarProps) => {
                             // Fallback if they are admin but not assigned yet
                             <SidebarLink to="/clubs" icon={Building} label="My Club (Unassigned)" onClose={onClose} />
                         )}
+                        <SidebarLink to="/forms" icon={FileText} label="Forms" onClose={onClose} />
                         <SidebarLink to="/reports" icon={ClipboardList} label="Event Reports" onClose={onClose} />
+
                         <SidebarLink to="/members" icon={Users} label="Manage Team" onClose={onClose} />
                     </>
                 )}
@@ -119,6 +122,7 @@ export const Sidebar = ({ onClose }: SidebarProps) => {
                         <SidebarLink to="/clubs/new" icon={Plus} label="Create Club" onClose={onClose} />
                         <SidebarLink to="/analytics" icon={BarChart} label="Analytics" onClose={onClose} />
                         <SidebarLink to="/reports" icon={FileText} label="System Reports" onClose={onClose} />
+                        <SidebarLink to="/reports/ai-studio" icon={Sparkles} label="AI Studio" onClose={onClose} />
                     </>
                 )}
 

@@ -7,6 +7,9 @@ import { AlignLeft, Image as ImageIcon, UserCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
+import { generateClubBio } from '../services/aiService';
+import { Sparkles } from 'lucide-react';
+import { useState } from 'react';
 
 const clubSchema = z.object({
     name: z.string().min(3, 'Name must be at least 3 characters'),
@@ -28,10 +31,31 @@ interface ClubFormProps {
 export const ClubForm = ({ initialData, isEditing = false }: ClubFormProps) => {
     const navigate = useNavigate();
     const { user, role } = useAuthStore();
-    const { register, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm<ClubFormData>({
+    const [generating, setGenerating] = useState(false);
+    const { register, handleSubmit, setError, setValue, watch, formState: { errors, isSubmitting } } = useForm<ClubFormData>({
         resolver: zodResolver(clubSchema),
         defaultValues: initialData || { founded_year: new Date().getFullYear().toString() }
     });
+
+    const handleEnhanceBio = async () => {
+        const name = watch('name');
+        const category = watch('category');
+
+        if (!name || !category) {
+            alert("Please fill in Club Name and Category first.");
+            return;
+        }
+
+        setGenerating(true);
+        try {
+            const bio = await generateClubBio(name, category, "To foster excellence and community engagement.");
+            setValue('description', bio);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setGenerating(false);
+        }
+    };
 
     const onSubmit = async (data: ClubFormData) => {
         try {
@@ -97,7 +121,18 @@ export const ClubForm = ({ initialData, isEditing = false }: ClubFormProps) => {
             />
 
             <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">Description</label>
+                <div className="flex justify-between items-center">
+                    <label className="block text-sm font-medium text-gray-700">Description</label>
+                    <button
+                        type="button"
+                        onClick={handleEnhanceBio}
+                        disabled={generating}
+                        className="text-xs flex items-center text-brand-600 hover:text-brand-700 font-medium disabled:opacity-50"
+                    >
+                        <Sparkles className="h-3 w-3 mr-1" />
+                        {generating ? 'Enhancing...' : 'Enhance Bio with AI'}
+                    </button>
+                </div>
                 <div className="relative">
                     <div className="absolute top-3 left-3 text-gray-400 pointer-events-none">
                         <AlignLeft className="h-5 w-5" />

@@ -7,6 +7,7 @@ import { useAuthStore } from '../store/authStore';
 import { format } from 'date-fns';
 import { EventCard } from '../components/EventCard';
 
+
 interface ClubDetail {
     id: string;
     name: string;
@@ -44,6 +45,7 @@ export const ClubDetailPage = () => {
     const [applying, setApplying] = useState(false);
     const [memberCount, setMemberCount] = useState<number>(0);
     const [galleryImages, setGalleryImages] = useState<Array<{ id: string; image_url: string; caption?: string }>>([]);
+
 
     useEffect(() => {
         if (!id) return;
@@ -158,8 +160,15 @@ export const ClubDetailPage = () => {
     // Determine if the current user is authorized to edit (Admin of this club OR Dean)
     const isAuthorizedToEdit = (user && club && user.id === club.admin_id) || role === 'dean';
 
-    const upcomingEvents = events.filter(e => new Date(e.end_time) >= new Date());
-    const pastEvents = events.filter(e => new Date(e.end_time) < new Date());
+    const upcomingEvents = events.filter(e => {
+        const endDate = e.end_time ? new Date(e.end_time) : new Date(e.start_time);
+        return endDate >= new Date();
+    });
+
+    const pastEvents = events.filter(e => {
+        const endDate = e.end_time ? new Date(e.end_time) : new Date(e.start_time);
+        return endDate < new Date();
+    });
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500 overflow-x-hidden">
@@ -213,42 +222,40 @@ export const ClubDetailPage = () => {
                         </div>
                     </div>
 
-                    <div>
-                        <div className="flex items-center gap-3 mb-2 flex-wrap">
-                            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{club.name}</h1>
-                            <span className="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-700">
-                                {club.category}
-                            </span>
+                    {/* About Section */}
+                    <div className="mt-8 space-y-8 animate-in fade-in duration-300">
+                        <div>
+                            <h3 className="text-lg font-bold text-gray-900 mb-3">About Us</h3>
+                            <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">{club.description}</p>
                         </div>
-                        <p className="text-gray-600 max-w-3xl leading-relaxed text-sm sm:text-base">{club.description}</p>
-                    </div>
 
-                    <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 border-t border-gray-100 pt-6 sm:pt-8">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                                <Users className="h-5 w-5" />
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-gray-100 pt-8">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                                    <Users className="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-gray-900">{memberCount} Members</p>
+                                    <p className="text-xs text-gray-500">Total Size</p>
+                                </div>
                             </div>
-                            <div>
-                                <p className="text-sm font-medium text-gray-900">{memberCount} {memberCount === 1 ? 'Member' : 'Members'}</p>
-                                <p className="text-xs text-gray-500">Total Members</p>
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
+                                    <Calendar className="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-gray-900">Est. {club.founded_year}</p>
+                                    <p className="text-xs text-gray-500">Founded Year</p>
+                                </div>
                             </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
-                                <Calendar className="h-5 w-5" />
-                            </div>
-                            <div>
-                                <p className="text-sm font-medium text-gray-900">Founded {club.founded_year}</p>
-                                <p className="text-xs text-gray-500">Est. Date</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-green-50 text-green-600 rounded-lg">
-                                <Mail className="h-5 w-5" />
-                            </div>
-                            <div>
-                                <p className="text-sm font-medium text-gray-900">Contact Admin</p>
-                                <p className="text-xs text-gray-500">{club.admin?.email || 'N/A'}</p>
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-green-50 text-green-600 rounded-lg">
+                                    <Mail className="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-gray-900">Contact</p>
+                                    <p className="text-xs text-gray-500">{club.admin?.email || 'N/A'}</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -361,6 +368,8 @@ export const ClubDetailPage = () => {
                         </div>
                     )}
                 </div>
+
+                {/* Events Section (Already displayed in tab, but removed redundant block in previous step) */}
             </div>
         </div>
     );

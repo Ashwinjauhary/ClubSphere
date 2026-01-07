@@ -68,7 +68,7 @@ export const generateEventReport = async (data: ReportData): Promise<GeneratedRe
         }
         `;
 
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -147,6 +147,184 @@ The event successfully created a competitive yet collaborative environment.
             conclusion,
             impactAnalysis,
             images: data.images
+        };
+    }
+    // ... existing code ...
+
+    // ... existing code ...
+};
+
+export const generateEventDescription = async (
+    title: string,
+    date: string,
+    venue: string,
+    eventType: string
+): Promise<string> => {
+    console.log("Generating event description...", title);
+    const prompt = `
+    You are an expert copywriter for student club events.
+    Write an engaging, exciting, and professional event description (approx 100-150 words) for:
+    
+    Event Title: ${title}
+    Date: ${date}
+    Venue: ${venue}
+    Type: ${eventType}
+
+    The tone should be energetic, inviting, and emphasize the value of attending. 
+    Use bullet points for key highlights if appropriate.
+    Return ONLY the plain text description. Do not include a title or markdown wrapper like "Here is the description".
+    `;
+
+    try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+
+        const result = await response.json();
+        if (result.error) throw new Error(result.error.message);
+        return result.candidates[0].content.parts[0].text;
+    } catch (error) {
+        console.error("AI Generation Failed:", error);
+        return `Join us for ${title}, a ${eventType} taking place on ${date} at ${venue}. Don't miss this opportunity to learn, network, and have fun! (Auto-generated fallback)`;
+    }
+};
+
+export const generateClubBio = async (
+    name: string,
+    category: string,
+    mission: string
+): Promise<string> => {
+    console.log("Generating club bio...", name);
+    const prompt = `
+    You are a professional profile writer for student organizations.
+    Write a compelling and professional "About Us" bio (approx 100 words) for a club named "${name}".
+    
+    Category: ${category}
+    Mission/Goal: ${mission}
+
+    The bio should highlight the club's vision, what members can expect, and why students should join.
+    Return ONLY the plain text bio.
+    `;
+
+    try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+
+        const result = await response.json();
+        if (result.error) throw new Error(result.error.message);
+        return result.candidates[0].content.parts[0].text;
+    } catch (error) {
+        console.error("AI Generation Failed:", error);
+        return `${name} is a premier ${category} club dedicated to ${mission}. Join us to be part of a vibrant community! (Auto-generated fallback)`;
+    }
+};
+
+export const generateFeedbackForm = async (
+    eventTitle: string,
+    eventType: string,
+    topic: string
+): Promise<any[]> => {
+    console.log("Generating feedback form questions for:", eventTitle);
+    const prompt = `
+    You are an expert survey designer for university events.
+    Create a JSON array of 5 feedback questions for an event titled "${eventTitle}" (${eventType}) about "${topic}".
+    
+    The questions should be a mix of:
+    - Rating (1-5 stars)
+    - Text (Open-ended)
+    - Single Choice (Yes/No or specific options)
+    
+    Return ONLY a valid JSON array of objects with this structure:
+    [
+      { "id": "q1", "type": "rating", "label": "How clearly were the concepts explained?", "required": true },
+      { "id": "q2", "type": "text", "label": "What was your key takeaway?", "required": false },
+      { "id": "q3", "type": "single_choice", "label": "Would you attend a follow-up?", "required": true, "options": ["Yes", "Maybe", "No"] }
+    ]
+    
+    Ensure IDs are unique strings. Do not include markdown code blocks.
+    `;
+
+    try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+
+        const result = await response.json();
+        if (result.error) throw new Error(result.error.message);
+
+        const text = result.candidates[0].content.parts[0].text;
+        const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        return JSON.parse(cleanJson);
+    } catch (error) {
+        console.error("AI Form Generation Failed:", error);
+        return [
+            { id: "f1", type: "rating", "label": `How would you rate the ${eventTitle}?`, "required": true },
+            { id: "f2", type: "rating", "label": "Rate the speaker's knowledge.", "required": true },
+            { id: "f3", type: "text", "label": "What did you like the most?", "required": false },
+            { id: "f4", type: "text", "label": "Any suggestions for improvement?", "required": false },
+            { id: "f5", type: "single_choice", "label": "Would you recommend this event to a friend?", "required": true, "options": ["Yes", "No"] }
+        ];
+    }
+};
+
+export const generateFormSchema = async (
+    userPrompt: string
+): Promise<{ title: string; description: string; questions: any[] }> => {
+    console.log("Generating full form schema for:", userPrompt);
+    const prompt = `
+    You are an expert form builder and survey designer.
+    Based on this request: "${userPrompt}", create a complete form structure.
+    
+    Return ONLY a valid JSON object with this structure:
+    {
+      "title": "Professional Form Title",
+      "description": "A welcoming description encouraging users to fill the form.",
+      "questions": [
+        { "id": "q1", "type": "text", "label": "Full Name", "required": true },
+        { "id": "q2", "type": "single_choice", "label": "Department", "required": true, "options": ["HR", "IT", "Sales"] }
+      ]
+    }
+    
+    Supported Question Types:
+    - text (Short answer)
+    - textarea (Long answer)
+    - rating (1-5 stars)
+    - single_choice (Radio buttons)
+    - multiple_choice (Checkboxes)
+    - date (Date picker)
+    - email (Email input)
+
+    Ensure IDs are unique strings. NO markdown code blocks.
+    `;
+
+    try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+
+        const result = await response.json();
+        if (result.error) throw new Error(result.error.message);
+
+        const text = result.candidates[0].content.parts[0].text;
+        const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        return JSON.parse(cleanJson);
+    } catch (error) {
+        console.error("AI Form Generation Failed:", error);
+        return {
+            title: "New Form",
+            description: "Please fill out this form.",
+            questions: [
+                { id: "fallback_1", type: "text", label: "Example Question", required: true }
+            ]
         };
     }
 };

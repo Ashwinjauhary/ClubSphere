@@ -12,6 +12,10 @@ import { EventsPage } from './pages/EventsPage';
 import { EventDetailPage } from './pages/EventDetailPage';
 
 import { AIReportStudioPage } from './pages/AIReportStudioPage';
+import { FormsListPage } from './pages/FormsListPage';
+import { FormBuilderPage } from './pages/FormBuilderPage';
+import { FormViewerPage } from './pages/FormViewerPage';
+import { FormStatsPage } from './pages/FormStatsPage';
 import { CreateEventPage } from './pages/CreateEventPage';
 import { ApprovalsPage } from './pages/ApprovalsPage';
 import { SubmitReportPage } from './pages/SubmitReportPage';
@@ -33,6 +37,11 @@ import { ClubHighlightsPage } from './pages/ClubHighlightsPage';
 import { SuperAdminPage } from './pages/SuperAdminPage';
 import { GalleryManagementPage } from './pages/GalleryManagementPage';
 import { EventScannerPage } from './pages/EventScannerPage';
+import { FeedbackFormPage } from './pages/FeedbackFormPage';
+import { FeedbackFormBuilderPage } from './pages/FeedbackFormBuilderPage';
+import { EventFeedbackStatsPage } from './pages/EventFeedbackStatsPage';
+import { QRScannerFormPage } from './pages/QRScannerFormPage';
+
 
 function App() {
   const checkUser = useAuthStore((state) => state.checkUser);
@@ -49,6 +58,7 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/f/:id" element={<FormViewerPage />} /> {/* Public Form Link */}
 
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
@@ -62,6 +72,9 @@ function App() {
               <Route path="/events" element={<EventsPage />} />
               <Route path="/events/:id" element={<EventDetailPage />} />
               <Route path="/events/:id/scan" element={<EventScannerPage />} />
+              <Route path="/events/:id/feedback" element={<FeedbackFormPage />} />
+              <Route path="/events/:eventId/feedback-builder" element={<FeedbackFormBuilderPage />} />
+              <Route path="/events/:id/feedback-stats" element={<EventFeedbackStatsPage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/analysis" element={<AnalyticsPage />} />
               <Route path="/reports/submit" element={<SubmitReportPage />} />
@@ -76,6 +89,14 @@ function App() {
 
               <Route path="/reports/ai-studio" element={<AIReportStudioPage />} />
               <Route path="/clubs/:id/highlights" element={<ClubHighlightsPage />} />
+
+              {/* AI Forms System */}
+              <Route path="/forms" element={<FormsListPage />} />
+              <Route path="/forms/new" element={<FormBuilderPage />} />
+              <Route path="/forms/:id/edit" element={<FormBuilderPage />} />
+              <Route path="/forms/:id/stats" element={<FormStatsPage />} />
+              <Route path="/scan-form" element={<QRScannerFormPage />} />
+
               <Route path="/events/new" element={<CreateEventPage />} />
               <Route path="/members" element={<ClubMembersPage />} />
               <Route path="/profile" element={<ProfilePage />} />

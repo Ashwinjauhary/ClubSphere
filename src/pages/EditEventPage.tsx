@@ -7,6 +7,8 @@ import { Input } from '../components/ui/Input';
 import { Calendar, MapPin, AlignLeft, Clock } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { generateEventDescription } from '../services/aiService';
+import { Sparkles } from 'lucide-react';
 
 
 const eventSchema = z.object({
@@ -27,9 +29,31 @@ export const EditEventPage = () => {
     const [loading, setLoading] = useState(true);
     const [currentStatus, setCurrentStatus] = useState<string>('');
 
-    const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<EventFormData>({
+    const [generating, setGenerating] = useState(false);
+    const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<EventFormData>({
         resolver: zodResolver(eventSchema),
     });
+
+    const handleAutoGenerate = async () => {
+        const title = watch('title');
+        const date = watch('date');
+        const location = watch('location');
+
+        if (!title || !date || !location) {
+            alert("Please ensure Title, Date, and Location are filled.");
+            return;
+        }
+
+        setGenerating(true);
+        try {
+            const desc = await generateEventDescription(title, date, location, "Club Event");
+            setValue('description', desc);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setGenerating(false);
+        }
+    };
 
     useEffect(() => {
         const fetchEvent = async () => {
@@ -131,7 +155,18 @@ export const EditEventPage = () => {
                         </div>
 
                         <div className="space-y-1">
-                            <label className="block text-sm font-medium text-gray-700">Description</label>
+                            <div className="flex justify-between items-center">
+                                <label className="block text-sm font-medium text-gray-700">Description</label>
+                                <button
+                                    type="button"
+                                    onClick={handleAutoGenerate}
+                                    disabled={generating}
+                                    className="text-xs flex items-center text-brand-600 hover:text-brand-700 font-medium disabled:opacity-50"
+                                >
+                                    <Sparkles className="h-3 w-3 mr-1" />
+                                    {generating ? 'Generating...' : 'Auto-Generate with AI'}
+                                </button>
+                            </div>
                             <div className="relative">
                                 <div className="absolute top-3 left-3 text-gray-400 pointer-events-none">
                                     <AlignLeft className="h-5 w-5" />
