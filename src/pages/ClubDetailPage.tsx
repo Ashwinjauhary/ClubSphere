@@ -43,14 +43,29 @@ export const ClubDetailPage = () => {
     const [applicationStatus, setApplicationStatus] = useState<string | null>(null);
     const [applying, setApplying] = useState(false);
     const [memberCount, setMemberCount] = useState<number>(0);
+    const [galleryImages, setGalleryImages] = useState<Array<{ id: string; image_url: string; caption?: string }>>([]);
 
     useEffect(() => {
         if (!id) return;
         fetchClubDetails();
         fetchClubEvents();
         fetchMemberCount();
+        fetchGalleryImages();
         if (user) checkApplicationStatus();
     }, [id, user]);
+
+    const fetchGalleryImages = async () => {
+        const { data, error } = await supabase
+            .from('club_gallery')
+            .select('id, image_url, caption')
+            .eq('club_id', id)
+            .order('created_at', { ascending: false })
+            .limit(6);
+
+        if (!error && data) {
+            setGalleryImages(data);
+        }
+    };
 
     const fetchMemberCount = async () => {
         const { count, error } = await supabase
@@ -294,13 +309,47 @@ export const ClubDetailPage = () => {
                 </div>
 
                 <div className="space-y-6">
-                    <h2 className="text-xl font-bold text-gray-900">Gallery</h2>
-                    <div className="grid grid-cols-2 gap-2">
-                        <div className="aspect-square bg-gray-200 rounded-lg"></div>
-                        <div className="aspect-square bg-gray-200 rounded-lg"></div>
-                        <div className="aspect-square bg-gray-200 rounded-lg"></div>
-                        <div className="aspect-square bg-gray-200 rounded-lg"></div>
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-bold text-gray-900">Gallery</h2>
+                        {isAuthorizedToEdit && (
+                            <button
+                                onClick={() => navigate(`/clubs/${id}/gallery`)}
+                                className="text-sm text-brand-600 hover:text-brand-700 font-medium"
+                            >
+                                Manage Gallery →
+                            </button>
+                        )}
                     </div>
+                    {galleryImages.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-2">
+                            {galleryImages.map((image) => (
+                                <div key={image.id} className="aspect-square bg-gray-200 rounded-lg overflow-hidden group relative">
+                                    <img
+                                        src={image.image_url}
+                                        alt={image.caption || 'Gallery image'}
+                                        className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                    />
+                                    {image.caption && (
+                                        <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-2">
+                                            {image.caption}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                            <p className="text-gray-500 text-sm">No gallery images yet</p>
+                            {isAuthorizedToEdit && (
+                                <button
+                                    onClick={() => navigate(`/clubs/${id}/gallery`)}
+                                    className="mt-2 text-brand-600 hover:text-brand-700 font-medium text-sm"
+                                >
+                                    Add Images
+                                </button>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

@@ -31,6 +31,7 @@ import { EditEventPage } from './pages/EditEventPage';
 import { ClubsWallPage } from './pages/ClubsWallPage';
 import { ClubHighlightsPage } from './pages/ClubHighlightsPage';
 import { SuperAdminPage } from './pages/SuperAdminPage';
+import { GalleryManagementPage } from './pages/GalleryManagementPage';
 
 function App() {
   const checkUser = useAuthStore((state) => state.checkUser);
@@ -56,6 +57,7 @@ function App() {
               <Route path="/clubs/new" element={<CreateClubPage />} />
               <Route path="/clubs/:id" element={<ClubDetailPage />} />
               <Route path="/clubs/:id/edit" element={<EditClubPage />} />
+              <Route path="/clubs/:id/gallery" element={<GalleryManagementPage />} />
               <Route path="/events" element={<EventsPage />} />
               <Route path="/events/:id" element={<EventDetailPage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
