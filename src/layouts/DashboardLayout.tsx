@@ -3,12 +3,14 @@ import { Sidebar } from '../components/Sidebar';
 import { useState } from 'react';
 import { Menu } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { AppUpdater } from '../components/AppUpdater';
 
 export const DashboardLayout = () => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     return (
         <div className="flex h-screen overflow-hidden bg-transparent"> {/* bg-transparent to show body gradient */}
+            <AppUpdater />
             {/* Mobile sidebar backdrop */}
             <AnimatePresence>
                 {sidebarOpen && (

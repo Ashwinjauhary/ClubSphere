@@ -39,11 +39,9 @@ export const LoginPage = () => {
 
             // Auth state change will be picked up by the store listener (if we add one) or we force a check
             await useAuthStore.getState().checkUser();
-            const role = useAuthStore.getState().role;
 
-            if (role === 'admin') navigate('/proposals'); // Admin landing
-            else if (role === 'dean') navigate('/approvals'); // Dean landing
-            else navigate('/dashboard'); // Student landing
+
+            navigate('/dashboard');
 
         } catch (err) {
             console.error('Unexpected error:', err);
