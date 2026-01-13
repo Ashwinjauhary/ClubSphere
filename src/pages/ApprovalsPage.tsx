@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
-import { X, Calendar } from 'lucide-react';
+import { X, Calendar, FileText, MessageSquare } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { supabase } from '../lib/supabase';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
+import { generateReportPDF } from '../services/pdfService';
+import { motion, AnimatePresence } from 'framer-motion';
+import { SkeletonList } from '../components/ui/Skeleton';
 
 interface PendingEvent {
     id: string;
@@ -30,9 +34,11 @@ export const ApprovalsPage = () => {
     const [events, setEvents] = useState<PendingEvent[]>([]);
     const [posts, setPosts] = useState<PendingPost[]>([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'events' | 'posts'>('events');
+    const [reports, setReports] = useState<any[]>([]);
+    const [activeTab, setActiveTab] = useState<'events' | 'posts' | 'reports'>('events');
     const [selectedEvent, setSelectedEvent] = useState<PendingEvent | null>(null);
     const [selectedPost, setSelectedPost] = useState<PendingPost | null>(null);
+    const [selectedReport, setSelectedReport] = useState<any | null>(null);
 
     useEffect(() => {
         fetchPendingItems();
@@ -69,6 +75,19 @@ export const ApprovalsPage = () => {
             // @ts-ignore
             setPosts(postsData || []);
 
+            // Fetch Reports
+            const { data: reportsData, error: reportsError } = await supabase
+                .from('reports')
+                .select(`
+                    *,
+                    events ( title, clubs ( name ) ),
+                    submitted_by_user:profiles!fk_reports_submitted_by ( full_name )
+                `) // Explicit FK for Approvals
+                .eq('approval_status', 'pending_approval');
+
+            if (reportsError) throw reportsError;
+            setReports(reportsData || []);
+
         } catch (error) {
             console.error('Error fetching approvals:', error);
         } finally {
@@ -79,207 +98,266 @@ export const ApprovalsPage = () => {
     const handleEventAction = async (id: string, action: 'approve' | 'reject') => {
         try {
             const newStatus = action === 'approve' ? 'approved' : 'rejected';
-            const { error } = await supabase
-                .from('events')
-                .update({ status: newStatus })
-                .eq('id', id);
-
+            const { error } = await supabase.from('events').update({ status: newStatus }).eq('id', id);
             if (error) throw error;
             setEvents(events.filter(e => e.id !== id));
             setSelectedEvent(null);
-        } catch (error) {
-            console.error('Error updating event:', error);
-            alert('Failed to update event status.');
-        }
+            toast.success(`Event ${action}ed`);
+        } catch (error) { console.error(error); toast.error('Failed to update event status'); }
     };
 
     const handlePostAction = async (id: string, action: 'approve' | 'reject') => {
         try {
             const newStatus = action === 'approve' ? 'approved' : 'rejected';
-            const { error } = await supabase
-                .from('posts')
-                .update({ status: newStatus })
-                .eq('id', id);
-
+            const { error } = await supabase.from('posts').update({ status: newStatus }).eq('id', id);
             if (error) throw error;
             setPosts(posts.filter(p => p.id !== id));
             setSelectedPost(null);
+            toast.success(`Post ${action}ed`);
+        } catch (error) { console.error(error); toast.error('Failed to update post status'); }
+    };
+
+    const handleReportAction = async (id: string, action: 'approve' | 'reject') => {
+        try {
+            const newStatus = action === 'approve' ? 'approved' : 'rejected';
+            const updates: any = {
+                approval_status: newStatus,
+                approved_at: new Date().toISOString()
+            };
+
+            const { error } = await supabase.from('reports').update(updates).eq('id', id);
+            if (error) throw error;
+            setReports(reports.filter(r => r.id !== id));
+            setSelectedReport(null);
+            toast.success(`Report ${action}ed`);
         } catch (error) {
-            console.error('Error updating post:', error);
-            alert('Failed to update post status.');
+            console.error('Error updating report:', error);
+            toast.error('Failed to update report status.');
         }
     };
 
-    if (loading) return <div className="text-center py-12">Loading approvals...</div>;
+    const tabs = [
+        { id: 'events', label: 'Event Proposals', count: events.length, icon: Calendar },
+        { id: 'posts', label: 'Wall Posts', count: posts.length, icon: MessageSquare },
+        { id: 'reports', label: 'Event Reports', count: reports.length, icon: FileText },
+    ];
 
     return (
-        <div className="space-y-6">
+        <div className="max-w-7xl mx-auto space-y-8">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-0">
-                <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Approvals & Review</h1>
-                    <p className="text-sm sm:text-base text-gray-500 mt-1">Authorize content and proposals from clubs.</p>
-                </div>
+                <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                >
+                    <h1 className="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-teal-600 to-emerald-600">
+                        Approvals & Review
+                    </h1>
+                    <p className="text-gray-500 mt-2 text-lg">Authorize content and proposals.</p>
+                </motion.div>
             </div>
 
-            {/* Tabs */}
-            <div className="border-b border-gray-200">
-                <nav className="-mb-px flex space-x-8">
+            {/* Animated Tabs */}
+            <div className="flex space-x-1 bg-gray-100/50 p-1 rounded-xl backdrop-blur-sm w-fit">
+                {tabs.map((tab) => (
                     <button
-                        onClick={() => setActiveTab('events')}
-                        className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'events'
-                            ? 'border-brand-500 text-brand-600'
-                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                            }`}
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id as any)}
+                        className={`
+                            relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 outline-none flex items-center gap-2
+                            ${activeTab === tab.id ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'}
+                        `}
                     >
-                        Event Proposals ({events.length})
+                        {activeTab === tab.id && (
+                            <motion.div
+                                layoutId="active-pill"
+                                className="absolute inset-0 bg-white shadow-sm rounded-lg"
+                                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                            />
+                        )}
+                        <span className="relative z-10 flex items-center gap-2">
+                            <tab.icon className="h-4 w-4" />
+                            {tab.label}
+                            {tab.count > 0 && (
+                                <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === tab.id ? 'bg-brand-100 text-brand-700' : 'bg-gray-200 text-gray-600'}`}>
+                                    {tab.count}
+                                </span>
+                            )}
+                        </span>
                     </button>
-                    <button
-                        onClick={() => setActiveTab('posts')}
-                        className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'posts'
-                            ? 'border-brand-500 text-brand-600'
-                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                            }`}
-                    >
-                        Wall Posts ({posts.length})
-                    </button>
-                </nav>
+                ))}
             </div>
 
             {/* Content */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden min-h-[400px]">
-                {activeTab === 'events' ? (
-                    events.length > 0 ? (
-                        <div className="divide-y divide-gray-100">
-                            {events.map((event) => (
-                                <div key={event.id} className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:bg-gray-50 transition-colors">
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="inline-flex items-center rounded-full bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
-                                                Event Proposal
-                                            </span>
-                                            {/* @ts-ignore */}
-                                            <span className="text-sm text-gray-500">• {event.clubs?.name || 'Unknown Club'}</span>
-                                        </div>
-                                        <h3 className="text-lg font-bold text-gray-900">{event.title}</h3>
-                                        <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-                                            <div className="flex items-center gap-1">
-                                                <Calendar className="h-4 w-4" /> {format(new Date(event.start_time), 'MMM d, yyyy')}
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <span className="font-semibold">₹{event.budget?.toLocaleString() || '0'}</span> Budget
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <Button variant="outline" size="sm" onClick={() => setSelectedEvent(event)}>Details</Button>
-                                        <Button variant="danger" size="sm" onClick={() => handleEventAction(event.id, 'reject')}>Reject</Button>
-                                        <Button size="sm" onClick={() => handleEventAction(event.id, 'approve')}>Approve</Button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="p-12 text-center text-gray-500">No pending event proposals.</div>
-                    )
+            <AnimatePresence mode='wait'>
+                {loading ? (
+                    <motion.div key="loader" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                        <SkeletonList count={4} />
+                    </motion.div>
                 ) : (
-                    posts.length > 0 ? (
-                        <div className="divide-y divide-gray-100">
-                            {posts.map((post) => (
-                                <div key={post.id} className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:bg-gray-50 transition-colors">
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-800 ring-1 ring-inset ring-blue-600/20">
-                                                Wall Post
-                                            </span>
-                                            {/* @ts-ignore */}
-                                            <span className="text-sm text-gray-500">• {post.clubs?.name || 'Unknown Club'}</span>
+                    <motion.div
+                        key={activeTab}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.2 }}
+                        className="space-y-4"
+                    >
+                        {activeTab === 'events' && (
+                            events.length > 0 ? (
+                                <div className="grid gap-4">
+                                    {events.map((event) => (
+                                        <div key={event.id} className="glass-card p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 group hover:border-brand-300 transition-all">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className="inline-flex items-center rounded-full bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-800 border border-yellow-200">
+                                                        Proposal
+                                                    </span>
+                                                    <span className="text-sm text-gray-500 font-medium">From {event.clubs?.name || 'Unknown Club'}</span>
+                                                </div>
+                                                <h3 className="text-xl font-bold text-gray-900 mb-1">{event.title}</h3>
+                                                <div className="text-sm text-gray-500 flex items-center gap-4">
+                                                    <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{format(new Date(event.start_time), 'MMM d, yyyy')}</span>
+                                                    <span className="font-medium text-gray-700">₹{event.budget.toLocaleString()}</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-3">
+                                                <Button variant="outline" size="sm" onClick={() => setSelectedEvent(event)}>Details</Button>
+                                                <Button className="bg-red-50 text-red-600 hover:bg-red-100 border-red-200" size="sm" onClick={() => handleEventAction(event.id, 'reject')}>Reject</Button>
+                                                <Button className="bg-green-600 hover:bg-green-700 text-white" size="sm" onClick={() => handleEventAction(event.id, 'approve')}>Approve</Button>
+                                            </div>
                                         </div>
-                                        <h3 className="text-lg font-bold text-gray-900">{post.title}</h3>
-                                        <p className="text-sm text-gray-500 mt-1 line-clamp-1">{post.content}</p>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <Button variant="outline" size="sm" onClick={() => setSelectedPost(post)}>Preview</Button>
-                                        <Button variant="danger" size="sm" onClick={() => handlePostAction(post.id, 'reject')}>Reject</Button>
-                                        <Button size="sm" onClick={() => handlePostAction(post.id, 'approve')}>Approve</Button>
-                                    </div>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="p-12 text-center text-gray-500">No pending wall posts.</div>
-                    )
+                            ) : <div className="p-12 text-center text-gray-500 glass rounded-xl">No pending event proposals.</div>
+                        )}
+
+                        {activeTab === 'posts' && (
+                            posts.length > 0 ? (
+                                <div className="grid gap-4">
+                                    {posts.map((post) => (
+                                        <div key={post.id} className="glass-card p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 group hover:border-blue-300 transition-all">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-800 border border-blue-200">Post</span>
+                                                    <span className="text-sm text-gray-500 font-medium">From {post.clubs?.name}</span>
+                                                </div>
+                                                <h3 className="text-xl font-bold text-gray-900 mb-1">{post.title}</h3>
+                                                <p className="text-sm text-gray-500 line-clamp-1">{post.content}</p>
+                                            </div>
+                                            <div className="flex gap-3">
+                                                <Button variant="outline" size="sm" onClick={() => setSelectedPost(post)}>Preview</Button>
+                                                <Button className="bg-red-50 text-red-600 hover:bg-red-100 border-red-200" size="sm" onClick={() => handlePostAction(post.id, 'reject')}>Reject</Button>
+                                                <Button className="bg-green-600 hover:bg-green-700 text-white" size="sm" onClick={() => handlePostAction(post.id, 'approve')}>Approve</Button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : <div className="p-12 text-center text-gray-500 glass rounded-xl">No pending wall posts.</div>
+                        )}
+
+                        {activeTab === 'reports' && (
+                            reports.length > 0 ? (
+                                <div className="grid gap-4">
+                                    {reports.map((report) => (
+                                        <div key={report.id} className="glass-card p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 group hover:border-purple-300 transition-all">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className="inline-flex items-center rounded-full bg-purple-50 px-2 py-1 text-xs font-medium text-purple-800 border border-purple-200">Event Report</span>
+                                                    <span className="text-sm text-gray-500 font-medium">{report.events?.clubs?.name}</span>
+                                                </div>
+                                                <h3 className="text-xl font-bold text-gray-900 mb-1">{report.events?.title}</h3>
+                                                <p className="text-sm text-gray-500">Submitted by {report.submitted_by_user?.full_name}</p>
+                                            </div>
+                                            <div className="flex gap-3">
+                                                <Button variant="outline" size="sm" onClick={() => setSelectedReport(report)}>Review</Button>
+                                                <Button className="bg-red-50 text-red-600 hover:bg-red-100 border-red-200" size="sm" onClick={() => handleReportAction(report.id, 'reject')}>Reject</Button>
+                                                <Button className="bg-green-600 hover:bg-green-700 text-white" size="sm" onClick={() => handleReportAction(report.id, 'approve')}>Approve</Button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : <div className="p-12 text-center text-gray-500 glass rounded-xl">No pending event reports.</div>
+                        )}
+                    </motion.div>
                 )}
-            </div>
+            </AnimatePresence>
 
-            {/* Event Modal */}
-            {selectedEvent && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
-                    <div className="bg-white rounded-lg sm:rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
-                        <div className="flex justify-between items-start gap-4 mb-4">
-                            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex-1">{selectedEvent.title}</h2>
-                            <button
-                                onClick={() => setSelectedEvent(null)}
-                                className="flex-shrink-0 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
-                                aria-label="Close modal"
-                            >
-                                <X className="h-5 w-5 sm:h-6 sm:w-6" />
-                            </button>
-                        </div>
-                        <div className="space-y-4">
-                            <p className="text-sm sm:text-base text-gray-600">{selectedEvent.description}</p>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 bg-gray-50 p-3 sm:p-4 rounded-lg">
-                                <div>
-                                    <span className="block text-xs font-bold text-gray-500 uppercase">Date</span>
-                                    <p className="text-sm sm:text-base text-gray-900">{format(new Date(selectedEvent.start_time), 'PPp')}</p>
+            {/* Modals with AnimatePresence */}
+            <AnimatePresence>
+                {/* Event Modal */}
+                {selectedEvent && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedEvent(null)} />
+                        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 relative z-10">
+                            <div className="flex justify-between mb-6">
+                                <h2 className="text-2xl font-bold text-gray-900">{selectedEvent.title}</h2>
+                                <button onClick={() => setSelectedEvent(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X className="h-5 w-5" /></button>
+                            </div>
+                            <p className="text-gray-600 mb-8 leading-relaxed">{selectedEvent.description}</p>
+                            <div className="flex justify-end gap-3 pt-4 border-t">
+                                <Button variant="ghost" onClick={() => handleEventAction(selectedEvent.id, 'reject')} className="text-red-600 hover:bg-red-50">Reject</Button>
+                                <Button onClick={() => handleEventAction(selectedEvent.id, 'approve')}>Approve Proposal</Button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+                {/* Post Modal */}
+                {selectedPost && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedPost(null)} />
+                        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 relative z-10">
+                            <div className="flex justify-between mb-6">
+                                <h2 className="text-2xl font-bold text-gray-900">{selectedPost.title}</h2>
+                                <button onClick={() => setSelectedPost(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X className="h-5 w-5" /></button>
+                            </div>
+                            <p className="text-gray-600 mb-8 whitespace-pre-wrap leading-relaxed">{selectedPost.content}</p>
+                            <div className="flex justify-end gap-3 pt-4 border-t">
+                                <Button variant="ghost" onClick={() => handlePostAction(selectedPost.id, 'reject')} className="text-red-600 hover:bg-red-50">Reject</Button>
+                                <Button onClick={() => handlePostAction(selectedPost.id, 'approve')}>Approve Post</Button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+                {/* Report Modal */}
+                {selectedReport && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedReport(null)} />
+                        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-8 relative z-10">
+                            <div className="flex justify-between mb-6">
+                                <h2 className="text-2xl font-bold text-gray-900">Review Report: {selectedReport.events?.title}</h2>
+                                <button onClick={() => setSelectedReport(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X className="h-5 w-5" /></button>
+                            </div>
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
+                                        <h3 className="font-bold text-xs uppercase mb-2 text-purple-700 tracking-wider">Highlights</h3>
+                                        <p className="text-sm text-gray-700">{selectedReport.highlights}</p>
+                                    </div>
+                                    <div className="bg-orange-50 p-4 rounded-xl border border-orange-100">
+                                        <h3 className="font-bold text-xs uppercase mb-2 text-orange-700 tracking-wider">Challenges</h3>
+                                        <p className="text-sm text-gray-700">{selectedReport.challenges}</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <span className="block text-xs font-bold text-gray-500 uppercase">Budget</span>
-                                    <p className="text-sm sm:text-base text-gray-900">₹{selectedEvent.budget}</p>
+                                <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                    <h3 className="font-bold text-xs uppercase mb-2 text-gray-500 tracking-wider">Content Summary</h3>
+                                    <p className="text-sm text-gray-600 whitespace-pre-wrap">{selectedReport.content}</p>
+                                </div>
+                                <div className="flex gap-4 text-sm text-gray-500">
+                                    <div className="px-3 py-1 bg-gray-100 rounded-lg">Attendees: <span className="font-semibold text-gray-900">{selectedReport.attendee_count}</span></div>
+                                    <div className="px-3 py-1 bg-gray-100 rounded-lg">By: <span className="font-semibold text-gray-900">{selectedReport.submitted_by_user?.full_name}</span></div>
                                 </div>
                             </div>
-                            {selectedEvent.poster_url && (
-                                <img src={selectedEvent.poster_url} alt="Poster" className="w-full rounded-lg" />
-                            )}
-                        </div>
-                        <div className="mt-6 flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
-                            <Button variant="danger" onClick={() => handleEventAction(selectedEvent.id, 'reject')} className="w-full sm:w-auto">Reject</Button>
-                            <Button onClick={() => handleEventAction(selectedEvent.id, 'approve')} className="w-full sm:w-auto">Approve Event</Button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Post Modal */}
-            {selectedPost && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
-                    <div className="bg-white rounded-lg sm:rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
-                        <div className="flex justify-between items-start gap-4 mb-4">
-                            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex-1">{selectedPost.title}</h2>
-                            <button
-                                onClick={() => setSelectedPost(null)}
-                                className="flex-shrink-0 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
-                                aria-label="Close modal"
-                            >
-                                <X className="h-5 w-5 sm:h-6 sm:w-6" />
-                            </button>
-                        </div>
-                        <div className="space-y-4">
-                            {/* @ts-ignore */}
-                            <p className="text-xs sm:text-sm text-gray-500">By {selectedPost.author?.full_name}</p>
-                            <div className="prose max-w-none text-sm sm:text-base text-gray-800 bg-gray-50 p-3 sm:p-4 rounded-lg whitespace-pre-wrap">
-                                {selectedPost.content}
+                            <div className="flex justify-end gap-3 mt-8 pt-6 border-t">
+                                <Button variant="outline" onClick={() => generateReportPDF(selectedReport.events?.title, selectedReport.generated_content, [])}>
+                                    Preview PDF
+                                </Button>
+                                <Button variant="ghost" onClick={() => handleReportAction(selectedReport.id, 'reject')} className="text-red-600 hover:bg-red-50">Reject</Button>
+                                <Button onClick={() => handleReportAction(selectedReport.id, 'approve')}>Approve & Publish</Button>
                             </div>
-                            {selectedPost.image_url && (
-                                <img src={selectedPost.image_url} alt="Post Image" className="w-full rounded-lg" />
-                            )}
-                        </div>
-                        <div className="mt-6 flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
-                            <Button variant="danger" onClick={() => handlePostAction(selectedPost.id, 'reject')} className="w-full sm:w-auto">Reject</Button>
-                            <Button onClick={() => handlePostAction(selectedPost.id, 'approve')} className="w-full sm:w-auto">Approve Post</Button>
-                        </div>
+                        </motion.div>
                     </div>
-                </div>
-            )}
+                )}
+            </AnimatePresence>
         </div>
     );
 };

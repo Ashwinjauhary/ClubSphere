@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Users, Trash2, Search } from 'lucide-react';
 
+import { SkeletonList } from '../ui/Skeleton';
+
 interface Profile {
     id: string;
     email: string;
@@ -89,7 +91,7 @@ export const UserManagementTab = () => {
     };
 
     if (loading) {
-        return <div className="flex items-center justify-center h-64">Loading users...</div>;
+        return <SkeletonList count={6} />;
     }
 
     return (

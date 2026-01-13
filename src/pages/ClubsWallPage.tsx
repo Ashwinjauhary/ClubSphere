@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { SkeletonList } from '../components/ui/Skeleton';
+import { PageHeader } from '../components/ui/PageHeader';
 import { supabase } from '../lib/supabase';
 import { formatDistanceToNow } from 'date-fns';
 import { Heart, MessageSquare, Share2, Users, Plus, X, Image as ImageIcon, Send, Trash2, Shield, Mail, Calendar } from 'lucide-react';
@@ -6,6 +8,8 @@ import { useAuthStore } from '../store/authStore';
 import { Button } from '../components/ui/Button';
 import { useForm } from 'react-hook-form';
 import clsx from 'clsx';
+
+import { toast } from 'sonner';
 
 interface Post {
     id: string;
@@ -135,7 +139,7 @@ export const ClubsWallPage = () => {
 
     const handleLike = async (post: Post) => {
         if (!user) {
-            alert('Please login to like posts.');
+            toast.error('Please login to like posts.');
             return;
         }
 
@@ -172,7 +176,7 @@ export const ClubsWallPage = () => {
                 console.log('Error sharing:', err);
             }
         } else {
-            alert('Link copied to clipboard!');
+            toast.success('Link copied to clipboard!');
         }
     };
 
@@ -219,7 +223,7 @@ export const ClubsWallPage = () => {
 
         } catch (error) {
             console.error('Error posting comment:', error);
-            alert('Failed to post comment.');
+            toast.error('Failed to post comment.');
         }
     };
 
@@ -308,7 +312,7 @@ export const ClubsWallPage = () => {
             ]);
 
             if (error) throw error;
-            alert('Post submitted for approval!');
+            toast.success('Post submitted for approval!');
             setIsCreateModalOpen(false);
             reset();
         } catch (error) {
@@ -320,22 +324,20 @@ export const ClubsWallPage = () => {
     const canCreatePost = role === 'admin' && managedClubId;
 
     return (
-        <div className="max-w-3xl mx-auto space-y-8 pb-10">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                <div className="text-center md:text-left">
-                    <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">Clubs Wall</h1>
-                    <p className="mt-2 text-lg text-gray-500">Discover stories, updates, and highlights from across the campus.</p>
-                </div>
-                {canCreatePost && (
+        <div className="max-w-3xl mx-auto space-y-8 pb-10 p-6 sm:p-8">
+            <PageHeader
+                title="Clubs Wall"
+                description="Discover stories, updates, and highlights from across the campus."
+                action={canCreatePost && (
                     <Button onClick={() => setIsCreateModalOpen(true)}>
                         <Plus className="h-5 w-5 mr-2" />
                         Create Post
                     </Button>
                 )}
-            </div>
+            />
 
             {loading ? (
-                <div className="text-center py-12">Loading the wall...</div>
+                <div className="max-w-4xl mx-auto p-6"><SkeletonList count={3} /></div>
             ) : (
                 <div className="space-y-8">
                     {posts.length === 0 ? (
@@ -412,8 +414,8 @@ export const ClubsWallPage = () => {
 
             {/* Comments Modal */}
             {activePostId && !isCreateModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
-                    <div className="bg-white rounded-t-xl sm:rounded-xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh]">
+                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 sm:p-4 bg-black/50 backdrop-blur-sm animate-in fade-in pt-12">
+                    <div className="bg-white rounded-t-xl sm:rounded-xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]">
                         <div className="flex justify-between items-center p-4 border-b border-gray-100">
                             <h2 className="text-lg font-bold text-gray-900">Comments</h2>
                             <button onClick={() => setActivePostId(null)} className="text-gray-400 hover:text-gray-500">
@@ -501,8 +503,7 @@ export const ClubsWallPage = () => {
 
                         {loadingProfile ? (
                             <div className="flex flex-col items-center justify-center h-full space-y-3 p-8">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
-                                <p className="text-sm text-gray-500">Loading profile...</p>
+                                <SkeletonList count={1} />
                             </div>
                         ) : viewingUser && (
                             <>
@@ -559,8 +560,8 @@ export const ClubsWallPage = () => {
 
             {/* Create Post Modal */}
             {isCreateModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in pt-12">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden max-h-[90vh] overflow-y-auto">
                         <div className="flex justify-between items-center p-4 border-b border-gray-100">
                             <h2 className="text-lg font-bold text-gray-900">Create Update</h2>
                             <button onClick={() => setIsCreateModalOpen(false)} className="text-gray-400 hover:text-gray-500">

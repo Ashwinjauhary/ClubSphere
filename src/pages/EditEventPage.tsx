@@ -11,6 +11,9 @@ import { generateEventDescription } from '../services/aiService';
 import { Sparkles } from 'lucide-react';
 
 
+import { SkeletonList } from '../components/ui/Skeleton';
+import { PageHeader } from '../components/ui/PageHeader';
+
 const eventSchema = z.object({
     title: z.string().min(5, 'Title must be at least 5 characters'),
     description: z.string().min(20, 'Description must be detailed (min 20 chars)'),
@@ -132,11 +135,9 @@ export const EditEventPage = () => {
 
     return (
         <div className="max-w-3xl mx-auto space-y-8">
-            <div>
-                <h1 className="text-3xl font-bold text-gray-900">Edit Event</h1>
-            </div>
+            <PageHeader title="Edit Event" />
 
-            {loading ? <div>Loading...</div> : (
+            {loading ? <div className="max-w-3xl mx-auto"><SkeletonList count={1} /></div> : (
                 <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 sm:p-8">
                     <form onSubmit={handleSubmit((data) => onSave(data, false))} className="space-y-6">
                         <Input

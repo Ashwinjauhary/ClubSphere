@@ -8,6 +8,8 @@ import { Input } from '../components/ui/Input';
 import { useAuthStore } from '../store/authStore';
 import { Link, useNavigate } from 'react-router-dom';
 
+import { toast } from 'sonner';
+
 const loginSchema = z.object({
     email: z.string().email('Please enter a valid email address'),
     password: z.string().min(6, 'Password must be at least 6 characters'),
@@ -31,7 +33,7 @@ export const LoginPage = () => {
 
             if (error) {
                 console.error('Login error:', error.message);
-                alert(error.message); // Simple error feedback
+                toast.error(error.message); // Simple error feedback
                 return;
             }
 

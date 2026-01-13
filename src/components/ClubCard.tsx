@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Building2, Users, Calendar, ArrowRight } from 'lucide-react';
+import { Users, Calendar, ArrowRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
@@ -42,77 +42,63 @@ export const ClubCard = ({ club }: ClubCardProps) => {
             onClick={() => navigate(`/clubs/${club.id}`)}
             className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-xl hover:border-brand-300 transition-all duration-300 cursor-pointer group"
         >
-            {/* Banner Image */}
-            <div className="h-40 bg-gradient-to-r from-brand-500 to-brand-600 relative overflow-hidden">
-                {club.banner_url ? (
-                    <img
-                        src={club.banner_url}
-                        alt={`${club.name} banner`}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    />
-                ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-brand-400 via-brand-500 to-brand-600">
-                        <Building2 className="h-20 w-20 text-white opacity-30" />
-                    </div>
-                )}
-            </div>
-
             {/* Content */}
-            <div className="p-6">
-                {/* Club Logo and Name */}
-                <div className="flex items-start gap-4 mb-4">
-                    <div className="h-16 w-16 rounded-lg border-2 border-gray-200 bg-white shadow-md overflow-hidden flex-shrink-0">
+            <div className="p-6 flex flex-col items-center text-center h-full relative z-10">
+                {/* Decorative Background Blob */}
+                <div className="absolute top-0 inset-x-0 h-24 bg-gradient-to-b from-brand-50/80 to-transparent -z-10" />
+
+                {/* Club Logo */}
+                <div className="h-28 w-28 rounded-full bg-white shadow-md p-1.5 ring-4 ring-white mb-5 transition-transform duration-300 group-hover:scale-105">
+                    <div className="h-full w-full rounded-full overflow-hidden bg-gray-50 flex items-center justify-center border border-gray-100">
                         {club.logo_url ? (
                             <img
                                 src={club.logo_url}
                                 alt={`${club.name} logo`}
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-contain p-1"
                             />
                         ) : (
                             <div className="w-full h-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center">
-                                <span className="text-white text-xl font-bold">
+                                <span className="text-white text-3xl font-bold">
                                     {club.name.charAt(0)}
                                 </span>
                             </div>
                         )}
                     </div>
+                </div>
 
-                    <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-bold text-gray-900 group-hover:text-brand-600 transition-colors mb-1 truncate">
-                            {club.name}
-                        </h3>
-                        {club.category && (
-                            <span className="inline-block px-2 py-1 text-xs font-medium bg-brand-100 text-brand-700 rounded-full">
-                                {club.category}
-                            </span>
-                        )}
-                    </div>
+                {/* Name & Category */}
+                <div className="w-full mb-3">
+                    <h3 className="text-xl font-bold text-gray-900 group-hover:text-brand-600 transition-colors mb-2 line-clamp-1">
+                        {club.name}
+                    </h3>
+                    {club.category && (
+                        <span className="inline-flex px-3 py-1 text-xs font-semibold bg-brand-50 text-brand-700 rounded-full border border-brand-100">
+                            {club.category}
+                        </span>
+                    )}
                 </div>
 
                 {/* Description */}
-                <p className="text-gray-600 text-sm line-clamp-3 mb-4 min-h-[3rem]">
+                <p className="text-gray-500 text-sm line-clamp-2 mb-6 flex-grow">
                     {club.description || 'No description available'}
                 </p>
 
-                {/* Footer */}
-                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                    <div className="flex items-center gap-3 text-sm text-gray-500">
-                        {club.founded_year && (
-                            <div className="flex items-center gap-1">
-                                <Calendar className="h-4 w-4" />
-                                <span>{club.founded_year}</span>
-                            </div>
-                        )}
+                {/* Footer Stats - Compact */}
+                <div className="w-full pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500 font-medium">
+                    <div className="flex items-center gap-3">
                         <div className="flex items-center gap-1">
-                            <Users className="h-4 w-4" />
-                            <span>{memberCount} {memberCount === 1 ? 'Member' : 'Members'}</span>
+                            <Calendar className="h-3.5 w-3.5 text-gray-400" />
+                            <span>{club.founded_year || '2024'}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <Users className="h-3.5 w-3.5 text-gray-400" />
+                            <span>{memberCount}</span>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-1 text-brand-600 font-medium text-sm group-hover:gap-2 transition-all">
-                        <span>View</span>
-                        <ArrowRight className="h-4 w-4" />
-                    </div>
+                    <span className="text-brand-600 flex items-center gap-1 group-hover:underline">
+                        Visit <ArrowRight className="h-3 w-3" />
+                    </span>
                 </div>
             </div>
         </div>

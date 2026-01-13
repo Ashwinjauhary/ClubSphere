@@ -1,40 +1,46 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
-import { FileText, Download, Trash2, Plus, Calendar, Loader2 } from 'lucide-react';
+import { FileText, Download, Trash2, Plus, Calendar } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Link } from 'react-router-dom';
 import { generateReportPDF } from '../utils/reportUtils';
 import type { GeneratedReport } from '../types';
+import { SkeletonList } from '../components/ui/Skeleton';
 
 interface Report {
     id: string;
     title: string;
-    created_at: string;
     status: 'draft' | 'final';
-    generated_content: GeneratedReport;
+    created_at: string;
+    generated_content: GeneratedReport & { introduction?: string };
+    submitted_by: string;
 }
 
 export const ReportsDashboardPage = () => {
-    const { managedClubId } = useAuthStore();
+    const { user } = useAuthStore();
     const [reports, setReports] = useState<Report[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (managedClubId) {
+        if (user) {
             fetchReports();
         }
-    }, [managedClubId]);
+    }, [user]);
 
     const fetchReports = async () => {
         try {
+            setLoading(true);
+            if (!user) return;
+
             const { data, error } = await supabase
                 .from('reports')
                 .select('*')
-                .eq('club_id', managedClubId)
+                .eq('submitted_by', user.id)
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
+            // @ts-ignore
             setReports(data || []);
         } catch (error) {
             console.error('Error fetching reports:', error);
@@ -43,26 +49,28 @@ export const ReportsDashboardPage = () => {
         }
     };
 
+    const handleDownload = (report: Report) => {
+        if (!report.generated_content) return;
+        // @ts-ignore
+        generateReportPDF(report.title, report.generated_content, []);
+    };
+
     const handleDelete = async (id: string) => {
         if (!confirm('Are you sure you want to delete this report?')) return;
         try {
             const { error } = await supabase.from('reports').delete().eq('id', id);
             if (error) throw error;
-            setReports(prev => prev.filter(r => r.id !== id));
+            setReports(reports.filter(r => r.id !== id));
         } catch (error) {
             console.error('Error deleting report:', error);
-            alert('Failed to delete report');
+            alert('Failed to delete report.');
         }
-    };
-
-    const handleDownload = (report: Report) => {
-        generateReportPDF(report.title, report.generated_content);
     };
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center h-64">
-                <Loader2 className="h-8 w-8 animate-spin text-brand-600" />
+            <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in">
+                <SkeletonList count={4} />
             </div>
         );
     }

@@ -4,6 +4,9 @@ import { ClubForm } from '../components/ClubForm';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 
+import { SkeletonList } from '../components/ui/Skeleton';
+import { PageHeader } from '../components/ui/PageHeader';
+
 export const EditClubPage = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -47,12 +50,15 @@ export const EditClubPage = () => {
         }
     }, [id, user, navigate]);
 
-    if (loading) return <div>Loading...</div>;
+    if (loading) return <div className="max-w-3xl mx-auto"><SkeletonList count={1} /></div>;
 
     return (
         <div className="max-w-3xl mx-auto space-y-8">
             <div>
-                <h1 className="text-3xl font-bold text-gray-900">Edit Club Details</h1>
+                <PageHeader
+                    title="Edit Club Details"
+                    description="Update your club's information."
+                />
                 <p className="text-gray-500 mt-1">Update your club's information.</p>
             </div>
 

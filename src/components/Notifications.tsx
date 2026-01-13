@@ -111,7 +111,7 @@ export const Notifications = () => {
                     setIsOpen(!isOpen);
                     if (!isOpen) markAsRead();
                 }}
-                className="relative p-2 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-gray-800"
+                className="relative p-2 text-gray-400 hover:text-brand-600 transition-colors rounded-full hover:bg-brand-50"
             >
                 <Bell className="h-6 w-6" />
                 {unreadCount > 0 && (
@@ -120,7 +120,7 @@ export const Notifications = () => {
             </button>
 
             {isOpen && (
-                <div className="absolute left-full top-0 ml-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden z-50">
+                <div className="absolute left-full bottom-0 ml-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden z-50">
                     <div className="p-3 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
                         <h3 className="font-semibold text-gray-900 text-sm">Notifications</h3>
                         <div className="flex gap-2">

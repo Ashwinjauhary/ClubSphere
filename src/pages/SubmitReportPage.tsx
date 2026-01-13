@@ -2,24 +2,23 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
-import { FileText, Sparkles, AlertCircle } from 'lucide-react';
-import { analyzeReportWithAI } from '../services/aiService';
+import { AlertCircle, Upload, FileText, CheckCircle, ArrowRight, Loader2 } from 'lucide-react';
 import type { AIAnalysisResult } from '../types';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
+import { toast } from 'sonner';
+import { motion } from 'framer-motion';
 
 export const SubmitReportPage = () => {
     const navigate = useNavigate();
     const { user, managedClubId } = useAuthStore();
     const [events, setEvents] = useState<any[]>([]);
     const [selectedEvent, setSelectedEvent] = useState('');
-    const [isAnalyzing, setIsAnalyzing] = useState(false);
-    const [analysis, setAnalysis] = useState<AIAnalysisResult | null>(null);
     const [uploading, setUploading] = useState(false);
     const [fileUrl, setFileUrl] = useState<string | null>(null);
+    const [isDragOver, setIsDragOver] = useState(false);
 
-    const { register, handleSubmit, watch, formState: { isSubmitting } } = useForm();
-    const reportContent = watch('content');
+    const { register, handleSubmit, formState: { isSubmitting } } = useForm();
 
     useEffect(() => {
         if (!user) return;
@@ -39,46 +38,23 @@ export const SubmitReportPage = () => {
         }
 
         const { data, error } = await query;
-
-        if (error) {
-            console.error('Error fetching events:', error);
-            return;
-        }
-
-        setEvents(data || []);
-    };
-
-    const onAnalyze = async () => {
-        if (!reportContent || reportContent.length < 50) return;
-        setIsAnalyzing(true);
-        try {
-            const result = await analyzeReportWithAI(reportContent);
-            setAnalysis(result);
-            if (result) {
-                // Auto-fill some fields if empty
-                // This is just a UX enhancement
-            }
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setIsAnalyzing(false);
-        }
+        if (!error) setEvents(data || []);
     };
 
     const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         if (!event.target.files || event.target.files.length === 0) return;
         const file = event.target.files[0];
+        await uploadFile(file);
+    };
 
+    const uploadFile = async (file: File) => {
         try {
             setUploading(true);
             const fileExt = file.name.split('.').pop();
             const fileName = `${Math.random()}.${fileExt}`;
             const filePath = `reports/${fileName}`;
 
-            const { error: uploadError } = await supabase.storage
-                .from('club-media')
-                .upload(filePath, file);
-
+            const { error: uploadError } = await supabase.storage.from('club-media').upload(filePath, file);
             if (uploadError) throw uploadError;
 
             const { data } = supabase.storage.from('club-media').getPublicUrl(filePath);
@@ -93,165 +69,208 @@ export const SubmitReportPage = () => {
 
     const onSubmit = async (data: any) => {
         if (!selectedEvent) return alert('Please select an event');
+        const eventDetails = events.find(e => e.id === selectedEvent);
+        if (!eventDetails) return alert('Event details not found');
 
         try {
-            const { error } = await supabase.from('reports').insert({
+            const { data: reportData, error } = await supabase.from('reports').insert({
                 event_id: selectedEvent,
+                club_id: eventDetails.club_id,
+                title: `Report: ${eventDetails.title}`,
                 submitted_by: user?.id,
-                content: data.content,
-                attendee_count: parseInt(data.attendance),
-                highlights: data.highlights,
-                challenges: data.challenges,
-                ai_feedback: analysis,
-                // attachment_url: fileUrl // If we added this column to reports table
-            });
+                content: data.content || "Report file uploaded.",
+                attendee_count: 0,
+                highlights: "See attached report",
+                challenges: "See attached report",
+                generated_content: {
+                    summary: data.content || "Report file uploaded.",
+                    impactScore: 10,
+                    strengths: ["Report Uploaded"],
+                    improvements: ["N/A"],
+                    sentiment: "positive",
+                    introduction: "Attached Report",
+                    objectivesContent: "See attachment",
+                    impactAnalysis: "See attachment",
+                    metricsAnalysis: "See attachment",
+                    strategicRoadmap: ["Review Attachment"]
+                } as AIAnalysisResult,
+                status: 'final'
+            }).select().single();
 
             if (error) throw error;
 
+            if (fileUrl && reportData) {
+                await supabase.from('report_images').insert({
+                    report_id: reportData.id,
+                    image_url: fileUrl,
+                    caption: 'Event Evidence'
+                });
+            }
+            toast.success('Report submitted successfully!');
             navigate('/dashboard');
         } catch (error) {
-            console.error('Submission failed:', error);
-            alert('Failed to submit report. Please try again.');
+            console.error('Error submitting report:', error);
+            toast.error('Failed to submit report.');
         }
     };
 
     return (
-        <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500">
-            <div>
-                <h1 className="text-3xl font-bold text-gray-900">Submit Event Report</h1>
-                <p className="text-gray-500 mt-1">Document the outcomes of your completed events.</p>
-            </div>
+        <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6">
+            <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-center mb-10"
+            >
+                <h1 className="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-violet-600">
+                    Submit Event Report
+                </h1>
+                <p className="text-gray-500 mt-3 text-lg">Document your success and share the impact.</p>
+            </motion.div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Left Column: Form */}
-                <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Select Event</label>
-                                <select
-                                    className="block w-full rounded-md border border-gray-300 py-2 px-3 text-gray-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 sm:text-sm"
-                                    value={selectedEvent}
-                                    onChange={(e) => setSelectedEvent(e.target.value)}
-                                    required
-                                >
-                                    <option value="">-- Choose a completed event --</option>
-                                    {events.map(evt => (
-                                        <option key={evt.id} value={evt.id}>
-                                            {evt.title} ({new Date(evt.start_time).toLocaleDateString()})
-                                        </option>
-                                    ))}
-                                </select>
+                {/* Main Form */}
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.1 }}
+                    className="lg:col-span-2"
+                >
+                    <div className="glass-card p-8 rounded-3xl relative overflow-hidden border-t-4 border-t-brand-500">
+                        <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+                            <FileText className="h-32 w-32 text-brand-600" />
+                        </div>
+
+                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 relative z-10">
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">Select Event</label>
+                                <div className="relative">
+                                    <select
+                                        className="block w-full rounded-xl border-gray-200 bg-white/50 py-3 px-4 text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500 transition-all hover:bg-white"
+                                        value={selectedEvent}
+                                        onChange={(e) => setSelectedEvent(e.target.value)}
+                                        required
+                                    >
+                                        <option value="">-- Choose a completed event --</option>
+                                        {events.map(evt => (
+                                            <option key={evt.id} value={evt.id}>
+                                                {evt.title} ({new Date(evt.start_time).toLocaleDateString()})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
                                 {events.length === 0 && (
-                                    <p className="mt-1 text-xs text-amber-600 flex items-center">
-                                        <AlertCircle className="h-3 w-3 mr-1" />
-                                        No pending events found to report on.
-                                    </p>
+                                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center text-amber-600 text-sm mt-2 bg-amber-50 p-2 rounded-lg">
+                                        <AlertCircle className="h-4 w-4 mr-2" />
+                                        <span>No pending events found. Great job!</span>
+                                    </motion.div>
                                 )}
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Attendance Count</label>
-                                    <input
-                                        type="number"
-                                        className="block w-full rounded-md border border-gray-300 py-2 px-3 text-gray-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 sm:text-sm"
-                                        {...register('attendance', { required: true })}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Evidence</label>
-                                    <div className="relative">
-                                        <input
-                                            type="file"
-                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                            onChange={handleFileUpload}
-                                            disabled={uploading}
-                                        />
-                                        <div className={`flex items-center justify-center border border-gray-300 rounded-md py-2 px-3 ${fileUrl ? 'bg-green-50 border-green-200 text-green-700' : 'bg-gray-50 text-gray-500'}`}>
-                                            {uploading ? 'Uploading...' : fileUrl ? 'File Uploaded ✓' : 'Click to Upload Photos'}
+                            <div className="space-y-4">
+                                <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">Upload Report</label>
+                                <div
+                                    className={`
+                                        relative group flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-2xl transition-all duration-300
+                                        ${isDragOver ? 'border-brand-500 bg-brand-50 scale-[1.02]' : 'border-gray-300 hover:border-brand-400 hover:bg-gray-50'}
+                                        ${fileUrl ? 'bg-green-50 border-green-500' : ''}
+                                    `}
+                                    onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                                    onDragLeave={() => setIsDragOver(false)}
+                                    onDrop={(e) => {
+                                        e.preventDefault();
+                                        setIsDragOver(false);
+                                        if (e.dataTransfer.files[0]) uploadFile(e.dataTransfer.files[0]);
+                                    }}
+                                >
+                                    {uploading ? (
+                                        <div className="text-center">
+                                            <Loader2 className="h-10 w-10 text-brand-600 animate-spin mx-auto mb-3" />
+                                            <p className="text-sm text-gray-500 font-medium">Uploading securely...</p>
                                         </div>
-                                    </div>
+                                    ) : fileUrl ? (
+                                        <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center">
+                                            <div className="bg-green-100 p-3 rounded-full inline-flex mb-3">
+                                                <CheckCircle className="h-8 w-8 text-green-600" />
+                                            </div>
+                                            <p className="text-green-700 font-bold">File Uploaded!</p>
+                                            <p className="text-xs text-green-600 mt-1">Ready to submit</p>
+                                        </motion.div>
+                                    ) : (
+                                        <>
+                                            <div className="bg-brand-50 p-4 rounded-full mb-3 group-hover:scale-110 transition-transform">
+                                                <Upload className="h-8 w-8 text-brand-600" />
+                                            </div>
+                                            <div className="text-center space-y-1">
+                                                <p className="text-sm font-medium text-gray-700">
+                                                    <span className="text-brand-600 hover:underline cursor-pointer">Click to upload</span> or drag and drop
+                                                </p>
+                                                <p className="text-xs text-gray-500">PDF, DOCX, or Images up to 10MB</p>
+                                            </div>
+                                            <input
+                                                type="file"
+                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                onChange={handleFileUpload}
+                                                accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                                disabled={uploading}
+                                            />
+                                        </>
+                                    )}
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Key Highlights</label>
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">Additional Notes</label>
                                 <textarea
-                                    className="block w-full rounded-md border border-gray-300 py-2 px-3 text-gray-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 sm:text-sm h-24"
-                                    placeholder="What went well? notable guests, achievements..."
-                                    {...register('highlights')}
+                                    className="block w-full rounded-xl border-gray-200 bg-white/50 py-3 px-4 text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500 min-h-[100px] transition-all hover:bg-white"
+                                    placeholder="Add any specific highlights or context..."
+                                    {...register('content')}
                                 />
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Challenges Faced</label>
-                                <textarea
-                                    className="block w-full rounded-md border border-gray-300 py-2 px-3 text-gray-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 sm:text-sm h-24"
-                                    placeholder="Any issues or blockers encountered..."
-                                    {...register('challenges')}
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Executive Summary (for AI)</label>
-                                <textarea
-                                    className="block w-full rounded-md border border-gray-300 py-2 px-3 text-gray-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 sm:text-sm h-32"
-                                    placeholder="Comprehensive overview of the event..."
-                                    {...register('content', { required: true })}
-                                />
-                            </div>
-
-                            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                                <Button type="button" variant="secondary" onClick={onAnalyze} disabled={isAnalyzing || !reportContent}>
-                                    <Sparkles className="mr-2 h-4 w-4" />
-                                    {isAnalyzing ? 'Analyzing...' : 'Generate AI Report'}
+                            <div className="pt-4 flex justify-end">
+                                <Button
+                                    type="submit"
+                                    loading={isSubmitting || uploading}
+                                    disabled={!fileUrl}
+                                    className={`
+                                        w-full sm:w-auto px-8 py-4 text-lg font-bold shadow-lg transition-all hover:scale-[1.02]
+                                        ${!fileUrl ? 'opacity-50 cursor-not-allowed' : 'bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-700 hover:to-indigo-700'}
+                                    `}
+                                >
+                                    Submit Final Report <ArrowRight className="ml-2 h-5 w-5" />
                                 </Button>
-                                <Button type="submit" loading={isSubmitting || uploading}>Submit Report</Button>
                             </div>
                         </form>
                     </div>
-                </div>
+                </motion.div>
 
-                {/* Right Column: AI Insights Preview */}
+                {/* Right Column: Tips */}
                 <div className="space-y-6">
-                    <div className="bg-gradient-to-br from-indigo-900 to-purple-900 rounded-xl p-6 text-white shadow-lg sticky top-6">
-                        <div className="flex items-center gap-2 mb-4">
-                            <Sparkles className="h-5 w-5 text-yellow-300" />
-                            <h3 className="font-bold text-lg">AI Assistant</h3>
-                        </div>
-
-                        {analysis ? (
-                            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
-                                <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-                                    <p className="text-xs text-indigo-200 uppercase tracking-wider font-semibold mb-1">Impact Score</p>
-                                    <div className="flex items-end gap-2">
-                                        <span className="text-4xl font-bold text-white">{analysis.impactScore}</span>
-                                        <span className="text-sm text-indigo-200 mb-1">/ 10</span>
-                                    </div>
-                                </div>
-
-                                <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-                                    <p className="text-xs text-indigo-200 uppercase tracking-wider font-semibold mb-2">Summary</p>
-                                    <p className="text-sm leading-relaxed text-indigo-50">{analysis.summary}</p>
-                                </div>
-
-                                <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-                                    <p className="text-xs text-indigo-200 uppercase tracking-wider font-semibold mb-2">Suggestions</p>
-                                    <ul className="text-sm space-y-2 text-indigo-50 list-disc list-inside">
-                                        {analysis.improvements.slice(0, 2).map((imp, i) => (
-                                            <li key={i}>{imp}</li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="text-center py-10 opacity-60">
-                                <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                                <p className="text-sm">Write your executive summary and click "Generate AI Report" to see real-time insights.</p>
-                            </div>
-                        )}
-                    </div>
+                    <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.2 }}
+                        className="glass p-6 rounded-2xl"
+                    >
+                        <h3 className="font-bold text-gray-900 mb-4 flex items-center">
+                            <span className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded mr-2">TIP</span>
+                            Why Submit Reports?
+                        </h3>
+                        <ul className="space-y-3 text-sm text-gray-600">
+                            <li className="flex items-start gap-2">
+                                <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
+                                <span>Track your club's impact over time.</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
+                                <span>Gain eligibility for budget increases.</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
+                                <span>Showcase achievements to the Dean.</span>
+                            </li>
+                        </ul>
+                    </motion.div>
                 </div>
             </div>
         </div>

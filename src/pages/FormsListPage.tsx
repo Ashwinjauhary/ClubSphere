@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui/Button';
+import { PageHeader } from '../components/ui/PageHeader';
+import { toast } from 'sonner';
 import {
     Plus,
     FileText,
@@ -67,6 +69,7 @@ export const FormsListPage = () => {
             setForms(formatted);
         } catch (error) {
             console.error('Error fetching forms:', error);
+            toast.error('Failed to load forms');
         } finally {
             setLoading(false);
         }
@@ -79,8 +82,10 @@ export const FormsListPage = () => {
             const { error } = await supabase.from('forms').delete().eq('id', id);
             if (error) throw error;
             setForms(forms.filter(f => f.id !== id));
+            toast.success('Form deleted successfully');
         } catch (error) {
             console.error('Error deleting form:', error);
+            toast.error('Failed to delete form');
         }
     };
 
@@ -98,6 +103,7 @@ export const FormsListPage = () => {
             setQrDataUrl(dataUrl);
         } catch (error) {
             console.error('Error generating QR code:', error);
+            toast.error('Failed to generate QR code');
         }
     };
 
@@ -106,6 +112,7 @@ export const FormsListPage = () => {
         navigator.clipboard.writeText(formUrl);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
+        toast.success('Link copied to clipboard');
     };
 
     const downloadQRCode = () => {
@@ -131,15 +138,17 @@ export const FormsListPage = () => {
     return (
         <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
             <div className="max-w-6xl mx-auto">
-                <div className="flex justify-between items-center mb-8">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900">My Forms</h1>
-                        <p className="text-gray-500">Create, manage, and analyze your forms.</p>
-                    </div>
-                    <Button onClick={() => navigate('/forms/new')}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Create New Form
-                    </Button>
+                <div className="mb-8">
+                    <PageHeader
+                        title="My Forms"
+                        description="Create, manage, and analyze your forms."
+                        action={
+                            <Button onClick={() => navigate('/forms/new')}>
+                                <Plus className="h-4 w-4 mr-2" />
+                                Create New Form
+                            </Button>
+                        }
+                    />
                 </div>
 
                 {forms.length === 0 ? (

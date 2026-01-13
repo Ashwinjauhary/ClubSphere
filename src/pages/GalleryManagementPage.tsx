@@ -2,7 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
+import { toast } from 'sonner';
 import { ChevronLeft, Upload, Trash2, Image as ImageIcon, Loader } from 'lucide-react';
+import { PageHeader } from '../components/ui/PageHeader';
 
 interface GalleryImage {
     id: string;
@@ -85,11 +87,11 @@ export const GalleryManagementPage = () => {
 
             if (dbError) throw dbError;
 
-            setCaption('');
             fetchImages();
+            toast.success('Image uploaded successfully');
         } catch (error) {
-            console.error('Error uploading image:', error);
-            alert('Failed to upload image. Please try again.');
+            console.error('Error uploading:', error);
+            toast.error('Failed to upload image');
         } finally {
             setUploading(false);
         }
@@ -115,9 +117,10 @@ export const GalleryManagementPage = () => {
             }
 
             setImages(images.filter(img => img.id !== imageId));
+            toast.success('Image deleted successfully');
         } catch (error) {
             console.error('Error deleting image:', error);
-            alert('Failed to delete image.');
+            toast.error('Failed to delete image.');
         }
     };
 
@@ -146,15 +149,15 @@ export const GalleryManagementPage = () => {
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-in fade-in duration-500">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-                <div>
-                    <Link to={`/clubs/${id}`} className="inline-flex items-center text-sm text-gray-500 hover:text-brand-600 mb-2">
-                        <ChevronLeft className="mr-1 h-4 w-4" />
-                        Back to Club
-                    </Link>
-                    <h1 className="text-2xl font-bold text-gray-900">Manage Gallery</h1>
-                    <p className="text-gray-500 text-sm">Upload and manage images for your club's gallery.</p>
-                </div>
+            <div className="mb-8">
+                <Link to={`/clubs/${id}`} className="inline-flex items-center text-sm text-gray-500 hover:text-brand-600 mb-4 transition-colors">
+                    <ChevronLeft className="mr-1 h-4 w-4" />
+                    Back to Club
+                </Link>
+                <PageHeader
+                    title="Manage Gallery"
+                    description="Upload and manage images for your club's gallery."
+                />
             </div>
 
             {/* Upload Section */}

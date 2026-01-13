@@ -1,5 +1,6 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { TrendingUp, Users, DollarSign, Activity } from 'lucide-react';
+import { PageHeader } from '../components/ui/PageHeader';
 
 const ATTENDANCE_DATA = [
     { name: 'Sep', attendance: 120 },
@@ -38,17 +39,17 @@ export const AnalyticsPage = () => {
     };
 
     return (
-        <div className="space-y-8">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Program Analytics</h1>
-                    <p className="text-gray-500 mt-1">Insights into campus engagement and resource allocation.</p>
-                </div>
-                <Button onClick={downloadReport} variant="outline">
-                    <Download className="mr-2 h-4 w-4" />
-                    Download Report
-                </Button>
-            </div>
+        <div className="max-w-7xl mx-auto space-y-8 p-6 sm:p-8">
+            <PageHeader
+                title="Program Analytics"
+                description="Insights into campus engagement and resource allocation."
+                action={
+                    <Button onClick={downloadReport} variant="outline">
+                        <Download className="mr-2 h-4 w-4" />
+                        Download Report
+                    </Button>
+                }
+            />
 
             {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -76,7 +77,7 @@ export const AnalyticsPage = () => {
                 <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                     <h3 className="text-lg font-bold text-gray-900 mb-6">Monthly Participation</h3>
                     <div className="h-80">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                             <LineChart data={ATTENDANCE_DATA}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                 <XAxis dataKey="name" axisLine={false} tickLine={false} />
@@ -101,7 +102,7 @@ export const AnalyticsPage = () => {
                 <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                     <h3 className="text-lg font-bold text-gray-900 mb-6">Budget Allocation vs Spent</h3>
                     <div className="h-80">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                             <BarChart data={BUDGET_DATA} layout="vertical" barGap={0} barSize={20}>
                                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
                                 <XAxis type="number" hide />

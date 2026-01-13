@@ -1,11 +1,14 @@
 import { supabase } from '../lib/supabase';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+
+
+import { toast } from 'sonner';
 import { AuthLayout } from '../layouts/AuthLayout';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Link, useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 
 const registerSchema = z.object({
     fullName: z.string().min(2, 'Full name is required'),
@@ -40,15 +43,16 @@ export const RegisterPage = () => {
 
             if (error) {
                 console.error('Signup error:', error.message);
-                alert(error.message);
+                toast.error(error.message);
                 return;
             }
 
-            alert('Registration successful! Please check your email for verification (if enabled) or log in.');
+            toast.success('Registration successful! Please check your email for verification (if enabled) or log in.');
             navigate('/login');
 
-        } catch (err) {
+        } catch (err: any) {
             console.error('Unexpected error:', err);
+            toast.error(err.message || 'An unexpected error occurred during registration.');
         }
     };
 

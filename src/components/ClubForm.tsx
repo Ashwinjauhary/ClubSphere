@@ -16,7 +16,6 @@ const clubSchema = z.object({
     description: z.string().min(20, 'Description must be detailed (min 20 chars)'),
     category: z.string().min(3, 'Category is required'),
     logo_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
-    banner_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
     founded_year: z.string().refine((val) => !isNaN(parseInt(val)), 'Must be a valid year'),
     admin_email: z.string().email('Invalid email').optional().or(z.literal('')), // New field for Dean
 });
@@ -84,7 +83,6 @@ export const ClubForm = ({ initialData, isEditing = false }: ClubFormProps) => {
                 description: data.description,
                 category: data.category,
                 logo_url: data.logo_url,
-                banner_url: data.banner_url,
                 founded_year: parseInt(data.founded_year),
                 admin_id: isEditing ? newAdminId : (newAdminId || user?.id), // Use looked-up ID, or current user
             };
@@ -186,13 +184,6 @@ export const ClubForm = ({ initialData, isEditing = false }: ClubFormProps) => {
                     icon={<ImageIcon className="h-5 w-5 text-gray-400" />}
                     error={errors.logo_url?.message}
                     {...register('logo_url')}
-                />
-                <Input
-                    label="Banner URL"
-                    placeholder="https://..."
-                    icon={<ImageIcon className="h-5 w-5 text-gray-400" />}
-                    error={errors.banner_url?.message}
-                    {...register('banner_url')}
                 />
             </div>
 

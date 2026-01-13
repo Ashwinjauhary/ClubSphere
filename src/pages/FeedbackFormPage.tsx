@@ -37,7 +37,7 @@ export const FeedbackFormPage = () => {
                 .from('feedback_forms')
                 .select('*')
                 .eq('event_id', eventId)
-                .eq('is_published', true)
+                .eq('is_active', true)
                 .maybeSingle();
 
             if (error) throw error;
@@ -63,7 +63,7 @@ export const FeedbackFormPage = () => {
                 .insert({
                     form_id: form.id,
                     user_id: user?.id || null, // Allow anonymous if configured (but we usually require auth for tracking)
-                    answers: data
+                    responses: data
                 });
 
             if (error) throw error;

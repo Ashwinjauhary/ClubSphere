@@ -80,7 +80,7 @@ export const FeedbackFormBuilderPage = () => {
                     title: data.title,
                     description: data.description,
                     questions: data.questions,
-                    is_published: true
+                    is_active: true
                 });
 
             if (error) throw error;

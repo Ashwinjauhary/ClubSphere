@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
+import { supabase } from '../lib/supabase';
 import { Users, Save, Trash2, Edit2, X } from 'lucide-react';
+import { SkeletonList } from '../components/ui/Skeleton';
+import { PageHeader } from '../components/ui/PageHeader';
 
 interface ClubMember {
-    id: string; // This is the membership ID
+    id: string;
     user_id: string;
     designation: string;
     joined_at: string;
@@ -12,6 +14,7 @@ interface ClubMember {
         full_name: string;
         email: string;
         avatar_url: string | null;
+        roll_number?: string;
     };
 }
 
@@ -188,98 +191,95 @@ export const ClubMembersPage = () => {
     };
 
     if (!managedClubId) return <div className="p-8 text-center text-gray-500">You are not assigned to manage any club.</div>;
-    if (loading) return <div className="p-8 text-center text-gray-500">Loading members...</div>;
+    if (loading) return <div className="space-y-6"><SkeletonList count={5} /></div>;
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Manage Team</h1>
-                    <p className="text-gray-500 mt-1">Customize designations and manage your club members.</p>
-                </div>
-                <div className="flex gap-4 items-center">
-                    <span className="bg-brand-50 text-brand-700 px-4 py-2 rounded-full text-sm font-medium">
-                        {members.length} Members
-                    </span>
+            <PageHeader
+                title="Manage Team"
+                description="Customize designations and manage your club members."
+                action={
                     <button
                         onClick={() => setIsAddModalOpen(true)}
                         className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500"
                     >
                         <Users className="h-4 w-4 mr-2" /> Add Member
                     </button>
-                </div>
-            </div>
+                }
+            />
 
             {/* Add Member Modal */}
-            {isAddModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
-                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-bold text-gray-900">Add New Member</h3>
-                            <button onClick={() => setIsAddModalOpen(false)} className="text-gray-400 hover:text-gray-500">
-                                <X className="h-5 w-5" />
-                            </button>
-                        </div>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Student Email</label>
-                                <input
-                                    type="email"
-                                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 border p-2"
-                                    placeholder="student@college.edu"
-                                    value={newMemberEmail}
-                                    onChange={(e) => setNewMemberEmail(e.target.value)}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name (Optional)</label>
-                                <input
-                                    type="text"
-                                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 border p-2"
-                                    placeholder="Update Name"
-                                    value={newMemberName}
-                                    onChange={(e) => setNewMemberName(e.target.value)}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Roll Number (Optional)</label>
-                                <input
-                                    type="text"
-                                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 border p-2"
-                                    placeholder="e.g. 2023CSB101"
-                                    value={newMemberRollNo}
-                                    onChange={(e) => setNewMemberRollNo(e.target.value)}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Designation</label>
-                                <input
-                                    type="text"
-                                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 border p-2"
-                                    placeholder="e.g. Logistics Head"
-                                    value={newMemberDesignation}
-                                    onChange={(e) => setNewMemberDesignation(e.target.value)}
-                                />
-                            </div>
-                            <div className="flex justify-end gap-3 pt-2">
-                                <button
-                                    onClick={() => setIsAddModalOpen(false)}
-                                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-                                >
-                                    Cancel
+            {
+                isAddModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
+                        <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-lg font-bold text-gray-900">Add New Member</h3>
+                                <button onClick={() => setIsAddModalOpen(false)} className="text-gray-400 hover:text-gray-500">
+                                    <X className="h-5 w-5" />
                                 </button>
-                                <button
-                                    onClick={handleAddMember}
-                                    disabled={adding}
-                                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:opacity-50"
-                                >
-                                    {adding ? 'Adding...' : 'Add Member'}
-                                </button>
+                            </div>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Student Email</label>
+                                    <input
+                                        type="email"
+                                        className="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 border p-2"
+                                        placeholder="student@college.edu"
+                                        value={newMemberEmail}
+                                        onChange={(e) => setNewMemberEmail(e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Full Name (Optional)</label>
+                                    <input
+                                        type="text"
+                                        className="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 border p-2"
+                                        placeholder="Update Name"
+                                        value={newMemberName}
+                                        onChange={(e) => setNewMemberName(e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Roll Number (Optional)</label>
+                                    <input
+                                        type="text"
+                                        className="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 border p-2"
+                                        placeholder="e.g. 2023CSB101"
+                                        value={newMemberRollNo}
+                                        onChange={(e) => setNewMemberRollNo(e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Designation</label>
+                                    <input
+                                        type="text"
+                                        className="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 border p-2"
+                                        placeholder="e.g. Logistics Head"
+                                        value={newMemberDesignation}
+                                        onChange={(e) => setNewMemberDesignation(e.target.value)}
+                                    />
+                                </div>
+                                <div className="flex justify-end gap-3 pt-2">
+                                    <button
+                                        onClick={() => setIsAddModalOpen(false)}
+                                        className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleAddMember}
+                                        disabled={adding}
+                                        className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:opacity-50"
+                                    >
+                                        {adding ? 'Adding...' : 'Add Member'}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div className="overflow-x-auto">
@@ -366,6 +366,6 @@ export const ClubMembersPage = () => {
                     </table>
                 </div>
             </div>
-        </div>
+        </div >
     );
 };

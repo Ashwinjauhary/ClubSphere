@@ -9,10 +9,15 @@ CREATE TABLE public.reports (
     club_id UUID REFERENCES public.clubs(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     generated_content JSONB NOT NULL, -- Stores the AI output structure
+    attendee_count INTEGER,
+    highlights TEXT,
+    challenges TEXT,
+    content TEXT NOT NULL,
     status TEXT CHECK (status IN ('draft', 'final')) DEFAULT 'draft',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-    created_by UUID REFERENCES public.profiles(id)
+    submitted_by UUID,
+    CONSTRAINT fk_reports_submitted_by FOREIGN KEY (submitted_by) REFERENCES public.profiles(id)
 );
 
 -- Create report_images table

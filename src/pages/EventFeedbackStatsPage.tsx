@@ -27,7 +27,7 @@ export const EventFeedbackStatsPage = () => {
                 .from('feedback_forms')
                 .select('*')
                 .eq('event_id', eventId)
-                .eq('is_published', true)
+                .eq('is_active', true)
                 .maybeSingle();
 
             if (formError) throw formError;
@@ -42,7 +42,7 @@ export const EventFeedbackStatsPage = () => {
                 .from('feedback_responses')
                 .select('*')
                 .eq('form_id', formData.id)
-                .order('submitted_at', { ascending: false });
+                .order('created_at', { ascending: false });
 
             if (respError) throw respError;
             setResponses(responseData || []);
@@ -67,7 +67,7 @@ export const EventFeedbackStatsPage = () => {
                 let count = 0;
 
                 responseList.forEach(r => {
-                    const val = r.answers[q.id];
+                    const val = r.responses[q.id];
                     if (val) {
                         dist[val as keyof typeof dist]++;
                         sum += Number(val);
@@ -85,7 +85,7 @@ export const EventFeedbackStatsPage = () => {
                 q.options?.forEach((opt: string) => counts[opt] = 0);
 
                 responseList.forEach(r => {
-                    const val = r.answers[q.id];
+                    const val = r.responses[q.id];
                     if (Array.isArray(val)) {
                         val.forEach(v => counts[v] = (counts[v] || 0) + 1);
                     } else if (val) {
@@ -100,7 +100,7 @@ export const EventFeedbackStatsPage = () => {
             } else if (q.type === 'text') {
                 stats[q.id] = {
                     type: 'text',
-                    answers: responseList.map(r => r.answers[q.id]).filter(Boolean)
+                    answers: responseList.map(r => r.responses[q.id]).filter(Boolean)
                 };
             }
         });
@@ -113,9 +113,9 @@ export const EventFeedbackStatsPage = () => {
 
         // Flatten data for CSV
         const flatData = responses.map(r => {
-            const row: any = { Date: new Date(r.submitted_at).toLocaleDateString() };
+            const row: any = { Date: new Date(r.created_at).toLocaleDateString() };
             form.questions.forEach((q: any) => {
-                row[q.label] = Array.isArray(r.answers[q.id]) ? r.answers[q.id].join(', ') : r.answers[q.id];
+                row[q.label] = Array.isArray(r.responses[q.id]) ? r.responses[q.id].join(', ') : r.responses[q.id];
             });
             return row;
         });
@@ -173,7 +173,7 @@ export const EventFeedbackStatsPage = () => {
                                             <span className="text-gray-400 mb-1">/ 5 Average</span>
                                         </div>
                                         <div className="h-48">
-                                            <ResponsiveContainer width="100%" height="100%">
+                                            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                                                 <BarChart data={data.distribution}>
                                                     <XAxis dataKey="name" fontSize={12} />
                                                     <YAxis allowDecimals={false} fontSize={12} />

@@ -144,8 +144,8 @@ export const FormStatsPage = () => {
                         <button
                             onClick={() => setActiveTab('analytics')}
                             className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'analytics'
-                                    ? 'border-brand-600 text-brand-600'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                ? 'border-brand-600 text-brand-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                 }`}
                         >
                             📊 Analytics
@@ -153,8 +153,8 @@ export const FormStatsPage = () => {
                         <button
                             onClick={() => setActiveTab('responses')}
                             className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'responses'
-                                    ? 'border-brand-600 text-brand-600'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                ? 'border-brand-600 text-brand-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                 }`}
                         >
                             📋 All Responses ({responses.length})
@@ -183,7 +183,7 @@ export const FormStatsPage = () => {
                                         </div>
                                     ) : (
                                         <div className="h-64 w-full">
-                                            <ResponsiveContainer width="100%" height="100%">
+                                            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                                                 {data.type === 'rating' ? (
                                                     <BarChart data={data.chartData}>
                                                         <XAxis dataKey="name" />

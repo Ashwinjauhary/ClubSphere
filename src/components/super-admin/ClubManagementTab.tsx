@@ -3,6 +3,8 @@ import { supabase } from '../../lib/supabase';
 import { Building2, Edit, Trash2, UserPlus, Search, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+import { SkeletonList } from '../ui/Skeleton';
+
 interface Club {
     id: string;
     name: string;
@@ -71,7 +73,7 @@ export const ClubManagementTab = () => {
     );
 
     if (loading) {
-        return <div className="flex items-center justify-center h-64">Loading clubs...</div>;
+        return <SkeletonList count={6} />;
     }
 
     return (

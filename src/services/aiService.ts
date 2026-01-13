@@ -3,156 +3,70 @@
 
 
 
-import type { ReportData, GeneratedReport, AIAnalysisResult } from '../types';
+import type { AIAnalysisResult } from '../types';
 
 // End of interfaces. Implementation follows.
 
 // Keep analyzeReportWithAI for legacy/simple analysis if needed, or remove.
-export const analyzeReportWithAI = async (_reportText: string): Promise<AIAnalysisResult> => {
-    // ... existing implementation or deprecate ...
-    return {
-        summary: "Deprecated function",
-        impactScore: 0,
-        strengths: [],
-        improvements: [],
-        sentiment: 'neutral'
-    };
+export const analyzeReportWithAI = async (reportText: string): Promise<AIAnalysisResult> => {
+    console.log("Analyzing report with AI...");
+    const prompt = `
+    You are a senior event analyst for a top-tier consulting firm.
+    Your task is to generate a comprehensive, 12-page level "Enterprise Performance Report" based on the raw event summary below.
+    
+    The content MUST be verbose, professional, and detailed. Do not summarize; expand.
+    
+    Raw Event Summary: "${reportText}"
+
+    Return ONLY a valid JSON object with the following detailed structure:
+    {
+      "summary": "A detailed 2-paragraph executive summary highlighting key outcomes and business value.",
+      "impactScore": 8, // Integer 1-10
+      "sentiment": "positive", // 'positive', 'neutral', 'negative'
+      "introduction": "A 150-word introduction setting the context, club mission alignment, and event significance.",
+      "objectivesContent": "A detailed breakdown of 3-4 key objectives and how they were met. Use professional language.",
+      "impactAnalysis": "A 200-word deep dive into the impact. Discuss qualitative and quantitative metrics, community engagement, and brand value.",
+      "strengths": ["Strength 1 (Detailed sentence)", "Strength 2 (Detailed sentence)", "Strength 3 (Detailed sentence)"],
+      "improvements": ["Challenge 1 with mitigation strategy", "Challenge 2 with mitigation strategy", "Challenge 3 with mitigation strategy"],
+      "strategicRoadmap": [
+         "Immediate: [Actionable item for next week]",
+         "Short-term: [Actionable item for next month]",
+         "Long-term: [Strategic goal for next year]"
+      ],
+      "metricsAnalysis": "A paragraph analyzing the attendance and budget efficiency."
+    }
+    No markdown formatting. Pure JSON.
+    `;
+
+    try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+
+        const result = await response.json();
+        if (result.error) throw new Error(result.error.message);
+
+        const text = result.candidates[0].content.parts[0].text;
+        const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        return JSON.parse(cleanJson);
+    } catch (error) {
+        console.error("AI Analysis Failed:", error);
+        return {
+            summary: "AI Analysis unavailable. Please review manually.",
+            impactScore: 5,
+            strengths: ["Could not analyze"],
+            improvements: ["Try again later"],
+            sentiment: 'neutral'
+        };
+    }
 };
 
 // Direct Gemini Integration for testing (since Edge Function deploy requires CLI auth)
 const GEMINI_API_KEY = "AIzaSyB7UC78c4IKLVok0MC0qac-gM45y8ok1qk";
 
-export const generateEventReport = async (data: ReportData): Promise<GeneratedReport> => {
-    console.log("Generating full report via Gemini Direct API...", data.basicInfo.title);
-
-    try {
-        // Determine verbosity based on detail level
-        const verbosityInstructions = {
-            brief: "Keep responses concise, 2-3 sentences per section. Target ~5 pages total.",
-            standard: "Provide moderate detail, 1-2 paragraphs per section. Target ~10 pages total.",
-            detailed: "Provide comprehensive, in-depth analysis with multiple paragraphs, examples, and detailed breakdowns. Target ~15-20 pages total. Expand on every aspect thoroughly."
-        };
-
-        const verbosity = verbosityInstructions[data.detailLevel] || verbosityInstructions.standard;
-
-        const customSectionsText = data.customSections && data.customSections.length > 0
-            ? `\nCustom Sections to include:\n${data.customSections.map(s => `- ${s.title}: ${s.content}`).join('\n')}`
-            : '';
-
-        const prompt = `
-        You are an expert academic report writer for a university club creating NAAC/IQAC-compliant event documentation.
-        Generate a comprehensive, professional event report based on the following details:
-        
-        Title: ${data.basicInfo.title}
-        Club: ${data.basicInfo.clubName}
-        Date: ${data.basicInfo.date}
-        Venue: ${data.basicInfo.venue}
-        Academic Year: ${data.basicInfo.academicYear}
-        Objectives: ${data.objectives.join(', ')}
-        Program Outcomes Mapped: ${Object.keys(data.poMapping || {}).filter(k => data.poMapping[k]).join(', ')}
-        Event Flow: ${JSON.stringify(data.eventFlow)}
-        Outcomes: ${JSON.stringify(data.outcomes)}
-        Images: ${data.images.map(i => i.caption).join(', ')}
-        ${customSectionsText}
-
-        VERBOSITY LEVEL: ${verbosity}
-
-        Return ONLY a valid JSON object (no markdown, no code blocks) with this structure:
-        {
-          "introduction": "Detailed introduction paragraph covering event background, significance, and context...",
-          "objectivesContent": "Elaborate on each objective with justifications and expected outcomes...",
-          "poJustification": "Detailed mapping and justification for each Program Outcome selected...",
-          "flowContent": "Comprehensive description of each session/round with timings, activities, and participant engagement...",
-          "conclusion": "Thorough summary with key takeaways, future recommendations, and impact statement...",
-          "impactAnalysis": "In-depth analysis of the event's impact on students, club, and institution..."${data.customSections && data.customSections.length > 0 ? ',\n          "customSections": ' + JSON.stringify(data.customSections.map(s => ({ title: s.title, content: "AI-enhanced content based on: " + s.content }))) : ''}
-        }
-        `;
-
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }]
-            })
-        });
-
-        const result = await response.json();
-
-        if (result.error) {
-            throw new Error(result.error.message);
-        }
-
-        const generatedText = result.candidates[0].content.parts[0].text;
-        const cleanJson = generatedText.replace(/```json/g, '').replace(/```/g, '').trim();
-        const responseData = JSON.parse(cleanJson);
-
-        return {
-            ...responseData,
-            images: data.images,
-            customSections: data.customSections // Pass through custom sections
-        };
-
-    } catch (err) {
-        console.error("Gemini API Failed, falling back to Mock:", err);
-
-        // Mock Fallback
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        const introduction = `
-The ${data.basicInfo.clubName} successfully organized "${data.basicInfo.title}" on ${data.basicInfo.date} at the ${data.basicInfo.venue}. This event was a significant initiative aimed at fostering technical excellence and professional growth among students for the Academic Year ${data.basicInfo.academicYear}. 
-
-The primary goal was to provide a platform for students to demonstrate their skills, learn from peers, and engage with industry-relevant concepts. With a turnout of ${data.outcomes.participants} enthusiastic participants, the event underscored the vibrant academic culture within the institution.
-    `.trim();
-
-        const objectivesContent = `
-The event was driven by the following key objectives:
-${data.objectives.map(obj => `• ${obj}: To ensure students gain practical exposure and theoretical understanding of the core concepts.`).join('\n')}
-• To promote teamwork and leadership skills among the organizing committee and participants.
-• To align with the institution's vision of holistic student development.
-    `.trim();
-
-        const poKeys = Object.keys(data.poMapping).filter(k => data.poMapping[k]);
-        const poJustification = poKeys.length > 0
-            ? `The event strongly contributed to the attainment of the following Program Outcomes (POs):\n` + poKeys.map(po => `• ${po}: Addressed through complex problem-solving activities and collaborative team challenges designed during the event rounds.`).join('\n')
-            : "The event contributed to general professional skill development, though specific PO mapping was flexible.";
-
-        const flowContent = data.eventFlow.map((round) => `
-### ${round.title}
-${round.description}
-
-The session was interactive, with participants actively engaging in the tasks. The structured flow ensured that all planned activities were executed within the allotted time, maximizing learning outcomes.
-    `).join('\n\n');
-
-        const conclusion = `
-"${data.basicInfo.title}" concluded on a high note, with ${data.outcomes.winners.length} winners recognized for their outstanding performance. 
-
-${data.outcomes.winners.map(w => `• ${w.position} Place: ${w.name} (${w.class})`).join('\n')}
-
-The event met its stated objectives and received positive feedback from both participants and faculty members. It stands as a testament to the ${data.basicInfo.clubName}'s commitment to excellence.
-    `.trim();
-
-        const impactAnalysis = `
-**Impact Score: ${Math.min(Math.floor(Math.random() * 2) + 8, 10)}/10**
-
-The event successfully created a competitive yet collaborative environment. 
-- **Knowledge Transfer**: ${Math.floor(Math.random() * 20) + 70}% of participants reported learning new skills.
-- **Engagement**: High levels of interaction were observed during the '${data.eventFlow[0]?.title || 'main'}' session.
-- **Future Scope**: Based on the success, it is recommended to scale this event to an inter-college level in the next iteration.
-    `.trim();
-
-        return {
-            introduction,
-            objectivesContent,
-            poJustification,
-            flowContent,
-            conclusion,
-            impactAnalysis,
-            images: data.images
-        };
-    }
-    // ... existing code ...
-
-    // ... existing code ...
-};
+// generateEventReport removed
 
 export const generateEventDescription = async (
     title: string,
@@ -326,5 +240,55 @@ export const generateFormSchema = async (
                 { id: "fallback_1", type: "text", label: "Example Question", required: true }
             ]
         };
+    }
+};
+
+export const suggestPOMapping = async (
+    title: string,
+    description: string
+): Promise<Record<string, boolean>> => {
+    console.log("Analyzing PO Mapping for:", title);
+    const prompt = `
+    You are an academic accreditation expert.
+    Analyze the following event and identify which Program Outcomes (POs) it maps to.
+    
+    Event: ${title}
+    Description: ${description}
+
+    Program Outcomes (IDs):
+    - PO1: Engineering Knowledge
+    - PO2: Problem Analysis
+    - PO3: Design/Development of Solutions
+    - PO4: Conduct Investigations of Complex Problems
+    - PO5: Modern Tool Usage
+    - PO6: The Engineer and Society
+    - PO7: Environment and Sustainability
+    - PO8: Ethics
+    - PO9: Individual and Team Work
+    - PO10: Communication
+    - PO11: Project Management and Finance
+    - PO12: Life-long Learning
+
+    Return ONLY a JSON object where keys are "PO1" to "PO12" and values are booleans (true if relevant, false otherwise).
+    Example: { "PO1": true, "PO2": false ... }
+    Do not include markdown.
+    `;
+
+    try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+
+        const result = await response.json();
+        if (result.error) throw new Error(result.error.message);
+
+        const text = result.candidates[0].content.parts[0].text;
+        const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        return JSON.parse(cleanJson);
+    } catch (error) {
+        console.error("AI PO Mapping Failed:", error);
+        return {};
     }
 };

@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { ScrollToTop } from './components/ScrollToTop';
+import { Toaster } from 'sonner';
 import { LandingPage } from './pages/LandingPage';
 
 import { DashboardLayout } from './layouts/DashboardLayout';
@@ -11,7 +12,7 @@ import { ClubDetailPage } from './pages/ClubDetailPage';
 import { EventsPage } from './pages/EventsPage';
 import { EventDetailPage } from './pages/EventDetailPage';
 
-import { AIReportStudioPage } from './pages/AIReportStudioPage';
+
 import { FormsListPage } from './pages/FormsListPage';
 import { FormBuilderPage } from './pages/FormBuilderPage';
 import { FormViewerPage } from './pages/FormViewerPage';
@@ -41,6 +42,8 @@ import { FeedbackFormPage } from './pages/FeedbackFormPage';
 import { FeedbackFormBuilderPage } from './pages/FeedbackFormBuilderPage';
 import { EventFeedbackStatsPage } from './pages/EventFeedbackStatsPage';
 import { QRScannerFormPage } from './pages/QRScannerFormPage';
+import { EventRegistrationPage } from './pages/EventRegistrationPage';
+import { EventMediaPage } from './pages/EventMediaPage';
 
 
 function App() {
@@ -52,6 +55,7 @@ function App() {
 
   return (
     <Router>
+      <Toaster position="top-right" richColors />
       <ScrollToTop />
       <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
         <Routes>
@@ -72,6 +76,8 @@ function App() {
               <Route path="/events" element={<EventsPage />} />
               <Route path="/events/:id" element={<EventDetailPage />} />
               <Route path="/events/:id/scan" element={<EventScannerPage />} />
+              <Route path="/events/:eventId/register" element={<EventRegistrationPage />} />
+              <Route path="/events/:id/media" element={<EventMediaPage />} />
               <Route path="/events/:id/feedback" element={<FeedbackFormPage />} />
               <Route path="/events/:eventId/feedback-builder" element={<FeedbackFormBuilderPage />} />
               <Route path="/events/:id/feedback-stats" element={<EventFeedbackStatsPage />} />
@@ -87,7 +93,7 @@ function App() {
               <Route path="/proposals/:id/edit" element={<EditEventPage />} />
               <Route path="/wall" element={<ClubsWallPage />} />
 
-              <Route path="/reports/ai-studio" element={<AIReportStudioPage />} />
+
               <Route path="/clubs/:id/highlights" element={<ClubHighlightsPage />} />
 
               {/* AI Forms System */}

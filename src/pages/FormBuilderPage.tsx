@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { supabase } from '../lib/supabase';
 import { generateFormSchema } from '../services/aiService';
 import { Button } from '../components/ui/Button';
+import { PageHeader } from '../components/ui/PageHeader';
 import {
     Loader2,
     Plus,
@@ -199,7 +201,7 @@ export const FormBuilderPage = () => {
             setValue('questions', formattedQuestions);
         } catch (error) {
             console.error(error);
-            alert("AI Generation failed.");
+            toast.error("AI Generation failed.");
         } finally {
             setGenerating(false);
         }
@@ -229,11 +231,11 @@ export const FormBuilderPage = () => {
             }
 
             if (error) throw error;
-            alert("Form Saved Successfully!");
+            toast.success("Form Saved Successfully!");
             navigate('/forms');
         } catch (error) {
             console.error(error);
-            alert("Failed to save form.");
+            toast.error("Failed to save form.");
         }
     };
 
@@ -242,14 +244,15 @@ export const FormBuilderPage = () => {
     return (
         <div className="min-h-screen bg-gray-50 py-4 sm:py-6 lg:py-8 px-3 sm:px-4 lg:px-8">
             <div className="max-w-4xl mx-auto">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-6 sm:mb-8">
-                    <Button variant="ghost" onClick={() => navigate('/forms')} className="text-sm sm:text-base">
+                <div className="mb-8">
+                    <Button variant="ghost" onClick={() => navigate('/forms')} className="text-sm sm:text-base mb-4 -ml-4 hover:bg-transparent hover:text-brand-600 p-0 pl-4">
                         <ArrowLeft className="h-4 w-4 mr-2" />
                         <span className="hidden xs:inline">Back to </span>Forms
                     </Button>
-                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-                        {isNew ? 'Create New Form' : 'Edit Form'}
-                    </h1>
+                    <PageHeader
+                        title={isNew ? 'Create New Form' : 'Edit Form'}
+                        description={isNew ? 'Design a new form to collect responses.' : 'Edit your existing form.'}
+                    />
                 </div>
 
                 <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg sm:rounded-xl p-4 sm:p-6 text-white mb-6 sm:mb-8 shadow-lg">

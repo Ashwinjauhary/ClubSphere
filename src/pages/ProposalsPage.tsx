@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
-import { Plus, Edit2 } from 'lucide-react';
+import { Plus, Edit2, Calendar, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
+import { motion } from 'framer-motion';
+import { SkeletonList } from '../components/ui/Skeleton';
+import { PageHeader } from '../components/ui/PageHeader';
 
 interface Event {
     id: string;
@@ -27,12 +30,6 @@ export const ProposalsPage = () => {
     const fetchProposals = async () => {
         try {
             setLoading(true);
-            // Fetch club managed by user first? Or just search events created by user?
-            // Events created by user is safer if they switch clubs, but generally admin_id matches.
-            // Let's use created_by for now as it's reliable for the person who made it.
-            // OR finding events where club_id is the one managed by user.
-
-            // Better: find club, then find events for that club.
             const { data: club } = await supabase.from('clubs').select('id').eq('admin_id', user?.id).single();
 
             if (club) {
@@ -55,115 +52,104 @@ export const ProposalsPage = () => {
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case 'approved': return 'bg-green-100 text-green-800';
-            case 'rejected': return 'bg-red-100 text-red-800';
-            case 'draft': return 'bg-gray-100 text-gray-800';
-            case 'pending': return 'bg-yellow-100 text-yellow-800';
-            default: return 'bg-blue-100 text-blue-800';
+            case 'approved': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+            case 'rejected': return 'bg-red-100 text-red-800 border-red-200';
+            case 'draft': return 'bg-gray-100 text-gray-800 border-gray-200';
+            case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+            default: return 'bg-blue-100 text-blue-800 border-blue-200';
         }
     };
 
+    const container = {
+        hidden: { opacity: 0 },
+        show: {
+            opacity: 1,
+            transition: { staggerChildren: 0.1 }
+        }
+    };
+
+    const item = {
+        hidden: { opacity: 0, y: 20 },
+        show: { opacity: 1, y: 0 }
+    };
+
     return (
-        <div className="space-y-6 sm:space-y-8">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">My Proposals</h1>
-                    <p className="text-sm sm:text-base text-gray-500 mt-1">Manage your event drafts and proposals.</p>
-                </div>
-                <Link
-                    to="/events/new"
-                    className="inline-flex items-center justify-center px-4 py-2.5 sm:py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-brand-600 hover:bg-brand-700"
-                >
-                    <Plus className="h-4 w-4 mr-2" /> New Proposal
-                </Link>
-            </div>
+        <div className="max-w-7xl mx-auto space-y-8 p-6 sm:p-8">
+            <PageHeader
+                title="My Proposals"
+                description="Manage your event drafts and tracking."
+                action={
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                    >
+                        <Link
+                            to="/events/new"
+                            className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-sm font-medium rounded-xl shadow-lg text-white bg-brand-600 hover:bg-brand-700 transition-all hover:scale-105"
+                        >
+                            <Plus className="h-5 w-5 mr-2" /> New Proposal
+                        </Link>
+                    </motion.div>
+                }
+            />
 
             {loading ? (
-                <div className="text-center py-12">Loading proposals...</div>
+                <div className="grid gap-6">
+                    <SkeletonList count={3} />
+                </div>
             ) : (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <motion.div
+                    variants={container}
+                    initial="hidden"
+                    animate="show"
+                    className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+                >
                     {events.length === 0 ? (
-                        <div className="p-8 text-center text-gray-500">
-                            No proposals found. Start by creating one!
+                        <div className="col-span-full py-20 text-center glass rounded-3xl">
+                            <Calendar className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                            <p className="text-gray-500 text-lg">No proposals found.</p>
+                            <p className="text-gray-400">Start by creating your first event proposal!</p>
                         </div>
                     ) : (
-                        <>
-                            {/* Mobile Card Layout */}
-                            <div className="md:hidden divide-y divide-gray-200">
-                                {events.map((event) => (
-                                    <div key={event.id} className="p-4 hover:bg-gray-50 transition-colors">
-                                        <div className="flex items-start justify-between gap-3 mb-3">
-                                            <h3 className="text-base font-semibold text-gray-900 flex-1">{event.title}</h3>
-                                            <Link
-                                                to={`/proposals/${event.id}/edit`}
-                                                className="text-brand-600 hover:text-brand-900 p-2 hover:bg-brand-50 rounded-md transition-colors"
-                                                aria-label="Edit proposal"
-                                            >
-                                                <Edit2 className="h-5 w-5" />
-                                            </Link>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-xs font-medium text-gray-500 uppercase">Status:</span>
-                                                <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(event.status)} uppercase`}>
-                                                    {event.status}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                                                <span className="text-xs font-medium text-gray-500 uppercase">Date:</span>
-                                                <span>{format(new Date(event.start_time), 'MMM d, yyyy h:mm a')}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                                                <span className="text-xs font-medium text-gray-500 uppercase">Location:</span>
-                                                <span>{event.location}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                        events.map((event) => (
+                            <motion.div
+                                key={event.id}
+                                variants={item}
+                                className="glass-card group relative overflow-hidden rounded-2xl p-6 hover:shadow-xl transition-all hover:-translate-y-1 border-t-4 border-t-transparent hover:border-t-brand-500"
+                            >
+                                <div className="flex justify-between items-start mb-4">
+                                    <span className={`px-3 py-1 text-xs font-bold uppercase tracking-wide rounded-full border ${getStatusColor(event.status)}`}>
+                                        {event.status}
+                                    </span>
+                                    <Link
+                                        to={`/proposals/${event.id}/edit`}
+                                        className="text-gray-400 hover:text-brand-600 p-2 hover:bg-brand-50 rounded-full transition-colors"
+                                        aria-label="Edit proposal"
+                                    >
+                                        <Edit2 className="h-5 w-5" />
+                                    </Link>
+                                </div>
 
-                            {/* Desktop Table Layout */}
-                            <div className="hidden md:block overflow-x-auto">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                                            <th scope="col" className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
-                                        {events.map((event) => (
-                                            <tr key={event.id} className="hover:bg-gray-50">
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="text-sm font-medium text-gray-900">{event.title}</div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(event.status)} uppercase`}>
-                                                        {event.status}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {format(new Date(event.start_time), 'MMM d, yyyy h:mm a')}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {event.location}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                    <Link to={`/proposals/${event.id}/edit`} className="text-brand-600 hover:text-brand-900">
-                                                        <Edit2 className="h-4 w-4" />
-                                                    </Link>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </>
+                                <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-1 group-hover:text-brand-600 transition-colors">
+                                    {event.title}
+                                </h3>
+
+                                <div className="space-y-2 mt-4">
+                                    <div className="flex items-center text-sm text-gray-500">
+                                        <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+                                        {format(new Date(event.start_time), 'MMM d, yyyy • h:mm a')}
+                                    </div>
+                                    <div className="flex items-center text-sm text-gray-500">
+                                        <MapPin className="h-4 w-4 mr-2 text-gray-400" />
+                                        {event.location || 'Location TBD'}
+                                    </div>
+                                </div>
+
+                                <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-brand-400 to-indigo-400 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
+                            </motion.div>
+                        ))
                     )}
-                </div>
+                </motion.div>
             )}
         </div>
     );

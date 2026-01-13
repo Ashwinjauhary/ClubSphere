@@ -4,6 +4,9 @@ import { ClubCard } from '../components/ClubCard';
 import { Plus, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { motion } from 'framer-motion';
+import { SkeletonList } from '../components/ui/Skeleton';
+import { PageHeader } from '../components/ui/PageHeader';
 
 interface Club {
     id: string;
@@ -11,7 +14,6 @@ interface Club {
     slug: string;
     description: string;
     logo_url: string;
-    banner_url: string;
     category: string;
     founded_year: number;
     admin_id: string;
@@ -50,63 +52,90 @@ export const ClubsPage = () => {
         club.description?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600 mx-auto"></div>
-                    <p className="mt-4 text-sm sm:text-base text-gray-600">Loading clubs...</p>
-                </div>
-            </div>
-        );
-    }
+    const container = {
+        hidden: { opacity: 0 },
+        show: {
+            opacity: 1,
+            transition: { staggerChildren: 0.1 }
+        }
+    };
+
+    const item = {
+        hidden: { opacity: 0, y: 20 },
+        show: { opacity: 1, y: 0 }
+    };
 
     return (
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
-                <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">All Clubs</h1>
-                    <p className="text-sm sm:text-base text-gray-600 mt-1 sm:mt-2">Discover and join student clubs</p>
-                </div>
-                {(role === 'dean' || role === 'super_admin') && (
+        <div className="max-w-7xl mx-auto space-y-8 p-6 sm:p-8">
+            <PageHeader
+                title="Student Clubs"
+                description="Discover your tribe. Join the movement."
+                action={(role === 'dean' || role === 'super_admin') && (
                     <button
                         onClick={() => navigate('/clubs/new')}
-                        className="flex items-center justify-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-md hover:bg-brand-700 transition-colors w-full sm:w-auto text-sm sm:text-base"
+                        className="flex items-center gap-2 px-6 py-3 bg-brand-600 text-white rounded-xl shadow-lg shadow-brand-500/30 hover:bg-brand-700 transition-all font-medium"
                     >
-                        <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
-                        Create Club
+                        <Plus className="h-5 w-5" />
+                        Start a New Club
                     </button>
                 )}
-            </div>
+            />
 
-            {/* Search */}
-            <div className="mb-6 sm:mb-8">
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder="Search clubs..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-9 sm:pl-10 pr-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                    />
+            {/* Glass Search Bar */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="relative group"
+            >
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Search className="h-5 w-5 text-gray-400 group-focus-within:text-brand-500 transition-colors" />
                 </div>
-            </div>
+                <input
+                    type="text"
+                    placeholder="Search for clubs, categories, or interests..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="block w-full pl-11 pr-4 py-4 glass rounded-2xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/50 transition-all"
+                />
+            </motion.div>
 
-            {/* Clubs Grid */}
-            {filteredClubs.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {/* Content Grid */}
+            {loading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <SkeletonList count={6} />
+                </div>
+            ) : filteredClubs.length > 0 ? (
+                <motion.div
+                    variants={container}
+                    initial="hidden"
+                    animate="show"
+                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+                >
                     {filteredClubs.map((club) => (
-                        <ClubCard key={club.id} club={club} />
+                        <motion.div key={club.id} variants={item} layout>
+                            <ClubCard club={club} />
+                        </motion.div>
                     ))}
-                </div>
+                </motion.div>
             ) : (
-                <div className="text-center py-12">
-                    <p className="text-gray-500 text-base sm:text-lg">
-                        {searchTerm ? 'No clubs found matching your search' : 'No clubs available yet'}
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-center py-20 glass rounded-3xl"
+                >
+                    <p className="text-gray-500 text-lg">
+                        {searchTerm ? 'No clubs found matching your search.' : 'No clubs available yet.'}
                     </p>
-                </div>
+                    {searchTerm && (
+                        <button
+                            onClick={() => setSearchTerm('')}
+                            className="mt-4 text-brand-600 hover:text-brand-700 font-medium"
+                        >
+                            Clear search
+                        </button>
+                    )}
+                </motion.div>
             )}
         </div>
     );

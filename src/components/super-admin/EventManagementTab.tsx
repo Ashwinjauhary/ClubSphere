@@ -3,6 +3,8 @@ import { supabase } from '../../lib/supabase';
 import { CheckCircle, XCircle, Edit, Trash2, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+import { SkeletonList } from '../ui/Skeleton';
+
 interface Event {
     id: string;
     title: string;
@@ -126,7 +128,7 @@ export const EventManagementTab = () => {
     };
 
     if (loading) {
-        return <div className="flex items-center justify-center h-64">Loading events...</div>;
+        return <SkeletonList count={6} />;
     }
 
     return (

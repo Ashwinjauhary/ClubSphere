@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
+import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui/Button';
 import { User, Mail, Hash, Briefcase, Camera, Shield } from 'lucide-react';
+import { SkeletonList } from '../components/ui/Skeleton';
+import { PageHeader } from '../components/ui/PageHeader';
+import { toast } from 'sonner';
 
 interface Profile {
     id: string;
     email: string;
     full_name: string;
     avatar_url: string;
-    role: string;
+    role: 'student' | 'admin' | 'dean';
     roll_number?: string;
     branch?: string;
     year?: string;
@@ -75,6 +78,7 @@ export const ProfilePage = () => {
 
             if (profileError) throw profileError;
             if (profileData) {
+                // @ts-ignore
                 setProfile(profileData);
                 setFullName(profileData.full_name || '');
                 setRollNo(profileData.roll_number || '');
@@ -109,7 +113,7 @@ export const ProfilePage = () => {
                     .from('clubs')
                     .select('id, name')
                     .eq('admin_id', user.id)
-                    .maybeSingle(); // Use maybeSingle to avoid 406 if no club assigned yet
+                    .maybeSingle();
 
                 if (!clubError && clubData) {
                     setManagedClub(clubData);
@@ -157,23 +161,23 @@ export const ProfilePage = () => {
 
             if (error) throw error;
 
-            alert('Profile updated successfully!');
-            fetchProfileData(); // Refresh
+            toast.success('Profile updated successfully!');
+            fetchProfileData();
 
         } catch (error) {
             console.error('Error updating profile:', error);
-            alert('Failed to update profile.');
+            toast.error('Failed to update profile.');
         } finally {
             setUpdating(false);
         }
     };
 
-    if (loading) return <div className="text-center py-12">Loading profile...</div>;
+    if (loading) return <div className="max-w-4xl mx-auto py-12"><SkeletonList count={4} /></div>;
     if (!profile) return <div className="text-center py-12">Profile not found.</div>;
 
     return (
-        <div className="max-w-4xl mx-auto space-y-8">
-            <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
+        <div className="max-w-4xl mx-auto space-y-8 p-6 sm:p-8">
+            <PageHeader title="My Profile" description="Manage your personal information and preferences." />
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div className="p-6 md:p-8 space-y-8">

@@ -5,6 +5,9 @@ import { Button } from '../components/ui/Button';
 import { Check, X, User } from 'lucide-react';
 // import { useParams, useNavigate } from 'react-router-dom';
 
+import { SkeletonList } from '../components/ui/Skeleton';
+import { PageHeader } from '../components/ui/PageHeader';
+
 interface Application {
     id: string;
     user_id: string;
@@ -97,11 +100,14 @@ export const ClubApplicationsPage = () => {
         }
     };
 
-    if (loading) return <div>Loading applications...</div>;
+    if (loading) return <div className="space-y-4"><SkeletonList count={3} /></div>;
 
     return (
         <div className="space-y-6">
-            <h1 className="text-2xl font-bold text-gray-900">Club Applications</h1>
+            <PageHeader
+                title="Club Applications"
+                description="Review and manage incoming membership requests."
+            />
 
             {applications.length === 0 ? (
                 <div className="text-gray-500">No applications found.</div>

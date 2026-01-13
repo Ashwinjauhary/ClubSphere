@@ -1,9 +1,14 @@
 export interface AIAnalysisResult {
     summary: string;
     impactScore: number;
+    sentiment: 'positive' | 'neutral' | 'negative';
     strengths: string[];
     improvements: string[];
-    sentiment: 'positive' | 'neutral' | 'negative';
+    introduction?: string;
+    objectivesContent?: string;
+    impactAnalysis?: string;
+    metricsAnalysis?: string;
+    strategicRoadmap?: string[];
 }
 
 export interface ReportData {
