@@ -9,7 +9,7 @@ export const DashboardLayout = () => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     return (
-        <div className="flex h-screen overflow-hidden bg-transparent"> {/* bg-transparent to show body gradient */}
+        <div className="flex h-screen lg:h-[100dvh] overflow-hidden bg-transparent"> {/* bg-transparent to show body gradient */}
             <AppUpdater />
             {/* Mobile sidebar backdrop */}
             <AnimatePresence>
@@ -52,7 +52,7 @@ export const DashboardLayout = () => {
                     <div className="w-10" />
                 </div>
 
-                <main className="flex-1 p-4 lg:p-6 lg:pt-8 w-full max-w-[1920px] mx-auto">
+                <main className="flex-1 p-4 lg:p-6 lg:pt-8 w-full max-w-[1920px] mx-auto pb-24 lg:pb-10">
                     <Outlet />
                 </main>
             </div>

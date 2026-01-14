@@ -190,7 +190,7 @@ export const generateFeedbackForm = async (
 
 export const generateFormSchema = async (
     userPrompt: string
-): Promise<{ title: string; description: string; questions: any[] }> => {
+): Promise<{ title: string; description: string; theme: string; settings: any; questions: any[] }> => {
     console.log("Generating full form schema for:", userPrompt);
     const prompt = `
     You are an expert form builder and survey designer.
@@ -200,20 +200,33 @@ export const generateFormSchema = async (
     {
       "title": "Professional Form Title",
       "description": "A welcoming description encouraging users to fill the form.",
+      "theme": "classic-blue", 
+      "settings": {
+        "limit_one_response_per_user": false,
+        "accepting_responses": true,
+        "thank_you_message": "Thank you for your submission!"
+      },
       "questions": [
         { "id": "q1", "type": "text", "label": "Full Name", "required": true },
-        { "id": "q2", "type": "single_choice", "label": "Department", "required": true, "options": ["HR", "IT", "Sales"] }
+        { "id": "q2", "type": "single_choice", "label": "Department", "required": true, "options": ["HR", "IT", "Sales"] },
+        { "id": "q3", "type": "file_upload", "label": "Upload Resume", "required": true, "accept_file_types": [".pdf", ".docx"] }
       ]
     }
     
+    Supported Themes: 'classic-blue', 'modern-purple', 'fresh-green', 'warm-orange', 'professional-gray', 'elegant-pink'.
+    
     Supported Question Types:
     - text (Short answer)
-    - textarea (Long answer)
-    - rating (1-5 stars)
-    - single_choice (Radio buttons)
+    - textarea (Paragraph)
+    - number
+    - email
+    - date
+    - single_choice (Radio)
     - multiple_choice (Checkboxes)
-    - date (Date picker)
-    - email (Email input)
+    - dropdown (Select menu)
+    - rating (1-5 stars)
+    - file_upload (for documents/images)
+    - description (Static text block for info)
 
     Ensure IDs are unique strings. NO markdown code blocks.
     `;
@@ -236,6 +249,8 @@ export const generateFormSchema = async (
         return {
             title: "New Form",
             description: "Please fill out this form.",
+            theme: "classic-blue",
+            settings: { limit_one_response_per_user: false, accepting_responses: true, thank_you_message: "Thank you!" },
             questions: [
                 { id: "fallback_1", type: "text", label: "Example Question", required: true }
             ]

@@ -190,7 +190,7 @@ export const EventsPage = () => {
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto z-50 relative overflow-hidden"
+                            className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90dvh] overflow-y-auto z-50 relative overflow-hidden"
                         >
                             {/* Decorative Background Mesh for Modal */}
                             <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-brand-500/10 to-purple-500/10 -z-10" />
