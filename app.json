@@ -1,0 +1,11 @@
+{
+    "expo": {
+        "name": "ClubSphere",
+        "slug": "clubsphere",
+        "extra": {
+            "eas": {
+                "projectId": "b6bdf94a-bef1-4550-aace-540fc4fd2148"
+            }
+        }
+    }
+}
