@@ -73,10 +73,10 @@ export const LandingPage = () => {
 
                     <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
                         <button
-                            onClick={() => navigate('/register')}
+                            onClick={() => navigate('/login')}
                             className="px-10 py-5 bg-brand-600 text-white text-lg font-bold rounded-2xl hover:bg-brand-700 transition-all shadow-[0_6px_0_0_#0369a1] hover:shadow-[0_3px_0_0_#0369a1] hover:translate-y-[3px] active:shadow-none active:translate-y-[6px] flex items-center gap-3"
                         >
-                            Start Free Trial <ArrowRight className="h-6 w-6" />
+                            Login <ArrowRight className="h-6 w-6" />
                         </button>
                         <a
                             href="#mobile-app"
