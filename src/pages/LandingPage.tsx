@@ -152,7 +152,7 @@ export const LandingPage = () => {
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4">
                             <a
-                                href="/app-release.apk"
+                                href="https://xmufhhfsaqtidszsrgfm.supabase.co/storage/v1/object/public/apk-releases/application-02529e79-9288-485c-b3ea-8b95ed13632a.apk"
                                 download="ClubSphere.apk"
                                 className="px-8 py-4 bg-slate-900 text-white text-lg font-bold rounded-xl hover:bg-slate-800 transition-all shadow-xl flex items-center justify-center gap-3"
                             >
