@@ -8,7 +8,7 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Shield, Mail, ArrowLeft, CheckCircle } from 'lucide-react';
 import { ParticlesBackground } from '../components/ui/ParticlesBackground';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 const forgotPasswordSchema = z.object({
     email: z.string().email('Invalid email address'),

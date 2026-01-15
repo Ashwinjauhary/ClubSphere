@@ -8,7 +8,7 @@ import { Input } from '../components/ui/Input';
 import { ArrowLeft, Calendar, MapPin, DollarSign, Type, Users } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { useState } from 'react';
 
 const eventSchema = z.object({

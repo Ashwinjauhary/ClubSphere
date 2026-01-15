@@ -7,7 +7,7 @@ import { useAuthStore } from '../store/authStore';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Shield, Mail, Lock, User, ArrowRight } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { ParticlesBackground } from '../components/ui/ParticlesBackground';
 
 const registerSchema = z.object({

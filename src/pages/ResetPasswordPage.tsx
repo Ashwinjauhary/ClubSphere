@@ -8,7 +8,7 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Shield, Lock, CheckCircle } from 'lucide-react';
 import { ParticlesBackground } from '../components/ui/ParticlesBackground';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 const resetPasswordSchema = z.object({
     password: z.string().min(6, 'Password must be at least 6 characters'),
