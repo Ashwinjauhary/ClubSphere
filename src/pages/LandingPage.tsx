@@ -68,7 +68,7 @@ export const LandingPage = () => {
 
                     <p className="max-w-3xl mx-auto text-xl md:text-2xl text-slate-500 mb-12 leading-relaxed font-medium">
                         The definitive platform for student organizations. <br />
-                        Streamline memberships, events, and approvals with <span className="text-slate-900 font-bold underline decoration-brand-400 decoration-4 underline-offset-4">power & precision.</span>
+                        Streamline memberships, events, and approvals with <span className="text-slate-900 font-bold">power & precision.</span>
                     </p>
 
                     <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
