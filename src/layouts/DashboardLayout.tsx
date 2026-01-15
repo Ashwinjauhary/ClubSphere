@@ -44,7 +44,7 @@ export const DashboardLayout = () => {
             {/* Main content */}
             <div className="flex-1 flex flex-col h-full overflow-hidden relative">
                 {/* Mobile header */}
-                <div className="lg:hidden bg-white border-b border-gray-100 px-4 py-4 flex items-center justify-between sticky top-0 z-30">
+                <div className="lg:hidden bg-white border-b border-gray-100 px-4 py-4 flex items-center justify-between sticky top-0 z-30 pt-[calc(1rem+env(safe-area-inset-top))]">
                     <button
                         onClick={() => setSidebarOpen(true)}
                         className="p-2 -ml-2 rounded-md hover:bg-gray-50 active:scale-95 transition-all text-gray-600"
@@ -58,8 +58,8 @@ export const DashboardLayout = () => {
                     <div className="w-10" />
                 </div>
 
-                <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 lg:p-8 scrollbar-thin">
-                    <div className="max-w-[1600px] mx-auto pb-24 lg:pb-10">
+                <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 lg:p-8 scrollbar-thin pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-10">
+                    <div className="max-w-[1600px] mx-auto pb-4">
                         <Outlet />
                     </div>
                 </main>
