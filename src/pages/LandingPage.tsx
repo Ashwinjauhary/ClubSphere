@@ -171,7 +171,7 @@ export const LandingPage = () => {
 
                             <button
                                 className="w-full sm:w-auto px-8 py-4 bg-white text-gray-900 rounded-xl font-bold hover:bg-gray-100 transition-colors flex items-center justify-center gap-3"
-                                onClick={() => window.open('https://xmufhhfsaqtidszsrgfm.supabase.co/storage/v1/object/public/apk-releases/app-debug.apk', '_blank')}
+                                onClick={() => window.open('https://xmufhhfsaqtidszsrgfm.supabase.co/storage/v1/object/public/apk-releases/application-02529e79-9288-485c-b3ea-8b95ed13632a.apk', '_blank')}
                             >
                                 <Download className="h-6 w-6" />
                                 <span>Download APK (v1.0)</span>
