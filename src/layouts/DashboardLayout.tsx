@@ -4,12 +4,18 @@ import { useState } from 'react';
 import { Menu } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AppUpdater } from '../components/AppUpdater';
+import { ParticlesBackground } from '../components/ui/ParticlesBackground';
 
 export const DashboardLayout = () => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     return (
-        <div className="flex h-screen lg:h-[100dvh] overflow-hidden bg-transparent"> {/* bg-transparent to show body gradient */}
+        <div className="flex h-screen w-full overflow-hidden bg-gray-50 font-sans text-gray-900 relative">
+            {/* Global Particles Background */}
+            <div className="absolute inset-0 z-0 pointer-events-none">
+                <ParticlesBackground />
+            </div>
+
             <AppUpdater />
             {/* Mobile sidebar backdrop */}
             <AnimatePresence>
@@ -18,42 +24,44 @@ export const DashboardLayout = () => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+                        className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-40 lg:hidden"
                         onClick={() => setSidebarOpen(false)}
                     />
                 )}
             </AnimatePresence>
 
-            {/* Sidebar - Floating Glass Style */}
+            {/* Sidebar Container */}
             <div className={`
-                fixed inset-y-0 left-0 z-50 w-72 p-4 transform transition-transform duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)]
-                lg:relative lg:translate-x-0
+                fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 cubic-bezier(0.4, 0, 0.2, 1)
+                lg:relative lg:translate-x-0 h-full
                 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
             `}>
-                <div className="h-full glass rounded-2xl shadow-2xl ring-1 ring-white/40">
+                <div className="h-full bg-white flex flex-col">
                     <Sidebar onClose={() => setSidebarOpen(false)} />
                 </div>
             </div>
 
             {/* Main content */}
-            <div className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden relative scrollbar-thin">
-                {/* Mobile header with hamburger */}
-                <div className="lg:hidden glass border-b border-white/20 px-4 py-3 flex items-center justify-between sticky top-0 z-30 mx-4 mt-4 rounded-xl">
+            <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+                {/* Mobile header */}
+                <div className="lg:hidden bg-white border-b border-gray-100 px-4 py-4 flex items-center justify-between sticky top-0 z-30">
                     <button
                         onClick={() => setSidebarOpen(true)}
-                        className="p-2 rounded-lg hover:bg-white/20 transition-colors"
+                        className="p-2 -ml-2 rounded-md hover:bg-gray-50 active:scale-95 transition-all text-gray-600"
                         aria-label="Open menu"
                     >
-                        <Menu className="h-6 w-6 text-brand-700" />
+                        <Menu className="h-6 w-6" />
                     </button>
-                    <span className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-brand-600 to-purple-600">
-                        ClubSphere
+                    <span className="text-lg font-bold text-gray-900 font-display">
+                        CLUBSPHERE
                     </span>
                     <div className="w-10" />
                 </div>
 
-                <main className="flex-1 p-4 lg:p-6 lg:pt-8 w-full max-w-[1920px] mx-auto pb-24 lg:pb-10">
-                    <Outlet />
+                <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 lg:p-8 scrollbar-thin">
+                    <div className="max-w-[1600px] mx-auto pb-24 lg:pb-10">
+                        <Outlet />
+                    </div>
                 </main>
             </div>
         </div>

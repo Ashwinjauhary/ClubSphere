@@ -9,9 +9,13 @@ interface AuthState {
     loading: boolean;
     checkUser: () => Promise<void>;
     signOut: () => Promise<void>;
+    signIn: (email: string, password: string) => Promise<void>;
+    signUp: (email: string, password: string, fullName: string) => Promise<void>;
+    resetPassword: (email: string) => Promise<void>;
+    updatePassword: (password: string) => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
     user: null,
     role: null,
     managedClubId: null,
@@ -38,7 +42,7 @@ export const useAuthStore = create<AuthState>((set) => ({
                         .from('clubs')
                         .select('id')
                         .eq('admin_id', user.id)
-                        .maybeSingle(); // maybeSingle because they might be admin but not assigned a club yet
+                        .maybeSingle();
 
                     if (club) managedClubId = club.id;
                 }
@@ -57,5 +61,40 @@ export const useAuthStore = create<AuthState>((set) => ({
     signOut: async () => {
         await supabase.auth.signOut();
         set({ user: null, role: null, managedClubId: null });
+    },
+    signIn: async (email, password) => {
+        const { error } = await supabase.auth.signInWithPassword({
+            email,
+            password
+        });
+        if (error) throw error;
+        await get().checkUser(); // Refresh state after login
+    },
+    signUp: async (email, password, fullName) => {
+        const { error, data } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: {
+                    full_name: fullName,
+                },
+            },
+        });
+        if (error) throw error;
+        // Profile creation is typically handled by Supabase triggers,
+        // but if not, we would insert here. For now assuming triggers.
+        if (data.user) {
+            await get().checkUser();
+        }
+    },
+    resetPassword: async (email: string) => {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.origin + '/reset-password',
+        });
+        if (error) throw error;
+    },
+    updatePassword: async (password: string) => {
+        const { error } = await supabase.auth.updateUser({ password });
+        if (error) throw error;
     }
 }));

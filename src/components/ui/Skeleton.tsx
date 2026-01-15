@@ -1,5 +1,5 @@
 export const SkeletonCard = () => (
-    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 animate-pulse">
+    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 animate-pulse">
         <div className="flex items-center gap-4 mb-4">
             <div className="h-12 w-12 bg-gray-200 rounded-full"></div>
             <div className="flex-1">

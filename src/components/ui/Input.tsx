@@ -1,6 +1,7 @@
 import React from 'react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { motion } from 'framer-motion';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -17,28 +18,39 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         return (
             <div className="w-full">
                 {label && (
-                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                    <label className="mb-2 block text-sm font-bold text-gray-700">
                         {label}
                     </label>
                 )}
-                <div className="relative">
+                <div className="relative group">
                     {icon && (
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-brand-600 transition-colors duration-200">
                             {icon}
                         </div>
                     )}
                     <input
                         ref={ref}
                         className={cn(
-                            'block w-full rounded-md border border-gray-300 py-2 text-gray-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 placeholder:text-gray-400 sm:text-sm',
-                            icon ? 'pl-10 pr-3' : 'px-3',
-                            error && 'border-red-500 focus:border-red-500 focus:ring-red-500',
+                            'block w-full rounded-xl border-2 border-gray-200 bg-white py-3 text-gray-900 shadow-sm transition-all duration-200',
+                            'focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 focus:outline-none',
+                            'placeholder:text-gray-400 sm:text-sm font-medium',
+                            'hover:border-gray-300',
+                            icon ? 'pl-11 pr-4' : 'px-4',
+                            error && 'border-red-300 focus:border-red-500 focus:ring-red-100 bg-red-50/50 text-red-900 placeholder:text-red-300',
                             className
                         )}
                         {...props}
                     />
                 </div>
-                {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+                {error && (
+                    <motion.p
+                        initial={{ opacity: 0, y: -5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-1.5 text-xs text-red-600 font-bold ml-1 flex items-center gap-1.5"
+                    >
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-600 inline-block" /> {error}
+                    </motion.p>
+                )}
             </div>
         );
     }

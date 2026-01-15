@@ -44,23 +44,25 @@ export const SuperAdminPage = () => {
     };
 
     return (
-        <div className="min-h-screen">
-            <div className="max-w-7xl mx-auto p-6 sm:p-8 pb-0">
+        <div className="min-h-screen pb-20">
+            <div className="max-w-7xl mx-auto p-6 sm:p-8">
                 <PageHeader
                     title="Super Admin"
                     description="System Control Center"
                     action={
-                        <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-gray-500 bg-gray-100 px-3 py-1 rounded-full border border-gray-200">
-                            <Settings className="h-3 w-3" /> Root Access
-                        </div>
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-violet-600 bg-violet-100/50 backdrop-blur-md px-4 py-1.5 rounded-full border border-violet-200 shadow-sm"
+                        >
+                            <Settings className="h-3.5 w-3.5 animate-spin-slow" /> Root Access
+                        </motion.div>
                     }
                 />
-            </div>
 
-            {/* Tabs Navigation */}
-            <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200">
-                <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
-                    <nav className="flex space-x-1 overflow-x-auto p-2 scrollbar-none" aria-label="Tabs">
+                {/* Glass Tabs Navigation */}
+                <div className="sticky top-4 z-40 mt-8 mb-8">
+                    <div className="bg-white/70 backdrop-blur-xl border border-white/40 shadow-glass rounded-2xl p-1.5 mx-auto max-w-fit flex space-x-1 overflow-x-auto no-scrollbar">
                         {tabs.map((tab) => {
                             const Icon = tab.icon;
                             const isActive = activeTab === tab.id;
@@ -69,38 +71,36 @@ export const SuperAdminPage = () => {
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
                                     className={`
-                                        relative group flex items-center gap-2 py-2 px-4 rounded-lg text-sm font-medium transition-all duration-200 outline-none
-                                        ${isActive ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}
+                                        relative group flex items-center gap-2 py-2.5 px-5 rounded-xl text-sm font-medium transition-all duration-300 outline-none select-none
+                                        ${isActive ? 'text-white shadow-lg' : 'text-gray-500 hover:text-gray-800 hover:bg-white/50'}
                                     `}
                                 >
                                     {isActive && (
                                         <motion.div
                                             layoutId="admin-tab"
-                                            className="absolute inset-0 bg-white shadow-sm ring-1 ring-gray-200 rounded-lg"
+                                            className="absolute inset-0 bg-gradient-to-r from-violet-600 to-brand-600 rounded-xl"
                                             transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                                         />
                                     )}
                                     <span className="relative z-10 flex items-center gap-2">
-                                        <Icon className={`h-4 w-4 ${isActive ? 'text-brand-600' : 'text-gray-400 group-hover:text-gray-500'}`} />
+                                        <Icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-gray-400 group-hover:text-violet-500 transition-colors'}`} />
                                         {tab.label}
                                     </span>
                                 </button>
                             );
                         })}
-                    </nav>
+                    </div>
                 </div>
-            </div>
 
-            {/* Tab Content */}
-            <div className="max-w-7xl mx-auto p-6 sm:p-8">
+                {/* Tab Content */}
                 <AnimatePresence mode='wait'>
                     <motion.div
                         key={activeTab}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.2 }}
-                        className="bg-white/50 backdrop-blur-xl rounded-2xl shadow-sm border border-white/60 p-1"
+                        initial={{ opacity: 0, y: 20, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -20, scale: 0.98 }}
+                        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                        className="glass-card p-1 min-h-[500px]"
                     >
                         {renderTabContent()}
                     </motion.div>

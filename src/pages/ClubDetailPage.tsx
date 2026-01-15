@@ -1,11 +1,11 @@
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Button } from '../components/ui/Button';
-import { Calendar, Users, Mail, ChevronLeft, Pen, Award, MapPin, Image as ImageIcon } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+
+import { Calendar, Users, Mail, Pen, Award, MapPin, Image as ImageIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import { format } from 'date-fns';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { SkeletonList } from '../components/ui/Skeleton';
 
 interface ClubDetail {
@@ -46,8 +46,6 @@ export const ClubDetailPage = () => {
     const [memberCount, setMemberCount] = useState<number>(0);
     const [galleryImages, setGalleryImages] = useState<Array<{ id: string; image_url: string; caption?: string }>>([]);
     const [activeTab, setActiveTab] = useState('overview');
-
-
 
     useEffect(() => {
         if (!id) return;
@@ -141,8 +139,8 @@ export const ClubDetailPage = () => {
         }
     };
 
-    if (loading) return <div className="min-h-screen flex items-center justify-center"><SkeletonList count={1} /></div>;
-    if (!club) return <div className="text-center py-12">Club not found</div>;
+    if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><SkeletonList count={1} /></div>;
+    if (!club) return <div className="text-center py-12 bg-gray-50 text-gray-900">Club not found</div>;
 
     const isAuthorizedToEdit = (user && club && user.id === club.admin_id) || role === 'dean';
     const upcomingEvents = events.filter(e => {
@@ -151,242 +149,211 @@ export const ClubDetailPage = () => {
     });
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-20">
-            {/* Content Container */}
-            <div className="max-w-7xl mx-auto p-6 sm:p-8 relative z-10">
-                {/* Back Button */}
-                <div className="mb-6">
-                    <Link to="/clubs" className="inline-flex items-center text-gray-500 hover:text-brand-600 transition-colors">
-                        <ChevronLeft className="h-5 w-5 mr-1" />
-                        Back to Clubs
-                    </Link>
+        <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                {/* Left Sidebar - Profile Information */}
+                <div className="lg:col-span-4 xl:col-span-3 space-y-6">
+
+                    {/* Main Profile Card */}
+                    <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col items-center text-center">
+                        {/* Ringed Logo Container */}
+                        <div className="relative mb-4">
+                            <div className="absolute -inset-1 rounded-full bg-blue-50"></div>
+                            <div className="relative h-28 w-28 rounded-full bg-white border-4 border-white shadow-md overflow-hidden">
+                                {club.logo_url ? (
+                                    <img src={club.logo_url} alt={club.name} className="h-full w-full object-cover" />
+                                ) : (
+                                    <div className="h-full w-full bg-gray-100 flex items-center justify-center text-gray-400">
+                                        <Users className="h-10 w-10" />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <h1 className="text-xl font-bold text-gray-900 mb-2 leading-tight">
+                            {club.name}
+                        </h1>
+
+                        <span className="inline-block px-4 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-bold uppercase tracking-wider mb-6">
+                            {club.category}
+                        </span>
+
+                        {/* Stats Grid */}
+                        <div className="w-full grid grid-cols-2 gap-4 mb-8">
+                            <div>
+                                <div className="text-xl font-bold text-gray-900">{memberCount}</div>
+                                <div className="text-xs text-gray-500 uppercase font-semibold">Members</div>
+                            </div>
+                            <div>
+                                <div className="text-xl font-bold text-gray-900">{club.founded_year}</div>
+                                <div className="text-xs text-gray-500 uppercase font-semibold">Founded</div>
+                            </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="w-full space-y-3 mb-6">
+                            {isAuthorizedToEdit ? (
+                                <>
+                                    <button
+                                        onClick={() => navigate(`/clubs/${club.id}/edit`)}
+                                        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white border border-blue-500 text-blue-600 rounded-lg text-sm font-bold uppercase tracking-wide hover:bg-blue-50 transition-colors"
+                                    >
+                                        <Pen className="h-3.5 w-3.5" /> Edit Profile
+                                    </button>
+                                    <button
+                                        onClick={() => navigate(`/clubs/${club.id}/gallery`)}
+                                        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white border border-blue-500 text-blue-600 rounded-lg text-sm font-bold uppercase tracking-wide hover:bg-blue-50 transition-colors"
+                                    >
+                                        <ImageIcon className="h-3.5 w-3.5" /> Manage Gallery
+                                    </button>
+                                </>
+                            ) : role === 'student' ? (
+                                hasApplied ? (
+                                    <button disabled className="w-full px-4 py-2 bg-gray-100 text-gray-500 border border-gray-200 rounded-lg text-sm font-bold uppercase">
+                                        {applicationStatus === 'approved' ? 'Active Member' : 'Pending'}
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={handleApply}
+                                        disabled={applying}
+                                        className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold uppercase hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all"
+                                    >
+                                        {applying ? 'Applying...' : 'Join Club'}
+                                    </button>
+                                )
+                            ) : null}
+                        </div>
+
+                        <div className="text-xs text-gray-400 flex items-center gap-1.5 break-all justify-center w-full">
+                            <Mail className="h-3.5 w-3.5 flex-shrink-0" />
+                            {club.admin?.email}
+                        </div>
+                    </div>
+
+                    {/* Location Card */}
+                    <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                        <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">
+                            <MapPin className="h-4 w-4 text-red-500" /> Location
+                        </h3>
+                        <p className="text-gray-600 text-sm pl-6 leading-relaxed">
+                            Main Campus, Student Center<br />
+                            Room 304, Tech Wing
+                        </p>
+                    </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
-                    {/* Left Sidebar (Profile Info) */}
-                    <div className="lg:col-span-4 xl:col-span-3 space-y-6">
-                        <motion.div
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            className="bg-white/80 backdrop-blur-xl border border-white/40 shadow-xl rounded-3xl p-6 text-center relative overflow-hidden"
+                {/* Right Content Area */}
+                <div className="lg:col-span-8 xl:col-span-9">
+                    {/* Tabs */}
+                    <div className="bg-white rounded-2xl p-2 shadow-sm border border-gray-100 mb-6 flex items-center justify-around sm:justify-start gap-4 sm:gap-8">
+                        <button
+                            onClick={() => setActiveTab('overview')}
+                            className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'overview' ? 'bg-brand-600 text-white shadow-md' : 'text-gray-500 hover:text-gray-900'}`}
                         >
-                            {/* Decorative Top Gradient */}
-                            <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-brand-400 to-brand-600" />
+                            Overview
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('events')}
+                            className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'events' ? 'bg-brand-600 text-white shadow-md' : 'text-gray-500 hover:text-gray-900'}`}
+                        >
+                            Events
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('gallery')}
+                            className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'gallery' ? 'bg-brand-600 text-white shadow-md' : 'text-gray-500 hover:text-gray-900'}`}
+                        >
+                            Gallery
+                        </button>
+                    </div>
 
-                            <div className="relative mx-auto h-32 w-32 rounded-full p-1.5 bg-white shadow-lg mb-4 ring-4 ring-brand-50 mt-4">
-                                <div className="h-full w-full rounded-full overflow-hidden bg-gray-50 flex items-center justify-center border border-gray-100">
-                                    {club.logo_url ? (
-                                        <img src={club.logo_url} alt={club.name} className="h-full w-full object-contain p-2" />
-                                    ) : (
-                                        <div className="h-full w-full bg-brand-100 flex items-center justify-center text-brand-600">
-                                            <Users className="h-12 w-12" />
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
+                    <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 min-h-[400px] relative overflow-hidden">
+                        {/* Faded Watermark */}
+                        <div className="absolute top-10 right-10 opacity-[0.03] pointer-events-none">
+                            <Award className="h-64 w-64 text-gray-900" />
+                        </div>
 
-                            {/* Moved Title & Category Here */}
-                            <div className="mb-6">
-                                <h1 className="text-2xl font-bold text-gray-900 leading-tight mb-2">
-                                    {club.name}
-                                </h1>
-                                <span className="inline-block px-3 py-1 rounded-full bg-brand-50 text-brand-700 text-xs font-bold uppercase tracking-wider border border-brand-100">
-                                    {club.category}
-                                </span>
-                            </div>
-
+                        {activeTab === 'overview' && (
                             <motion.div
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
-                                transition={{ delay: 0.2 }}
-                                className="space-y-4"
+                                className="relative z-10"
                             >
-                                <div className="grid grid-cols-2 gap-3 text-center py-4 border-y border-gray-100/50">
-                                    <div>
-                                        <div className="text-2xl font-bold text-gray-900">{memberCount}</div>
-                                        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Members</div>
-                                    </div>
-                                    <div>
-                                        <div className="text-2xl font-bold text-gray-900">{club.founded_year || new Date().getFullYear()}</div>
-                                        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Founded</div>
-                                    </div>
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className="h-8 w-1.5 bg-brand-500 rounded-full"></div>
+                                    <h2 className="text-2xl font-bold text-gray-900">About Us</h2>
                                 </div>
 
-                                {isAuthorizedToEdit ? (
-                                    <div className="grid gap-2">
-                                        <Button
-                                            variant="outline"
-                                            onClick={() => navigate(`/clubs/${club.id}/edit`)}
-                                            className="w-full justify-center border-brand-200 text-brand-700 hover:bg-brand-50"
-                                        >
-                                            <Pen className="h-4 w-4 mr-2" /> Edit Profile
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            onClick={() => navigate(`/clubs/${club.id}/gallery`)}
-                                            className="w-full justify-center border-blue-200 text-blue-700 hover:bg-blue-50"
-                                        >
-                                            <ImageIcon className="h-4 w-4 mr-2" /> Manage Gallery
-                                        </Button>
-                                    </div>
-                                ) : role === 'student' ? (
-                                    hasApplied ? (
-                                        <Button disabled className="w-full justify-center bg-gray-100 text-gray-500 border-gray-200">
-                                            {applicationStatus === 'approved' ? '✓ Member' : 'Application Pending'}
-                                        </Button>
-                                    ) : (
-                                        <Button onClick={handleApply} loading={applying} className="w-full justify-center shadow-lg shadow-brand-500/30">
-                                            Apply to Join
-                                        </Button>
-                                    )
-                                ) : null}
+                                <p className="text-gray-600 text-lg leading-relaxed max-w-3xl">
+                                    {club.description}
+                                </p>
+                            </motion.div>
+                        )}
 
-                                <div className="pt-2 text-xs text-center text-gray-400 flex items-center justify-center gap-1">
-                                    <Mail className="h-3 w-3" />
-                                    {club.admin?.email}
+                        {activeTab === 'events' && (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="relative z-10"
+                            >
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className="h-8 w-1.5 bg-brand-500 rounded-full"></div>
+                                    <h2 className="text-2xl font-bold text-gray-900">Upcoming Events</h2>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {upcomingEvents.map(event => (
+                                        <div key={event.id} className="border border-gray-100 rounded-xl p-4 hover:shadow-md transition-shadow bg-white">
+                                            <div className="aspect-video bg-gray-100 rounded-lg mb-4 overflow-hidden">
+                                                {event.poster_url ? (
+                                                    <img src={event.poster_url} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-gray-300">
+                                                        <Calendar className="h-8 w-8" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <h4 className="font-bold text-gray-900">{event.title}</h4>
+                                            <p className="text-sm text-gray-500">{format(new Date(event.start_time), 'PPp')}</p>
+                                        </div>
+                                    ))}
+                                    {upcomingEvents.length === 0 && (
+                                        <div className="col-span-full py-12 text-center text-gray-500">
+                                            No upcoming events.
+                                        </div>
+                                    )}
                                 </div>
                             </motion.div>
-                        </motion.div>
+                        )}
 
-                        {/* Contact/Socials Placeholder */}
-                        <div className="bg-white/60 backdrop-blur-md border border-white/40 rounded-2xl p-4 shadow-sm">
-                            <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center">
-                                <MapPin className="h-4 w-4 mr-2 text-red-500" /> Location
-                            </h4>
-                            <p className="text-sm text-gray-600 pl-6">Main Campus, Student Center</p>
-                        </div>
-                    </div>
+                        {activeTab === 'gallery' && (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="relative z-10"
+                            >
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className="h-8 w-1.5 bg-brand-500 rounded-full"></div>
+                                    <h2 className="text-2xl font-bold text-gray-900">Gallery</h2>
+                                </div>
 
-                    {/* Main Content Area */}
-                    <div className="lg:col-span-8 xl:col-span-9 space-y-6">
-                        {/* Navigation Tabs */}
-                        <div className="bg-white/80 backdrop-blur-md rounded-2xl p-1.5 flex flex-wrap gap-2 shadow-sm border border-white/50 sticky top-24 z-30">
-                            {['overview', 'events', 'gallery'].map((tab) => (
-                                <button
-                                    key={tab}
-                                    onClick={() => setActiveTab(tab)}
-                                    className={`
-                                            flex-1 min-w-[100px] px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300
-                                            ${activeTab === tab
-                                            ? 'bg-brand-600 text-white shadow-lg shadow-brand-500/30 ring-1 ring-black/5'
-                                            : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}
-                                        `}
-                                >
-                                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Tab Content */}
-                        <AnimatePresence mode="wait">
-                            {activeTab === 'overview' && (
-                                <motion.div
-                                    key="overview"
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -10 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="space-y-6"
-                                >
-                                    <div className="bg-white/70 backdrop-blur-xl border border-white/50 rounded-3xl p-8 shadow-sm relative overflow-hidden">
-                                        <div className="absolute top-0 right-0 p-8 opacity-5">
-                                            <Award className="h-32 w-32" />
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                    {galleryImages.map(img => (
+                                        <div key={img.id} className="aspect-square bg-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all">
+                                            <img src={img.image_url} alt={img.caption || 'Gallery'} className="w-full h-full object-cover" />
                                         </div>
-                                        <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-                                            <span className="w-2 h-8 bg-brand-500 rounded-full mr-3"></span>
-                                            About Us
-                                        </h2>
-                                        <div className="prose prose-lg text-gray-600 max-w-none leading-relaxed">
-                                            <p>{club.description}</p>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            )}
-
-                            {activeTab === 'events' && (
-                                <motion.div
-                                    key="events"
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -10 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="space-y-6"
-                                >
-                                    <div className="flex justify-between items-center">
-                                        <h3 className="text-xl font-bold text-gray-900">Upcoming Events</h3>
-                                        {upcomingEvents.length > 0 && <span className="text-sm text-gray-500">{upcomingEvents.length} scheduled</span>}
-                                    </div>
-                                    {upcomingEvents.length > 0 ? (
-                                        <div className="grid gap-6">
-                                            {upcomingEvents.map(event => (
-                                                <div key={event.id} className="group relative overflow-hidden rounded-3xl bg-white shadow-sm border border-gray-100 transition-all hover:shadow-xl hover:-translate-y-1">
-                                                    <div className="aspect-video w-full overflow-hidden bg-gray-100">
-                                                        {event.poster_url ? (
-                                                            <img src={event.poster_url} alt={event.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                                                        ) : (
-                                                            <div className="h-full w-full bg-gradient-to-br from-brand-50 to-brand-100 flex items-center justify-center">
-                                                                <Calendar className="h-12 w-12 text-brand-200" />
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <div className="p-6">
-                                                        <div className="flex gap-2 mb-3">
-                                                            <span className="bg-brand-50 text-brand-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-                                                                {format(new Date(event.start_time), 'MMM d')}
-                                                            </span>
-                                                            <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-                                                                {format(new Date(event.start_time), 'h:mm a')}
-                                                            </span>
-                                                        </div>
-                                                        <h4 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-brand-600 transition-colors">{event.title}</h4>
-                                                        <div className="flex items-center text-gray-500 text-sm">
-                                                            <MapPin className="h-4 w-4 mr-2" />
-                                                            {event.location}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="bg-gray-50 rounded-3xl p-12 text-center border-2 border-dashed border-gray-200">
-                                            <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                                            <p className="text-gray-500">No upcoming events scheduled.</p>
+                                    ))}
+                                    {galleryImages.length === 0 && (
+                                        <div className="col-span-full py-12 text-center text-gray-500">
+                                            No images uploaded yet.
                                         </div>
                                     )}
-                                </motion.div>
-                            )}
-
-                            {activeTab === 'gallery' && (
-                                <motion.div
-                                    key="gallery"
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -10 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="grid grid-cols-2 md:grid-cols-3 gap-4"
-                                >
-                                    {galleryImages.length > 0 ? (
-                                        galleryImages.map((image) => (
-                                            <div key={image.id} className="aspect-square rounded-2xl overflow-hidden relative group break-inside-avoid shadow-sm">
-                                                <img src={image.image_url} alt={image.caption} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                                                    <p className="text-white text-sm font-medium transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-                                                        {image.caption}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className="col-span-full py-12 text-center text-gray-500 bg-white rounded-3xl border border-gray-100">
-                                            <ImageIcon className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                                            <p>No photos uploaded yet.</p>
-                                        </div>
-                                    )}
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
+                                </div>
+                            </motion.div>
+                        )}
                     </div>
                 </div>
+
             </div>
         </div>
     );

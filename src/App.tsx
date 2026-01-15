@@ -1,6 +1,9 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { supabase } from './lib/supabase';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { ScrollToTop } from './components/ScrollToTop';
 import { Toaster } from 'sonner';
 import { LandingPage } from './pages/LandingPage';
@@ -49,19 +52,42 @@ import { EventMediaPage } from './pages/EventMediaPage';
 function App() {
   const checkUser = useAuthStore((state) => state.checkUser);
 
+  // Synchronous check for recovery hash to prevent LandingPage race condition
+  const hash = window.location.hash;
+  if (hash && hash.includes('type=recovery') && !window.location.pathname.includes('/reset-password')) {
+    // Redirect to reset password page - preserving the hash
+    window.location.href = '/reset-password' + hash;
+    return null;
+  }
+
   useEffect(() => {
     checkUser();
+
+    // Listen for password recovery event
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        if (!window.location.pathname.includes('/reset-password')) {
+          window.location.href = '/reset-password';
+        }
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, [checkUser]);
 
   return (
     <Router>
       <Toaster position="top-right" richColors />
       <ScrollToTop />
-      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
+      <div className="min-h-screen bg-transparent text-gray-900 font-sans">
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/f/:id" element={<FormViewerPage />} /> {/* Public Form Link */}
 
           {/* Protected Routes */}

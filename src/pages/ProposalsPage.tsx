@@ -85,9 +85,9 @@ export const ProposalsPage = () => {
                     >
                         <Link
                             to="/events/new"
-                            className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-sm font-medium rounded-xl shadow-lg text-white bg-brand-600 hover:bg-brand-700 transition-all hover:scale-105"
+                            className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-sm font-bold rounded-xl shadow-[0_4px_0_0_#0369a1] text-white bg-brand-600 hover:bg-brand-700 transition-all hover:-translate-y-1 active:shadow-none active:translate-y-1"
                         >
-                            <Plus className="h-5 w-5 mr-2" /> New Proposal
+                            <Plus className="h-5 w-5 mr-2" /> Create New Proposal
                         </Link>
                     </motion.div>
                 }

@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
-import { Users, Calendar, Building2, TrendingUp, ArrowRight, Activity, Award } from 'lucide-react';
+import { Users, Calendar, Building2, TrendingUp, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { PageHeader } from '../components/ui/PageHeader';
 
 interface DashboardStats {
     totalClubs: number;
@@ -64,28 +63,18 @@ export const DashboardPage = () => {
     };
 
     const item = {
-        hidden: { opacity: 0, y: 20 },
+        hidden: { opacity: 0, y: 10 },
         show: { opacity: 1, y: 0 }
     };
 
     if (loading) {
         return (
-            <div className="max-w-7xl mx-auto space-y-8 animate-pulse">
-                {/* Header Skeleton */}
-                <div className="mb-8">
-                    <div className="h-10 w-96 bg-gray-200 rounded-lg mb-2"></div>
-                    <div className="h-6 w-64 bg-gray-200 rounded-lg"></div>
-                </div>
-
-                {/* Bento Grid Skeleton */}
+            <div className="max-w-7xl mx-auto space-y-8 animate-pulse p-6">
+                <div className="h-10 w-1/3 bg-gray-200 rounded mb-4"></div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {/* Large Card Skeleton */}
-                    <div className="col-span-1 md:col-span-2 h-48 bg-gray-100 rounded-2xl border border-gray-200"></div>
-                    {/* Standard Card Skeletons */}
-                    <div className="h-48 bg-gray-100 rounded-2xl border border-gray-200"></div>
-                    <div className="h-48 bg-gray-100 rounded-2xl border border-gray-200"></div>
-                    {/* Wide Card Skeleton */}
-                    <div className="col-span-1 md:col-span-2 lg:col-span-4 h-64 bg-gray-100 rounded-2xl border border-gray-200"></div>
+                    <div className="col-span-1 md:col-span-2 h-48 bg-gray-200 rounded-2xl"></div>
+                    <div className="h-48 bg-gray-200 rounded-2xl"></div>
+                    <div className="h-48 bg-gray-200 rounded-2xl"></div>
                 </div>
             </div>
         );
@@ -93,110 +82,127 @@ export const DashboardPage = () => {
 
     return (
         <div className="max-w-7xl mx-auto space-y-8 p-6 sm:p-8">
-            <PageHeader
-                title={`Welcome back, ${user?.email?.split('@')[0]}`}
-                description={
-                    role === 'super_admin' ? 'System Overview & Control Center' :
-                        role === 'dean' ? 'University Event & Club Oversight' :
-                            role === 'admin' ? 'Club Management Dashboard' :
-                                'Explore Campus Life'
-                }
-            />
+            {/* Header */}
+            <div>
+                <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+                    Welcome back, <span className="text-purple-600">{user?.email?.split('@')[0]}</span> <span className="text-yellow-400">✨</span>
+                </h1>
+                <p className="text-gray-500 text-lg">System Overview & Control Center</p>
+            </div>
 
-            {/* Bento Grid Stats */}
+            {/* Stats Grid */}
             <motion.div
                 variants={container}
                 initial="hidden"
                 animate="show"
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
             >
-                {/* Large Card - Total Events */}
+                {/* Total Events - Large Card */}
                 <motion.div
                     variants={item}
                     onClick={() => navigate('/events')}
-                    className="col-span-1 md:col-span-2 glass-card p-6 flex flex-col justify-between h-48 cursor-pointer group relative overflow-hidden"
+                    className="col-span-1 md:col-span-2 bg-white rounded-3xl p-8 shadow-sm border-2 border-gray-100 hover:border-purple-100 transition-all cursor-pointer group relative overflow-hidden"
                 >
-                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                        <Calendar className="h-32 w-32 text-purple-600" />
+                    <div className="flex justify-between items-start mb-8 relative z-10">
+                        <div>
+                            <div className="flex items-center gap-2 text-purple-600 mb-2 font-bold uppercase tracking-wide text-xs">
+                                <TrendingUp className="h-4 w-4" /> Total Events
+                            </div>
+                            <h2 className="text-6xl font-black text-gray-900 tracking-tight">{stats.totalEvents}</h2>
+                        </div>
+                        <div className="bg-purple-100 p-4 rounded-2xl text-purple-600">
+                            <Calendar className="h-8 w-8" />
+                        </div>
                     </div>
-                    <div>
-                        <p className="text-purple-600 font-medium mb-1 flex items-center gap-2">
-                            <Activity className="h-4 w-4" /> Total Events
-                        </p>
-                        <h2 className="text-5xl font-bold text-gray-900">{stats.totalEvents}</h2>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-500 group-hover:text-purple-600 transition-colors">
-                        View all events <ArrowRight className="h-4 w-4" />
+
+                    <div className="flex items-center gap-2 text-sm font-semibold text-gray-600 group-hover:text-purple-700 transition-colors relative z-10">
+                        View Schedule <ArrowRight className="h-4 w-4" />
                     </div>
                 </motion.div>
 
-                {/* Standard Card - Clubs */}
+                {/* Registered Clubs */}
                 <motion.div
                     variants={item}
                     onClick={() => navigate('/clubs')}
-                    className="glass-card p-6 flex flex-col justify-between h-48 cursor-pointer group hover:bg-white/80"
+                    className="bg-white rounded-3xl p-6 shadow-sm border-2 border-gray-100 hover:border-blue-100 transition-all cursor-pointer group"
                 >
-                    <div className="flex justify-between items-start">
-                        <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
+                    <div className="flex justify-between items-start mb-6">
+                        <div className="p-3 bg-blue-50 rounded-xl text-blue-600">
                             <Building2 className="h-6 w-6" />
                         </div>
-                        <span className="text-xs font-semibold bg-green-100 text-green-700 px-2 py-1 rounded-full">Active</span>
+                        <span className="px-2.5 py-1 bg-green-100 text-green-700 text-xs font-extrabold rounded-lg uppercase tracking-wide">Active</span>
                     </div>
-                    <div>
-                        <p className="text-gray-500 text-sm mb-1">Registered Clubs</p>
-                        <h3 className="text-3xl font-bold text-gray-900">{stats.totalClubs}</h3>
+
+                    <div className="mb-4">
+                        <span className="text-gray-500 text-xs font-bold uppercase tracking-wider">Registered Clubs</span>
+                        <h3 className="text-4xl font-black text-gray-900 mt-2">{stats.totalClubs}</h3>
+                    </div>
+
+                    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-blue-600 w-3/4 rounded-full"></div>
                     </div>
                 </motion.div>
 
-                {/* Standard Card - Members */}
+                {/* Total Users */}
                 <motion.div
                     variants={item}
-                    className="glass-card p-6 flex flex-col justify-between h-48 group hover:bg-white/80"
+                    className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all"
                 >
-                    <div className="flex justify-between items-start">
-                        <div className="p-2 bg-green-50 rounded-lg text-green-600">
+                    <div className="flex justify-between items-start mb-6">
+                        <div className="p-3 bg-green-50 rounded-xl text-green-600">
                             <Users className="h-6 w-6" />
                         </div>
                     </div>
+
                     <div>
-                        <p className="text-gray-500 text-sm mb-1">Total Members</p>
-                        <h3 className="text-3xl font-bold text-gray-900">{stats.totalMembers}</h3>
+                        <span className="text-gray-500 text-xs font-bold uppercase tracking-wide">Total Users</span>
+                        <h3 className="text-3xl font-bold text-gray-900 mt-1">{stats.totalMembers}</h3>
+                    </div>
+
+                    <div className="mt-4 flex items-center text-xs text-green-600 bg-green-50 w-fit px-2 py-1 rounded-full">
+                        <TrendingUp className="h-3 w-3 mr-1" /> +12% this week
                     </div>
                 </motion.div>
 
-                {/* Wide Card - Quick Actions */}
-                <motion.div
-                    variants={item}
-                    className="col-span-1 md:col-span-2 lg:col-span-4 glass-card p-8 mt-4"
-                >
+                {/* Quick Actions */}
+                <div className="col-span-1 md:col-span-2 lg:col-span-4 mt-4">
                     <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                        <TrendingUp className="h-5 w-5 text-brand-600" /> Quick Actions
+                        <span className="text-yellow-500">⚡</span> Quick Actions
                     </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                        <button onClick={() => navigate('/clubs')} className="p-4 rounded-xl border border-gray-100 hover:border-brand-200 hover:bg-brand-50 transition-all text-left group">
-                            <span className="block p-2 w-fit bg-brand-100 text-brand-600 rounded-lg mb-3 group-hover:scale-110 transition-transform">
-                                <Building2 className="h-5 w-5" />
-                            </span>
-                            <span className="font-semibold text-gray-900">Browse Clubs</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                        <button onClick={() => navigate('/clubs')} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all text-left flex items-start gap-4 group">
+                            <div className="p-3 bg-blue-50 text-blue-600 rounded-xl group-hover:scale-110 transition-transform">
+                                <Building2 className="h-6 w-6" />
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-gray-900">Browse Clubs</h4>
+                                <span className="text-sm text-gray-500">Explore the registry</span>
+                            </div>
                         </button>
 
-                        <button onClick={() => navigate('/events')} className="p-4 rounded-xl border border-gray-100 hover:border-purple-200 hover:bg-purple-50 transition-all text-left group">
-                            <span className="block p-2 w-fit bg-purple-100 text-purple-600 rounded-lg mb-3 group-hover:scale-110 transition-transform">
-                                <Calendar className="h-5 w-5" />
-                            </span>
-                            <span className="font-semibold text-gray-900">Upcoming Events</span>
+                        <button onClick={() => navigate('/events')} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all text-left flex items-start gap-4 group">
+                            <div className="p-3 bg-purple-50 text-purple-600 rounded-xl group-hover:scale-110 transition-transform">
+                                <Calendar className="h-6 w-6" />
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-gray-900">Upcoming Events</h4>
+                                <span className="text-sm text-gray-500">Check the schedule</span>
+                            </div>
                         </button>
 
                         {(role === 'admin' || role === 'dean' || role === 'super_admin') && (
-                            <button onClick={() => navigate('/analytics')} className="p-4 rounded-xl border border-gray-100 hover:border-green-200 hover:bg-green-50 transition-all text-left group">
-                                <span className="block p-2 w-fit bg-green-100 text-green-600 rounded-lg mb-3 group-hover:scale-110 transition-transform">
-                                    <Award className="h-5 w-5" />
-                                </span>
-                                <span className="font-semibold text-gray-900">Analytics</span>
+                            <button onClick={() => navigate('/analytics')} className="bg-white p-6 rounded-2xl border-2 border-gray-100 hover:border-green-200 transition-all text-left flex items-start gap-4 group hover:-translate-y-1">
+                                <div className="p-3 bg-green-50 text-green-600 rounded-xl group-hover:bg-green-100 transition-colors">
+                                    <TrendingUp className="h-6 w-6" />
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-gray-900 group-hover:text-green-700 transition-colors">Analytics</h4>
+                                    <span className="text-sm text-gray-500 font-medium">View performance</span>
+                                </div>
                             </button>
                         )}
                     </div>
-                </motion.div>
+                </div>
             </motion.div>
         </div>
     );

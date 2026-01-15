@@ -1,43 +1,81 @@
-import { type ButtonHTMLAttributes, forwardRef } from 'react';
+import { forwardRef } from 'react';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 import { Loader2 } from 'lucide-react';
+import { motion, type HTMLMotionProps } from 'framer-motion';
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-    variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
-    size?: 'sm' | 'md' | 'lg';
-    loading?: boolean;
-    children: React.ReactNode;
+function cn(...inputs: ClassValue[]) {
+    return twMerge(clsx(inputs));
 }
 
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-    ({ variant = 'primary', size = 'md', loading = false, disabled, children, className = '', ...props }, ref) => {
-        const baseStyles = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95';
+export interface ButtonProps extends Omit<HTMLMotionProps<"button">, "children"> {
+    variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'neon' | 'cyber';
+    size?: 'sm' | 'md' | 'lg' | 'icon';
+    isLoading?: boolean;
+    loading?: boolean;
+    leftIcon?: React.ReactNode;
+    rightIcon?: React.ReactNode;
+    children?: React.ReactNode;
+}
 
-        const variants = {
-            primary: 'bg-brand-600 text-white hover:bg-brand-700 focus:ring-brand-500 shadow-sm hover:shadow-md',
-            secondary: 'bg-gray-600 text-white hover:bg-gray-700 focus:ring-gray-500 shadow-sm hover:shadow-md',
-            outline: 'border-2 border-brand-600 text-brand-600 hover:bg-brand-50 focus:ring-brand-500',
-            ghost: 'text-gray-700 hover:bg-gray-100 focus:ring-gray-500',
-            danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 shadow-sm hover:shadow-md',
-        };
+const Button = forwardRef<HTMLButtonElement, ButtonProps>(({
+    className,
+    variant = 'primary',
+    size = 'md',
+    isLoading,
+    loading,
+    leftIcon,
+    rightIcon,
+    children,
+    ...props
+}, ref) => {
+    const isButtonLoading = isLoading || loading;
 
-        const sizes = {
-            sm: 'px-3 py-1.5 text-sm',
-            md: 'px-4 py-2 text-base',
-            lg: 'px-6 py-3 text-lg',
-        };
+    const variants = {
+        primary: 'bg-brand-600 text-white hover:bg-brand-700 shadow-md hover:shadow-lg border border-transparent',
+        secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200 border border-transparent',
+        outline: 'bg-transparent text-gray-700 border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50',
+        ghost: 'bg-transparent text-gray-600 hover:bg-gray-100 hover:text-gray-900',
+        danger: 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100',
+        neon: '', // Deprecated
+        cyber: '', // Deprecated
+    };
 
-        return (
-            <button
-                ref={ref}
-                disabled={disabled || loading}
-                className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
-                {...props}
-            >
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {children}
-            </button>
-        );
-    }
-);
+    const sizes = {
+        sm: 'h-8 px-3 text-xs',
+        md: 'h-10 px-5 text-sm',
+        lg: 'h-12 px-8 text-base',
+        icon: 'h-10 w-10 p-2',
+    };
+
+    return (
+        <motion.button
+            ref={ref}
+            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            className={cn(
+                'relative inline-flex items-center justify-center font-bold rounded-lg transition-all duration-200',
+                'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed',
+                variants[variant],
+                sizes[size],
+                className
+            )}
+            disabled={isButtonLoading || props.disabled}
+            {...props}
+        >
+            {isButtonLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+                <>
+                    {leftIcon && <span className="mr-2">{leftIcon}</span>}
+                    {children}
+                    {rightIcon && <span className="ml-2">{rightIcon}</span>}
+                </>
+            )}
+        </motion.button>
+    );
+});
 
 Button.displayName = 'Button';
+
+export { Button };
