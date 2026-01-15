@@ -79,7 +79,7 @@ export const LandingPage = () => {
                             Start Free Trial <ArrowRight className="h-6 w-6" />
                         </button>
                         <a
-                            href="/app-release.apk"
+                            href="#mobile-app"
                             className="px-10 py-5 bg-white text-slate-700 border-2 border-slate-200 text-lg font-bold rounded-2xl hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center gap-2"
                         >
                             <svg className="h-6 w-6 text-green-600" viewBox="0 0 24 24" fill="currentColor">
@@ -136,7 +136,7 @@ export const LandingPage = () => {
             </div>
 
             {/* Mobile App Section */}
-            <div className="py-24 bg-white border-t-2 border-slate-100 overflow-hidden relative">
+            <div id="mobile-app" className="py-24 bg-white border-t-2 border-slate-100 overflow-hidden relative">
                 <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                     <div className="relative z-10">
                         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-50 border-2 border-brand-100 text-brand-700 text-sm font-extrabold uppercase tracking-wide mb-6">
