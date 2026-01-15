@@ -78,11 +78,15 @@ export const LandingPage = () => {
                         >
                             Start Free Trial <ArrowRight className="h-6 w-6" />
                         </button>
-                        <button
-                            className="px-10 py-5 bg-white text-slate-700 border-2 border-slate-200 text-lg font-bold rounded-2xl hover:bg-slate-50 hover:border-slate-300 transition-all"
+                        <a
+                            href="/app-release.apk"
+                            className="px-10 py-5 bg-white text-slate-700 border-2 border-slate-200 text-lg font-bold rounded-2xl hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center gap-2"
                         >
-                            View Demo
-                        </button>
+                            <svg className="h-6 w-6 text-green-600" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M17.523 15.3414C17.523 15.3414 17.5605 15.3414 17.5605 15.3414C17.5605 15.3414 17.5605 15.3414 17.523 15.3414ZM6.47698 15.3414C6.43841 15.3414 6.43841 15.3414 6.47698 15.3414ZM12.0005 24C12.0005 24 12.0005 24 12.0005 24C12.0005 24 12.0005 24 12.0005 24ZM3.53503 12.2731L6.77253 14.1378L2.06203 16.8528L2.03953 16.8143L2.02953 16.8293L2.00203 9.61528L3.53503 12.2731ZM17.2275 14.1378L20.465 12.2731L21.998 9.61528L21.9705 16.8373L21.9605 16.8223L21.938 16.8598L17.2275 14.1378ZM12.0005 17.1423L7.75053 14.6938L12.0005 22.0526L16.2505 14.6938L12.0005 17.1423ZM4.06203 8.70528L10.7415 12.5533L12.0005 14.7333L13.2595 12.5533L19.939 8.70528L12.0005 0L4.06203 8.70528Z" />
+                            </svg>
+                            Get App
+                        </a>
                     </div>
                 </motion.div>
             </div>
@@ -127,6 +131,51 @@ export const LandingPage = () => {
                                 <p className="text-slate-600 text-lg leading-relaxed font-medium">{feature.description}</p>
                             </div>
                         ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Mobile App Section */}
+            <div className="py-24 bg-white border-t-2 border-slate-100 overflow-hidden relative">
+                <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                    <div className="relative z-10">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-50 border-2 border-brand-100 text-brand-700 text-sm font-extrabold uppercase tracking-wide mb-6">
+                            <span className="flex h-3 w-3 rounded-full bg-brand-600 shadow-sm animate-pulse"></span>
+                            Now on Android
+                        </div>
+                        <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-6 tracking-tighter">
+                            Club management <br />
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-purple-600">in your pocket.</span>
+                        </h2>
+                        <p className="text-xl text-slate-500 font-medium mb-10 leading-relaxed">
+                            Stay connected with your club wherever you go. Get real-time notifications, approve requests, and manage events directly from your phone.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-4">
+                            <a
+                                href="/app-release.apk"
+                                download="ClubSphere.apk"
+                                className="px-8 py-4 bg-slate-900 text-white text-lg font-bold rounded-xl hover:bg-slate-800 transition-all shadow-xl flex items-center justify-center gap-3"
+                            >
+                                <svg className="w-8 h-8 text-brand-400" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path fillRule="evenodd" d="M3 6a3 3 0 013-3h12a3 3 0 013 3v12a3 3 0 01-3 3H6a3 3 0 01-3-3V6zm14.25 6.75a.75.75 0 01-.75.75h-.9a.75.75 0 01-.75-.75v-.9a.75.75 0 01.75-.75h.9a.75.75 0 01.75.75v.9zm-8.25-.75a.75.75 0 00-.75.75v.9c0 .414.336.75.75.75h.9a.75.75 0 00.75-.75v-.9a.75.75 0 00-.75-.75h-.9zM6 16.5a.75.75 0 01.75-.75h.9a.75.75 0 01.75.75v.9a.75.75 0 01-.75.75h-.9a.75.75 0 01-.75-.75v-.9z" clipRule="evenodd" />
+                                </svg>
+                                <div className="text-left leading-none">
+                                    <div className="text-xs text-slate-400 font-medium uppercase tracking-wider mb-1">Download for</div>
+                                    <span className="text-xl">Android</span>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                    <div className="relative">
+                        <div className="absolute inset-0 bg-brand-600/10 blur-[100px] rounded-full"></div>
+                        <div className="relative z-10 aspect-video bg-slate-900 rounded-3xl shadow-2xl border-4 border-slate-900 flex items-center justify-center overflow-hidden transform md:rotate-3 md:hover:rotate-0 transition-all duration-500">
+                            {/* Mockup Content */}
+                            <div className="text-center p-10">
+                                <Users className="h-20 w-20 text-brand-500 mx-auto mb-4" />
+                                <h3 className="text-2xl font-bold text-white mb-2">ClubSphere Mobile</h3>
+                                <p className="text-slate-400">Experience the power of V4.0</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
