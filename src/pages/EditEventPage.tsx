@@ -218,10 +218,10 @@ export const EditEventPage = () => {
                             />
                         </div>
 
-                        <div className="pt-4 border-t border-gray-100 flex justify-end gap-3">
-                            <Button type="button" variant="ghost" onClick={() => navigate('/proposals')}>Cancel</Button>
-                            <Button type="button" variant="outline" onClick={handleSaveDraft} loading={isSubmitting}>Save as Draft</Button>
-                            <Button type="submit" loading={isSubmitting}>
+                        <div className="pt-4 border-t border-gray-100 flex flex-col-reverse sm:flex-row justify-end gap-3 bg-white sticky bottom-0 z-10 p-2 -mx-2 sm:static sm:p-0 sm:mx-0">
+                            <Button type="button" variant="ghost" className="w-full sm:w-auto text-gray-500" onClick={() => navigate('/proposals')}>Cancel</Button>
+                            <Button type="button" variant="outline" className="w-full sm:w-auto whitespace-nowrap" onClick={handleSaveDraft} loading={isSubmitting}>Save as Draft</Button>
+                            <Button type="submit" className="w-full sm:w-auto whitespace-nowrap" loading={isSubmitting}>
                                 {currentStatus === 'draft' ? 'Submit Proposal' : 'Save Changes'}
                             </Button>
                         </div>

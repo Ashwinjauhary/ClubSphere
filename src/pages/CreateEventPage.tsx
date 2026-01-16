@@ -81,10 +81,10 @@ export const CreateEventPage = () => {
                 description="Submit a new event for approval by the Dean."
             />
 
-            <div className="bg-white rounded-3xl p-8 border-2 border-gray-100 shadow-sm mt-8 pb-10 mb-10">
+            <div className="bg-white rounded-3xl p-4 sm:p-8 border-2 border-gray-100 shadow-sm mt-8 pb-10 mb-20">
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="col-span-2">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="col-span-1 lg:col-span-2">
                             <Input
                                 label="Event Title"
                                 placeholder="eg. Tech Symposium 2026"
@@ -94,7 +94,7 @@ export const CreateEventPage = () => {
                             />
                         </div>
 
-                        <div className="col-span-2">
+                        <div className="col-span-1 lg:col-span-2">
                             <label className="mb-2 block text-sm font-bold text-gray-700">Description</label>
                             <textarea
                                 className="block w-full rounded-xl border-2 border-gray-200 p-4 min-h-[120px] focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 focus:outline-none transition-all"
