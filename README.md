@@ -21,25 +21,24 @@
 ClubSphere follows a modern **Serverless** architecture, leveraging Supabase for the backend infrastructure and React for the client-side experience.
 
 ```mermaid
-graph TD
-    User["End User (Web/Mobile)"] -->|HTTPS/REST| CDN["Vercel Edge Network"]
-    CDN --> Client["React + Vite App"]
-    
-    subgraph "Backend Services (Supabase)"
-        Client -->|Auth API| Auth["Authentication"]
-        Client -->|Data API| DB[("PostgreSQL Database")]
-        Client -->|Storage API| Storage["File Storage"]
-        DB -->|Triggers| RLS["Row Level Security"]
+flowchart TD
+    subgraph "Clients"
+        User["End User"] -->|Browser| Web["Web App (React/Vite)"]
+        User -->|Android Device| Mobile["Android App (Capacitor)"]
+        Mobile -->|WebView| Web
+        Mobile -->|Plugins| Native["Camera/Filesystem"]
     end
+
+    Web -->|HTTPS| API["Vercel Edge Network"]
     
-    subgraph "External AI"
-        Client -->|Generate Report| AI["Google Gemini API"]
+    subgraph "Backend & AI"
+        API -->|Auth| SupaAuth["Supabase Auth"]
+        API -->|Data| SupaDB[("Supabase DB")]
+        API -->|Storage| SupaStore["Supabase Storage"]
+        API -->|Analysis| Gemini["Google Gemini AI"]
     end
-    
-    subgraph "Mobile (Android)"
-        App["Android APK"] -->|WebView| Client
-        App -->|Plugins| Native["Camera/Filesystem"]
-    end
+
+    SupaDB -->|RLS Policies| Secure["Data Security"]
 ```
 
 ---
