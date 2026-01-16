@@ -187,31 +187,31 @@ export const FormBuilderPage = () => {
     return (
         <div className="min-h-screen bg-gray-50 py-4 sm:py-6 lg:py-8 px-3 sm:px-4 lg:px-8">
             <div className="max-w-4xl mx-auto">
-                <div className="flex justify-between items-center mb-6">
-                    <Button variant="ghost" onClick={() => navigate('/forms')} className="p-0 hover:bg-transparent hover:text-brand-600">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+                    <Button variant="ghost" onClick={() => navigate('/forms')} className="p-0 hover:bg-transparent hover:text-brand-600 self-start">
                         <ArrowLeft className="h-4 w-4 mr-2" />
                         Back
                     </Button>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                         {/* Tab Switcher */}
-                        <div className="bg-white p-1 rounded-lg border border-gray-200 flex">
+                        <div className="bg-white p-1 rounded-lg border border-gray-200 flex w-full sm:w-auto">
                             <button
                                 onClick={() => setActiveTab('questions')}
-                                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${activeTab === 'questions' ? 'bg-brand-50 text-brand-700' : 'text-gray-600 hover:bg-gray-50'}`}
+                                className={`flex-1 sm:flex-none justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${activeTab === 'questions' ? 'bg-brand-50 text-brand-700' : 'text-gray-600 hover:bg-gray-50'}`}
                             >
                                 <FileText className="h-4 w-4" /> Questions
                             </button>
                             <button
                                 onClick={() => setActiveTab('settings')}
-                                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${activeTab === 'settings' ? 'bg-brand-50 text-brand-700' : 'text-gray-600 hover:bg-gray-50'}`}
+                                className={`flex-1 sm:flex-none justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${activeTab === 'settings' ? 'bg-brand-50 text-brand-700' : 'text-gray-600 hover:bg-gray-50'}`}
                             >
                                 <Settings className="h-4 w-4" /> Settings
                             </button>
                         </div>
+                        <Button variant="outline" onClick={() => window.open(`/forms/public/${formId}`, '_blank')} className="w-full sm:w-auto mt-2 sm:mt-0">
+                            <Eye className="h-4 w-4 mr-2" /> Preview
+                        </Button>
                     </div>
-                    <Button variant="outline" onClick={() => window.open(`/forms/public/${formId}`, '_blank')}>
-                        <Eye className="h-4 w-4 mr-2" /> Preview
-                    </Button>
                 </div>
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">

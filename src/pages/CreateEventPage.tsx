@@ -81,7 +81,7 @@ export const CreateEventPage = () => {
                 description="Submit a new event for approval by the Dean."
             />
 
-            <div className="bg-white rounded-3xl p-8 border-2 border-gray-100 shadow-sm mt-8">
+            <div className="bg-white rounded-3xl p-8 border-2 border-gray-100 shadow-sm mt-8 pb-10 mb-10">
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="col-span-2">

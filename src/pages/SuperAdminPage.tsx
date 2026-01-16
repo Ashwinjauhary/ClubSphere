@@ -53,9 +53,9 @@ export const SuperAdminPage = () => {
                         <motion.div
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-violet-600 bg-violet-100/50 backdrop-blur-md px-4 py-1.5 rounded-full border border-violet-200 shadow-sm"
+                            className="flex items-center gap-2 text-[10px] sm:text-xs font-mono uppercase tracking-widest text-violet-600 bg-violet-100/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-violet-200 shadow-sm whitespace-nowrap"
                         >
-                            <Settings className="h-3.5 w-3.5 animate-spin-slow" /> Root Access
+                            <Settings className="h-3 w-3 sm:h-3.5 sm:w-3.5 animate-spin-slow" /> Root Access
                         </motion.div>
                     }
                 />

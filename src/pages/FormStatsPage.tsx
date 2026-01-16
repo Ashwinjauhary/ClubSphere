@@ -117,24 +117,26 @@ export const FormStatsPage = () => {
     return (
         <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
             <div className="max-w-6xl mx-auto space-y-8">
-                <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-4">
-                        <Button variant="ghost" onClick={() => navigate('/forms')}>
+                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                        <Button variant="ghost" onClick={() => navigate('/forms')} className="self-start sm:self-auto">
                             <ArrowLeft className="h-4 w-4 mr-2" />
                             Back
                         </Button>
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-900">{form.title}</h1>
-                            <p className="text-gray-500 flex items-center gap-2">
+                            <h1 className="text-2xl font-bold text-gray-900 break-words leading-tight">{form.title}</h1>
+                            <p className="text-gray-500 flex items-center gap-2 mt-1">
                                 <Users className="h-4 w-4" />
                                 {responses.length} Responses
                             </p>
                         </div>
                     </div>
                     {responses.length > 0 && (
-                        <Button onClick={exportToExcel} variant="outline">
-                            <Download className="h-4 w-4 mr-2" /> Export to Excel
-                        </Button>
+                        <div className="mt-2 md:mt-0">
+                            <Button onClick={exportToExcel} variant="outline" className="w-full sm:w-auto">
+                                <Download className="h-4 w-4 mr-2" /> Export to Excel
+                            </Button>
+                        </div>
                     )}
                 </div>
 
