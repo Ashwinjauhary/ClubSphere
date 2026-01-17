@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Button } from './Button';
-import { Upload, X, Loader2, Image as ImageIcon } from 'lucide-react';
+import { Upload, X, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ImageUploadProps {
