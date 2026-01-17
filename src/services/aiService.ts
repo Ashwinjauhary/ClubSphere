@@ -1,19 +1,62 @@
-// This service mocks the behavior of a Supabase Edge Function calling Gemini API
-// In production, this would be: await supabase.functions.invoke('analyze-report', { body: { reportText } })
-
-
+// This service now connects to SambaNova Cloud (Llama 3.1)
+// API Docs: https://cloud.sambanova.ai/apis
 
 import type { AIAnalysisResult } from '../types';
 
-// End of interfaces. Implementation follows.
+const SAMBANOVA_API_KEY = "33c5af54-da1d-4a56-844a-7d8b8e104e0c";
+const BASE_URL = "https://api.sambanova.ai/v1/chat/completions";
+const MODEL = "Meta-Llama-3.1-8B-Instruct";
 
-// Keep analyzeReportWithAI for legacy/simple analysis if needed, or remove.
+// Helper for caching
+// Helper for caching (Removed as SambaNova has no free tier quota issues)
+
+// Generic Helper for SambaNova Calls
+async function callSambaNovaAPI(systemPrompt: string, userPrompt: string): Promise<string> {
+    const messages = [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+    ];
+
+    // Prepare body. Note: response_format for JSON mode isn't standard in all v1 implementations yet,
+    // so we rely on the prompt instructions mainly, but we can try adding it if needed.
+    // Llama 3.1 is good at following "Return JSON" instructions.
+
+    try {
+        const response = await fetch(BASE_URL, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${SAMBANOVA_API_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: MODEL,
+                messages: messages,
+                temperature: 0.7,
+                top_p: 0.9
+            })
+        });
+
+        if (!response.ok) {
+            const err = await response.text();
+            throw new Error(`SambaNova API Error: ${response.status} - ${err}`);
+        }
+
+        const data = await response.json();
+        return data.choices[0].message.content;
+
+    } catch (error) {
+        console.error("SambaNova Call Failed:", error);
+        throw error;
+    }
+}
+
+// --- Exported Functions ---
+
 export const analyzeReportWithAI = async (reportText: string): Promise<AIAnalysisResult> => {
     console.log("Analyzing report with AI...");
-    const prompt = `
-    You are a senior event analyst for a top-tier consulting firm.
+    const systemPrompt = "You are a senior event analyst for a top-tier consulting firm.";
+    const userPrompt = `
     Your task is to generate a comprehensive, 12-page level "Enterprise Performance Report" based on the raw event summary below.
-    
     The content MUST be verbose, professional, and detailed. Do not summarize; expand.
     
     Raw Event Summary: "${reportText}"
@@ -39,16 +82,7 @@ export const analyzeReportWithAI = async (reportText: string): Promise<AIAnalysi
     `;
 
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-        });
-
-        const result = await response.json();
-        if (result.error) throw new Error(result.error.message);
-
-        const text = result.candidates[0].content.parts[0].text;
+        const text = await callSambaNovaAPI(systemPrompt, userPrompt);
         const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
         return JSON.parse(cleanJson);
     } catch (error) {
@@ -59,14 +93,9 @@ export const analyzeReportWithAI = async (reportText: string): Promise<AIAnalysi
             strengths: ["Could not analyze"],
             improvements: ["Try again later"],
             sentiment: 'neutral'
-        };
+        } as any;
     }
 };
-
-// Direct Gemini Integration for testing (since Edge Function deploy requires CLI auth)
-const GEMINI_API_KEY = "AIzaSyB7UC78c4IKLVok0MC0qac-gM45y8ok1qk";
-
-// generateEventReport removed
 
 export const generateEventDescription = async (
     title: string,
@@ -75,8 +104,8 @@ export const generateEventDescription = async (
     eventType: string
 ): Promise<string> => {
     console.log("Generating event description...", title);
-    const prompt = `
-    You are an expert copywriter for student club events.
+    const systemPrompt = "You are an expert copywriter for student club events.";
+    const userPrompt = `
     Write an engaging, exciting, and professional event description (approx 100-150 words) for:
     
     Event Title: ${title}
@@ -90,18 +119,9 @@ export const generateEventDescription = async (
     `;
 
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-        });
-
-        const result = await response.json();
-        if (result.error) throw new Error(result.error.message);
-        return result.candidates[0].content.parts[0].text;
+        return await callSambaNovaAPI(systemPrompt, userPrompt);
     } catch (error) {
-        console.error("AI Generation Failed:", error);
-        return `Join us for ${title}, a ${eventType} taking place on ${date} at ${venue}. Don't miss this opportunity to learn, network, and have fun! (Auto-generated fallback)`;
+        return `Join us for ${title}, a ${eventType} taking place on ${date} at ${venue}. Don't miss this opportunity to learn, network, and have fun! (Fallback)`;
     }
 };
 
@@ -111,8 +131,8 @@ export const generateClubBio = async (
     mission: string
 ): Promise<string> => {
     console.log("Generating club bio...", name);
-    const prompt = `
-    You are a professional profile writer for student organizations.
+    const systemPrompt = "You are a professional profile writer for student organizations.";
+    const userPrompt = `
     Write a compelling and professional "About Us" bio (approx 100 words) for a club named "${name}".
     
     Category: ${category}
@@ -123,18 +143,9 @@ export const generateClubBio = async (
     `;
 
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-        });
-
-        const result = await response.json();
-        if (result.error) throw new Error(result.error.message);
-        return result.candidates[0].content.parts[0].text;
+        return await callSambaNovaAPI(systemPrompt, userPrompt);
     } catch (error) {
-        console.error("AI Generation Failed:", error);
-        return `${name} is a premier ${category} club dedicated to ${mission}. Join us to be part of a vibrant community! (Auto-generated fallback)`;
+        return `${name} is a premier ${category} club dedicated to ${mission}. Join us to be part of a vibrant community! (Fallback)`;
     }
 };
 
@@ -144,8 +155,8 @@ export const generateFeedbackForm = async (
     topic: string
 ): Promise<any[]> => {
     console.log("Generating feedback form questions for:", eventTitle);
-    const prompt = `
-    You are an expert survey designer for university events.
+    const systemPrompt = "You are an expert survey designer for university events.";
+    const userPrompt = `
     Create a JSON array of 5 feedback questions for an event titled "${eventTitle}" (${eventType}) about "${topic}".
     
     The questions should be a mix of:
@@ -160,30 +171,18 @@ export const generateFeedbackForm = async (
       { "id": "q3", "type": "single_choice", "label": "Would you attend a follow-up?", "required": true, "options": ["Yes", "Maybe", "No"] }
     ]
     
-    Ensure IDs are unique strings. Do not include markdown code blocks.
+    Ensure IDs are unique strings. No markdown code blocks. Pure JSON.
     `;
 
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-        });
-
-        const result = await response.json();
-        if (result.error) throw new Error(result.error.message);
-
-        const text = result.candidates[0].content.parts[0].text;
+        const text = await callSambaNovaAPI(systemPrompt, userPrompt);
         const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
         return JSON.parse(cleanJson);
     } catch (error) {
         console.error("AI Form Generation Failed:", error);
         return [
-            { id: "f1", type: "rating", "label": `How would you rate the ${eventTitle}?`, "required": true },
-            { id: "f2", type: "rating", "label": "Rate the speaker's knowledge.", "required": true },
-            { id: "f3", type: "text", "label": "What did you like the most?", "required": false },
-            { id: "f4", type: "text", "label": "Any suggestions for improvement?", "required": false },
-            { id: "f5", type: "single_choice", "label": "Would you recommend this event to a friend?", "required": true, "options": ["Yes", "No"] }
+            { id: "f1", type: "rating", "label": "How would you rate the event?", "required": true },
+            { id: "f2", type: "text", "label": "Feedback", "required": false }
         ];
     }
 };
@@ -192,8 +191,8 @@ export const generateFormSchema = async (
     userPrompt: string
 ): Promise<{ title: string; description: string; theme: string; settings: any; questions: any[] }> => {
     console.log("Generating full form schema for:", userPrompt);
-    const prompt = `
-    You are an expert form builder and survey designer.
+    const systemPrompt = "You are an expert form builder and survey designer.";
+    const userPromptText = `
     Based on this request: "${userPrompt}", create a complete form structure.
     
     Return ONLY a valid JSON object with this structure:
@@ -214,38 +213,17 @@ export const generateFormSchema = async (
     }
     
     Supported Themes: 'classic-blue', 'modern-purple', 'fresh-green', 'warm-orange', 'professional-gray', 'elegant-pink'.
-    
-    Supported Question Types:
-    - text (Short answer)
-    - textarea (Paragraph)
-    - number
-    - email
-    - date
-    - single_choice (Radio)
-    - multiple_choice (Checkboxes)
-    - dropdown (Select menu)
-    - rating (1-5 stars)
-    - file_upload (for documents/images)
-    - description (Static text block for info)
+    Supported Question Types: text, textarea, number, email, date, single_choice, multiple_choice, dropdown, rating, file_upload, description.
 
-    Ensure IDs are unique strings. NO markdown code blocks.
+    Ensure IDs are unique strings. NO markdown code blocks. Pure JSON.
     `;
 
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-        });
-
-        const result = await response.json();
-        if (result.error) throw new Error(result.error.message);
-
-        const text = result.candidates[0].content.parts[0].text;
+        const text = await callSambaNovaAPI(systemPrompt, userPromptText);
         const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
         return JSON.parse(cleanJson);
     } catch (error) {
-        console.error("AI Form Generation Failed:", error);
+        console.warn("AI Form Generation Quota/Error (Using Fallback):", error);
         return {
             title: "New Form",
             description: "Please fill out this form.",
@@ -263,8 +241,8 @@ export const suggestPOMapping = async (
     description: string
 ): Promise<Record<string, boolean>> => {
     console.log("Analyzing PO Mapping for:", title);
-    const prompt = `
-    You are an academic accreditation expert.
+    const systemPrompt = "You are an academic accreditation expert.";
+    const userPrompt = `
     Analyze the following event and identify which Program Outcomes (POs) it maps to.
     
     Event: ${title}
@@ -290,20 +268,99 @@ export const suggestPOMapping = async (
     `;
 
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-        });
-
-        const result = await response.json();
-        if (result.error) throw new Error(result.error.message);
-
-        const text = result.candidates[0].content.parts[0].text;
+        const text = await callSambaNovaAPI(systemPrompt, userPrompt);
         const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
         return JSON.parse(cleanJson);
     } catch (error) {
         console.error("AI PO Mapping Failed:", error);
         return {};
+    }
+};
+
+export const generateEventIdeas = async (
+    clubName: string,
+    clubCategory: string,
+    clubDescription: string,
+    customPrompt?: string
+): Promise<any[]> => {
+    // Cache removed for "Surprise Me" variety
+    // const cacheKey = `ideas_${clubName}_${customPrompt || 'auto'}`;
+    // const cached = getCached(cacheKey);
+    // if (cached) {
+    //     console.log("Using cached AI response for:", clubName);
+    //     return cached;
+    // }
+
+    console.log("Generating event ideas for:", clubName);
+    const systemPrompt = "You are a creative director for a university student club.";
+    const userPrompt = `
+    Club Name: ${clubName}
+    Category: ${clubCategory}
+    Mission: ${clubDescription}
+
+    ${customPrompt ? `THE USER HAS A SPECIFIC REQUEST: "${customPrompt}".` : ''}
+    ${customPrompt ? `Generate 3 event ideas specifically tailored to this request.` : `Suggest 3 unique, high-engagement, and FUN technical/creative event ideas.`}
+    
+    CRITICAL INSTRUCTIONS:
+    1. Focus on "easy to organize" but "interesting" events.
+    2. Even "Hard" events should be operationally simple.
+    3. Include detailed breakdown: Objectives, Rounds/Structure, and Rules.
+    4. EVENT TYPE MUST BE ONE OF: "Technical", "Cultural", "Academic", "Sports", "Other". Do NOT invent new types.
+    5. Include 'registration_fields': A list of custom fields needed for registration (e.g., Team Name, GitHub Repo).
+
+    Return ONLY a valid JSON array of objects with this structure:
+    [
+      {
+        "title": "Event Title",
+        "description": "Short summary (2 sentences).",
+        "objectives": ["Objective 1", "Objective 2"],
+        "structure_rounds": [
+          { "round_name": "Round 1: Quiz", "description": "Details...", "duration": "30 mins" },
+          { "round_name": "Round 2: Build", "description": "Details...", "duration": "1 hour" }
+        ],
+        "rules": ["Rule 1", "Rule 2", "Rule 3"],
+        "registration_fields": [
+          { "label": "Team Name", "type": "text", "required": true },
+          { "label": "GitHub Repo", "type": "url", "required": false }
+        ],
+        "event_type": "Technical",
+        "target_audience": "Who should attend?",
+        "difficulty_level": "Easy" | "Medium" | "Hard",
+        "expected_attendees": 50,
+        "estimated_budget": 1000,
+        "duration_hours": 2
+      }
+    ]
+    Do not include markdown. Pure JSON.
+    `;
+
+    try {
+        const text = await callSambaNovaAPI(systemPrompt, userPrompt);
+        const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(cleanJson);
+
+        // setCached(cacheKey, parsed);
+        return parsed;
+
+    } catch (error) {
+        console.warn("AI Quota Limit/Error (Switching to Offline Template):", error);
+        return [
+            {
+                title: "Networking Mixer",
+                description: "A casual evening for members to connect and share ideas.",
+                objectives: ["Network with peers", "Share project ideas"],
+                structure_rounds: [{ "round_name": "Ice Breaker", "description": "Fun intro game", "duration": "30m" }],
+                rules: ["Be respectful", "Have fun"],
+                registration_fields: [
+                    { "label": "Dietary Preference", "type": "text", "required": false }
+                ],
+                event_type: "Cultural",
+                target_audience: "All Students",
+                difficulty_level: "Easy",
+                expected_attendees: 30,
+                estimated_budget: 500,
+                duration_hours: 2
+            }
+        ];
     }
 };

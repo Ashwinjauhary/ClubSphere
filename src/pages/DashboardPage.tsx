@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
-import { Users, Calendar, Building2, TrendingUp, ArrowRight } from 'lucide-react';
+import { Users, Calendar, Building2, TrendingUp, ArrowRight, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
@@ -191,15 +191,27 @@ export const DashboardPage = () => {
                         </button>
 
                         {(role === 'admin' || role === 'dean' || role === 'super_admin') && (
-                            <button onClick={() => navigate('/analytics')} className="bg-white p-6 rounded-2xl border-2 border-gray-100 hover:border-green-200 transition-all text-left flex items-start gap-4 group hover:-translate-y-1">
-                                <div className="p-3 bg-green-50 text-green-600 rounded-xl group-hover:bg-green-100 transition-colors">
-                                    <TrendingUp className="h-6 w-6" />
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-gray-900 group-hover:text-green-700 transition-colors">Analytics</h4>
-                                    <span className="text-sm text-gray-500 font-medium">View performance</span>
-                                </div>
-                            </button>
+                            <>
+                                <button onClick={() => navigate('/analytics')} className="bg-white p-6 rounded-2xl border-2 border-gray-100 hover:border-green-200 transition-all text-left flex items-start gap-4 group hover:-translate-y-1">
+                                    <div className="p-3 bg-green-50 text-green-600 rounded-xl group-hover:bg-green-100 transition-colors">
+                                        <TrendingUp className="h-6 w-6" />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold text-gray-900 group-hover:text-green-700 transition-colors">Analytics</h4>
+                                        <span className="text-sm text-gray-500 font-medium">View performance</span>
+                                    </div>
+                                </button>
+
+                                <button onClick={() => navigate('/club-admin/ai-events')} className="bg-gradient-to-br from-indigo-500 to-purple-600 p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all text-left flex items-start gap-4 group hover:-translate-y-1 text-white">
+                                    <div className="p-3 bg-white/20 rounded-xl text-white group-hover:bg-white/30 transition-colors backdrop-blur-sm">
+                                        <Sparkles className="h-6 w-6" />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold text-white mb-1">AI Event Manager</h4>
+                                        <span className="text-xs text-indigo-100 font-medium opacity-90">Auto-generate ideas</span>
+                                    </div>
+                                </button>
+                            </>
                         )}
                     </div>
                 </div>

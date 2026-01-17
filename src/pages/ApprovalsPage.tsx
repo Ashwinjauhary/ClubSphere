@@ -293,7 +293,80 @@ export const ApprovalsPage = () => {
                                 <h2 className="text-2xl font-bold text-gray-900">{selectedEvent.title}</h2>
                                 <button onClick={() => setSelectedEvent(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X className="h-5 w-5" /></button>
                             </div>
-                            <p className="text-gray-600 mb-8 leading-relaxed">{selectedEvent.description}</p>
+                            <div className="space-y-6 mb-8">
+                                <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                    <h3 className="font-bold text-gray-900 mb-2">Description</h3>
+                                    <p className="text-gray-600 leading-relaxed text-sm">{selectedEvent.description || "No description provided."}</p>
+                                </div>
+
+                                {/* Structured Proposal Data */}
+                                {(selectedEvent as any).proposal_data && (
+                                    <div className="grid grid-cols-1 gap-6">
+                                        {(selectedEvent as any).proposal_data.objectives?.length > 0 && (
+                                            <div>
+                                                <h4 className="font-bold text-sm uppercase text-gray-500 tracking-wider mb-2">Objectives</h4>
+                                                <ul className="list-disc pl-5 space-y-1 text-sm text-gray-700">
+                                                    {(selectedEvent as any).proposal_data.objectives.map((obj: string, i: number) => (
+                                                        <li key={i}>{obj}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+
+                                        {(selectedEvent as any).proposal_data.structure_rounds?.length > 0 && (
+                                            <div>
+                                                <h4 className="font-bold text-sm uppercase text-gray-500 tracking-wider mb-2">Structure & Rounds</h4>
+                                                <div className="space-y-3">
+                                                    {(selectedEvent as any).proposal_data.structure_rounds.map((round: any, i: number) => (
+                                                        <div key={i} className="pl-4 border-l-2 border-brand-200">
+                                                            <p className="font-bold text-gray-900 text-sm">{round.round_name}</p>
+                                                            <p className="text-gray-600 text-xs mt-1">{round.description}</p>
+                                                            <p className="text-gray-400 text-[10px] mt-1 uppercase font-semibold">{round.duration}</p>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {(selectedEvent as any).proposal_data.rules?.length > 0 && (
+                                            <div>
+                                                <h4 className="font-bold text-sm uppercase text-gray-500 tracking-wider mb-2">Rules & Regulations</h4>
+                                                <ul className="list-decimal pl-5 space-y-1 text-sm text-gray-700">
+                                                    {(selectedEvent as any).proposal_data.rules.map((rule: string, i: number) => (
+                                                        <li key={i}>{rule}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+
+                                        {(selectedEvent as any).proposal_data.registration_fields?.length > 0 && (
+                                            <div>
+                                                <h4 className="font-bold text-sm uppercase text-gray-500 tracking-wider mb-2">Custom Registration Fields</h4>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {(selectedEvent as any).proposal_data.registration_fields.map((field: any, i: number) => (
+                                                        <span key={i} className="px-2 py-1 bg-blue-50 text-blue-700 border border-blue-100 rounded text-xs font-medium">
+                                                            {field.label} {field.required ? '*' : ''}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Custom Sections */}
+                                        {(selectedEvent as any).proposal_data.custom_sections?.length > 0 && (
+                                            <>
+                                                <hr className="border-gray-100 my-2" />
+                                                {(selectedEvent as any).proposal_data.custom_sections.map((section: any, i: number) => (
+                                                    <div key={i}>
+                                                        <h4 className="font-bold text-sm uppercase text-gray-500 tracking-wider mb-2">{section.title}</h4>
+                                                        <p className="text-gray-700 text-sm whitespace-pre-wrap">{section.content}</p>
+                                                    </div>
+                                                ))}
+                                            </>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                             <div className="flex justify-end gap-3 pt-4 border-t">
                                 <Button variant="ghost" onClick={() => handleEventAction(selectedEvent.id, 'reject')} className="text-red-600 hover:bg-red-50">Reject</Button>
                                 <Button onClick={() => handleEventAction(selectedEvent.id, 'approve')}>Approve Proposal</Button>

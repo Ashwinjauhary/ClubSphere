@@ -47,6 +47,7 @@ import { EventFeedbackStatsPage } from './pages/EventFeedbackStatsPage';
 import { QRScannerFormPage } from './pages/QRScannerFormPage';
 import { EventRegistrationPage } from './pages/EventRegistrationPage';
 import { EventMediaPage } from './pages/EventMediaPage';
+import { AIEventManagerPage } from './pages/AIEventManagerPage';
 
 
 function App() {
@@ -133,6 +134,7 @@ function App() {
               <Route path="/members" element={<ClubMembersPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/super-admin" element={<SuperAdminPage />} />
+              <Route path="/club-admin/ai-events" element={<AIEventManagerPage />} />
               {/* Add other protected routes here */}
             </Route>
           </Route>

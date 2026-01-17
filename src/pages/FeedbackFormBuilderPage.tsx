@@ -74,13 +74,15 @@ export const FeedbackFormBuilderPage = () => {
     const onSubmit = async (data: FormValues) => {
         try {
             const { error } = await supabase
-                .from('feedback_forms')
+                .from('forms')
                 .insert({
                     event_id: eventId,
                     title: data.title,
                     description: data.description,
                     questions: data.questions,
-                    is_active: true
+                    type: 'feedback',
+                    is_published: true,
+                    created_by: (await supabase.auth.getUser()).data.user?.id
                 });
 
             if (error) throw error;

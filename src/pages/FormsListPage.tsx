@@ -164,9 +164,26 @@ export const FormsListPage = () => {
                             <div key={form.id} className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
                                 <div className="p-6">
                                     <div className="flex justify-between items-start mb-4">
-                                        <div className={`px-2 py-1 rounded text-xs font-medium ${form.is_published ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                                        <button
+                                            onClick={async (e) => {
+                                                e.stopPropagation();
+                                                const newStatus = !form.is_published;
+                                                // Optimistic update
+                                                setForms(forms.map(f => f.id === form.id ? { ...f, is_published: newStatus } : f));
+                                                try {
+                                                    const { error } = await supabase.from('forms').update({ is_published: newStatus }).eq('id', form.id);
+                                                    if (error) throw error;
+                                                    toast.success(newStatus ? 'Form published' : 'Form unpublished');
+                                                } catch (err) {
+                                                    toast.error('Failed to update status');
+                                                    // Revert
+                                                    setForms(forms.map(f => f.id === form.id ? { ...f, is_published: !newStatus } : f));
+                                                }
+                                            }}
+                                            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${form.is_published ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                                        >
                                             {form.is_published ? 'Published' : 'Draft'}
-                                        </div>
+                                        </button>
                                         <button onClick={() => deleteForm(form.id)} className="text-gray-400 hover:text-red-500">
                                             <Trash2 className="h-4 w-4" />
                                         </button>
