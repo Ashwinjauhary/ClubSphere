@@ -81,7 +81,7 @@ export const ApprovalsPage = () => {
                 .select(`
                     *,
                     events ( title, clubs ( name ) ),
-                    submitted_by_user:profiles!fk_reports_submitted_by ( full_name )
+                    submitted_by_user:profiles!reports_submitted_by_fkey ( full_name )
                 `) // Explicit FK for Approvals
                 .eq('approval_status', 'pending_approval');
 

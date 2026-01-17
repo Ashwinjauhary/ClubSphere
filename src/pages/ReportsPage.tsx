@@ -43,7 +43,7 @@ export const ReportsPage = () => {
                     generated_content,
                     created_at,
                     events ( title, start_time ),
-                    profiles!fk_reports_submitted_by ( full_name, email ),
+                    profiles!reports_submitted_by_fkey ( full_name, email ),
                     report_images ( image_url, caption )
                 `)
                 .order('created_at', { ascending: false });
