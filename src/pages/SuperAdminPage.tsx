@@ -62,7 +62,7 @@ export const SuperAdminPage = () => {
 
                 {/* Glass Tabs Navigation */}
                 <div className="sticky top-4 z-40 mt-8 mb-8">
-                    <div className="bg-white/70 backdrop-blur-xl border border-white/40 shadow-glass rounded-2xl p-1.5 mx-auto max-w-fit flex space-x-1 overflow-x-auto no-scrollbar">
+                    <div className="bg-white/70 backdrop-blur-xl border border-white/40 shadow-glass rounded-2xl p-1.5 mx-auto w-full sm:w-auto sm:max-w-fit flex space-x-1 overflow-x-auto no-scrollbar">
                         {tabs.map((tab) => {
                             const Icon = tab.icon;
                             const isActive = activeTab === tab.id;
@@ -71,7 +71,7 @@ export const SuperAdminPage = () => {
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
                                     className={`
-                                        relative group flex items-center gap-2 py-2.5 px-5 rounded-xl text-sm font-medium transition-all duration-300 outline-none select-none
+                                        relative group flex items-center gap-2 py-2.5 px-3 sm:px-5 rounded-xl text-sm font-medium transition-all duration-300 outline-none select-none whitespace-nowrap flex-shrink-0
                                         ${isActive ? 'text-white shadow-lg' : 'text-gray-500 hover:text-gray-800 hover:bg-white/50'}
                                     `}
                                 >
