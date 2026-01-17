@@ -79,7 +79,7 @@ function App() {
 
   return (
     <Router>
-      <Toaster position="top-right" richColors />
+      <Toaster position="top-right" richColors toastOptions={{ className: 'mt-14 sm:mt-0' }} />
       <ScrollToTop />
       <div className="min-h-screen bg-transparent text-gray-900 font-sans">
         <Routes>
