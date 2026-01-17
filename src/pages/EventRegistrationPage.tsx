@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -88,11 +89,11 @@ export const EventRegistrationPage = () => {
 
             if (error) throw error;
 
-            alert('Registration Successful!');
+            toast.success('Registration Successful!');
             navigate(`/events/${eventId}`);
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            alert('Registration failed.');
+            toast.error(error.message || 'Registration failed.');
         }
     };
 

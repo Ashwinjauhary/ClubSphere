@@ -49,13 +49,16 @@ export const CreateEventPage = () => {
             }
 
             const { error } = await supabase.from('events').insert({
-                ...data,
+                title: data.title,
+                description: data.description,
+                start_time: data.start_time,
+                end_time: data.end_time,
+                location: data.location,
                 budget: Number(data.budget),
-                max_attendees: Number(data.max_attendees),
+                expected_attendees: Number(data.max_attendees),
                 club_id: club.id,
                 status: 'pending', // Default status
-                poster_url: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&q=80', // Placeholder
-                attendees_count: 0
+                poster_url: data.image_url || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&q=80', // Placeholder or user image
             });
 
             if (error) throw error;
