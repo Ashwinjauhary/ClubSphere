@@ -10,6 +10,7 @@ import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'sonner';
 import { useState } from 'react';
+import { ImageUpload } from '../components/ui/ImageUpload';
 
 const eventSchema = z.object({
     title: z.string().min(3, 'Title is required'),
@@ -32,6 +33,8 @@ export const CreateEventPage = () => {
     const {
         register,
         handleSubmit,
+        setValue,
+        watch,
         formState: { errors },
     } = useForm<EventForm>({
         resolver: zodResolver(eventSchema),
@@ -147,6 +150,15 @@ export const CreateEventPage = () => {
                             icon={<Users className="h-5 w-5" />} // Note: Users icon needs import check
                             {...register('max_attendees')}
                         />
+
+                        <div className="col-span-1 lg:col-span-2">
+                            <ImageUpload
+                                label="Event Poster"
+                                value={watch('image_url') || ''}
+                                onChange={(url) => setValue('image_url', url)}
+                                bucket="events"
+                            />
+                        </div>
                     </div>
 
                     <div className="pt-6 flex justify-end gap-3 border-t border-gray-100">

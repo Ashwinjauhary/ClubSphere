@@ -6,6 +6,7 @@ import { User, Mail, Hash, Briefcase, Camera, Shield } from 'lucide-react';
 import { SkeletonList } from '../components/ui/Skeleton';
 import { PageHeader } from '../components/ui/PageHeader';
 import { toast } from 'sonner';
+import { ImageUpload } from '../components/ui/ImageUpload';
 
 interface Profile {
     id: string;
@@ -298,19 +299,12 @@ export const ProfilePage = () => {
                                 ) : null}
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Avatar URL</label>
-                                    <div className="relative">
-                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <Camera className="h-5 w-5 text-gray-400" />
-                                        </div>
-                                        <input
-                                            type="text"
-                                            value={avatarUrl}
-                                            onChange={(e) => setAvatarUrl(e.target.value)}
-                                            className="block w-full pl-10 rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border p-2"
-                                            placeholder="https://example.com/me.jpg"
-                                        />
-                                    </div>
+                                    <ImageUpload
+                                        label="Profile Picture (Avatar)"
+                                        value={avatarUrl}
+                                        onChange={(url) => setAvatarUrl(url)}
+                                        bucket="avatars"
+                                    />
                                 </div>
 
                                 <div className="pt-2">

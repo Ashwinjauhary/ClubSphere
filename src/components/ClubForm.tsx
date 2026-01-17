@@ -3,7 +3,8 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { AlignLeft, Image as ImageIcon, UserCheck } from 'lucide-react';
+import { AlignLeft, UserCheck } from 'lucide-react';
+import { ImageUpload } from '../components/ui/ImageUpload';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
@@ -178,12 +179,10 @@ export const ClubForm = ({ initialData, isEditing = false }: ClubFormProps) => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <Input
-                    label="Logo URL"
-                    placeholder="https://..."
-                    icon={<ImageIcon className="h-5 w-5 text-gray-400" />}
-                    error={errors.logo_url?.message}
-                    {...register('logo_url')}
+                <ImageUpload
+                    label="Club Logo"
+                    value={watch('logo_url') || ''}
+                    onChange={(url) => setValue('logo_url', url, { shouldValidate: true })}
                 />
             </div>
 

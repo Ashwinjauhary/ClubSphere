@@ -9,6 +9,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { generateEventDescription } from '../services/aiService';
 import { Sparkles } from 'lucide-react';
+import { ImageUpload } from '../components/ui/ImageUpload';
 
 
 import { SkeletonList } from '../components/ui/Skeleton';
@@ -147,11 +148,11 @@ export const EditEventPage = () => {
                         />
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Event Poster URL</label>
-                            <input
-                                type="text"
-                                className={`block w-full rounded-md border border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 border p-2 ${errors.poster_url ? 'border-red-500' : ''}`}
-                                {...register('poster_url')}
+                            <ImageUpload
+                                label="Event Poster"
+                                value={watch('poster_url') || ''}
+                                onChange={(url) => setValue('poster_url', url)}
+                                bucket="events"
                             />
                         </div>
 
