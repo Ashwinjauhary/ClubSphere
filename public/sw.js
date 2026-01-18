@@ -34,6 +34,11 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
+    // Verify scheme is http or https
+    if (!event.request.url.startsWith('http')) {
+        return;
+    }
+
     event.respondWith(
         caches.match(event.request)
             .then((response) => {
@@ -46,12 +51,24 @@ self.addEventListener('fetch', (event) => {
                     if (!response || response.status !== 200 || response.type !== 'basic') {
                         return response;
                     }
-                    // Clone the response
-                    const responseToCache = response.clone();
-                    caches.open(CACHE_NAME)
-                        .then((cache) => {
-                            cache.put(event.request, responseToCache);
-                        });
+
+                    // Double check scheme before caching to be paranoid
+                    if (!event.request.url.startsWith('http')) return response;
+
+                    try {
+                        // Clone the response
+                        const responseToCache = response.clone();
+                        caches.open(CACHE_NAME)
+                            .then((cache) => {
+                                // schemes like chrome-extension:// will throw here if they slip through
+                                if (event.request.url.startsWith('http')) {
+                                    cache.put(event.request, responseToCache);
+                                }
+                            });
+                    } catch (err) {
+                        // Ignore caching errors for unsupported schemes
+                    }
+
                     return response;
                 });
             })

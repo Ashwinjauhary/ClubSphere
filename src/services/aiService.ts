@@ -3,52 +3,108 @@
 
 import type { AIAnalysisResult } from '../types';
 
-const SAMBANOVA_API_KEY = "33c5af54-da1d-4a56-844a-7d8b8e104e0c";
+const SAMBANOVA_API_KEY = import.meta.env.VITE_SAMBANOVA_API_KEY || "";
+if (!SAMBANOVA_API_KEY) {
+    console.warn("Missing VITE_SAMBANOVA_API_KEY in .env file");
+}
 const BASE_URL = "https://api.sambanova.ai/v1/chat/completions";
 const MODEL = "Meta-Llama-3.1-8B-Instruct";
 
 // Helper for caching
 // Helper for caching (Removed as SambaNova has no free tier quota issues)
 
+// Circuit Breaker Key
+const CIRCUIT_BREAKER_KEY = "ai_api_circuit_breaker_until";
+
 // Generic Helper for SambaNova Calls
-async function callSambaNovaAPI(systemPrompt: string, userPrompt: string): Promise<string> {
+async function callSambaNovaAPI(systemPrompt: string, userPrompt: string, temperature: number = 0.7): Promise<string> {
+    // 1. Check Circuit Breaker (Persistent)
+    const circuitOpenUntil = parseInt(localStorage.getItem(CIRCUIT_BREAKER_KEY) || "0", 10);
+    if (Date.now() < circuitOpenUntil) {
+        // Circuit is open, skip API call entirely
+        throw new Error("Local Circuit Breaker: Skipping API call (Rate Limit Cooldown)");
+    }
+
     const messages = [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
     ];
 
-    // Prepare body. Note: response_format for JSON mode isn't standard in all v1 implementations yet,
-    // so we rely on the prompt instructions mainly, but we can try adding it if needed.
-    // Llama 3.1 is good at following "Return JSON" instructions.
+    const maxRetries = 3;
+
+
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            const response = await fetch(BASE_URL, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${SAMBANOVA_API_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: MODEL,
+                    messages: messages,
+                    temperature: temperature,
+                    top_p: 0.9
+                })
+            });
+
+            if (response.status === 429) {
+                // 2. Trip Circuit Breaker for 60 seconds (Persist to LocalStorage)
+                const cooldownUntil = Date.now() + 60000;
+                localStorage.setItem(CIRCUIT_BREAKER_KEY, cooldownUntil.toString());
+
+                // Instant Failover
+                throw new Error("Rate limit exceeded (Circuit Breaker Tripped for 60s)");
+            }
+
+            if (!response.ok) {
+                const err = await response.text();
+                throw new Error(`SambaNova API Error: ${response.status} - ${err}`);
+            }
+
+            const data = await response.json();
+            return data.choices[0].message.content;
+
+        } catch (error) {
+            // Only retry for network/server errors, not rate limits
+            if (i === maxRetries - 1 || (error as Error).message.includes("Rate limit") || (error as Error).message.includes("Circuit")) {
+                // Don't log error for expected rate limits to keep console clean
+                if ((error as Error).message.includes("Rate limit") || (error as Error).message.includes("Circuit")) {
+                    throw error;
+                }
+                console.warn("SambaNova Call Failed:", error);
+                throw error;
+            }
+        }
+    }
+    throw new Error("SambaNova API unreachable");
+}
+
+// Helper to clean and parse AI JSON response
+const cleanAndParseJSON = (text: string): any => {
+    let clean = text.replace(/```json/g, '').replace(/```/g, '').trim();
+
+    // Find the first outer bracket/brace
+    const firstChar = clean.match(/^[\s\n]*([{\[])/);
+    if (firstChar) {
+        const start = clean.indexOf(firstChar[1]);
+        const endChar = firstChar[1] === '{' ? '}' : ']';
+        const end = clean.lastIndexOf(endChar);
+        if (end > start) {
+            clean = clean.substring(start, end + 1);
+        }
+    }
 
     try {
-        const response = await fetch(BASE_URL, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${SAMBANOVA_API_KEY}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                model: MODEL,
-                messages: messages,
-                temperature: 0.7,
-                top_p: 0.9
-            })
-        });
-
-        if (!response.ok) {
-            const err = await response.text();
-            throw new Error(`SambaNova API Error: ${response.status} - ${err}`);
-        }
-
-        const data = await response.json();
-        return data.choices[0].message.content;
-
-    } catch (error) {
-        console.error("SambaNova Call Failed:", error);
-        throw error;
+        return JSON.parse(clean);
+    } catch (e) {
+        // Fallback: Try to escape unescaped control characters within strings
+        console.warn("JSON Parse failed, attempting to sanitize control characters...", e);
+        const sanitized = clean.replace(/[\u0000-\u0019]+/g, "");
+        return JSON.parse(sanitized);
     }
-}
+};
 
 // --- Exported Functions ---
 
@@ -83,8 +139,7 @@ export const analyzeReportWithAI = async (reportText: string): Promise<AIAnalysi
 
     try {
         const text = await callSambaNovaAPI(systemPrompt, userPrompt);
-        const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(cleanJson);
+        return cleanAndParseJSON(text);
     } catch (error) {
         console.error("AI Analysis Failed:", error);
         return {
@@ -176,8 +231,7 @@ export const generateFeedbackForm = async (
 
     try {
         const text = await callSambaNovaAPI(systemPrompt, userPrompt);
-        const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(cleanJson);
+        return cleanAndParseJSON(text);
     } catch (error) {
         console.error("AI Form Generation Failed:", error);
         return [
@@ -220,10 +274,9 @@ export const generateFormSchema = async (
 
     try {
         const text = await callSambaNovaAPI(systemPrompt, userPromptText);
-        const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(cleanJson);
+        return cleanAndParseJSON(text);
     } catch (error) {
-        console.warn("AI Form Generation Quota/Error (Using Fallback):", error);
+
         return {
             title: "New Form",
             description: "Please fill out this form.",
@@ -269,13 +322,176 @@ export const suggestPOMapping = async (
 
     try {
         const text = await callSambaNovaAPI(systemPrompt, userPrompt);
-        const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(cleanJson);
+        return cleanAndParseJSON(text);
     } catch (error) {
         console.error("AI PO Mapping Failed:", error);
         return {};
     }
 };
+
+
+
+// Helper to manage event history
+const getEventHistory = (clubName: string): string[] => {
+    try {
+        const history = localStorage.getItem(`ai_event_history_${clubName}`);
+        return history ? JSON.parse(history) : [];
+    } catch (e) { return []; }
+};
+
+const saveEventHistory = (clubName: string, newEvents: any[]) => {
+    try {
+        const history = getEventHistory(clubName);
+        const newTitles = newEvents.map((e: any) => e.title);
+        // Keep last 50 events to avoid unlimited growth
+        const updated = [...new Set([...history, ...newTitles])].slice(-50);
+        localStorage.setItem(`ai_event_history_${clubName}`, JSON.stringify(updated));
+    } catch (e) { console.warn("Failed to save event history", e); }
+};
+
+// Offline Fallback Event Templates (Expanded for Uniqueness)
+const FALLBACK_EVENTS = [
+    {
+        title: "Tech Trivia Night",
+        description: "A competitive evening of geeky trivia spanning coding, sci-fi, and internet culture.",
+        objectives: ["Test knowledge", "Team bonding"],
+        structure_rounds: [{ "round_name": "Rapid Fire", "description": "20 questions in 10 mins", "duration": "30m" }],
+        rules: ["No phones", "Teams of 4"],
+        registration_fields: [{ "label": "Team Name", "type": "text", "required": true }],
+        event_type: "Technical",
+        target_audience: "Tech Enthusiasts",
+        difficulty_level: "Easy",
+        expected_attendees: 40,
+        estimated_budget: 200,
+        duration_hours: 2
+    },
+    {
+        title: "Alumni Fireside Chat",
+        description: "Invite successful alumni to share their journey and industry insights.",
+        objectives: ["Career guidance", "Networking"],
+        structure_rounds: [{ "round_name": "Q&A", "description": "Open floor questions", "duration": "45m" }],
+        rules: ["Respectful questions only"],
+        registration_fields: [{ "label": "Question for Speaker", "type": "text", "required": false }],
+        event_type: "Academic",
+        target_audience: "All Students",
+        difficulty_level: "Easy",
+        expected_attendees: 60,
+        estimated_budget: 100,
+        duration_hours: 1.5
+    },
+    {
+        title: "Speed Networking",
+        description: "Fast-paced networking session where members rotate every 5 minutes.",
+        objectives: ["Meet everyone", "Break ice"],
+        structure_rounds: [{ "round_name": "Rotations", "description": "5 min chats", "duration": "1h" }],
+        rules: ["Move when bell rings"],
+        registration_fields: [{ "label": "LinkedIn Profile", "type": "url", "required": false }],
+        event_type: "Cultural",
+        target_audience: "New Members",
+        difficulty_level: "Easy",
+        expected_attendees: 50,
+        estimated_budget: 50,
+        duration_hours: 1
+    },
+    {
+        title: "Designathon Sprint",
+        description: "A 3-hour intense design challenge to solve a specific UI/UX problem.",
+        objectives: ["Skill building", "Portfolio piece"],
+        structure_rounds: [{ "round_name": "Design Phase", "description": "Create high-fidelity mockups", "duration": "2.5h" }],
+        rules: ["Use Figma", "Submit PDF"],
+        registration_fields: [{ "label": "Portfolio Link", "type": "url", "required": false }],
+        event_type: "Technical",
+        target_audience: "Designers",
+        difficulty_level: "Medium",
+        expected_attendees: 30,
+        estimated_budget: 300,
+        duration_hours: 3
+    },
+    {
+        title: "Code & Coffee",
+        description: "A relaxed morning session for students to work on personal projects together.",
+        objectives: ["Community building", "Peer support"],
+        structure_rounds: [{ "round_name": "Open Coding", "description": "Coworking time", "duration": "2h" }],
+        rules: ["Bring your own mug"],
+        registration_fields: [{ "label": "Project Topic", "type": "text", "required": false }],
+        event_type: "Academic",
+        target_audience: "Developers",
+        difficulty_level: "Easy",
+        expected_attendees: 20,
+        estimated_budget: 50,
+        duration_hours: 2
+    },
+    {
+        title: "Startup Pitch Night",
+        description: "Students pitch their startup ideas to a panel of mock investors.",
+        objectives: ["Public speaking", "Entrepreneurship"],
+        structure_rounds: [{ "round_name": "The Pitch", "description": "3 min pitch + 2 min Q&A", "duration": "1h" }],
+        rules: ["No slides allowed"],
+        registration_fields: [{ "label": "Startup Name", "type": "text", "required": true }],
+        event_type: "Other",
+        target_audience: "Entrepreneurs",
+        difficulty_level: "Hard",
+        expected_attendees: 40,
+        estimated_budget: 100,
+        duration_hours: 2
+    },
+    {
+        title: "Open Mic Night",
+        description: "A cultural evening showcasing music, poetry, and stand-up comedy.",
+        objectives: ["Talent showcase", "Stress relief"],
+        structure_rounds: [{ "round_name": "Performances", "description": "5 min slots", "duration": "1.5h" }],
+        rules: ["Keep it clean"],
+        registration_fields: [{ "label": "Performance Type", "type": "text", "required": true }],
+        event_type: "Cultural",
+        target_audience: "All Students",
+        difficulty_level: "Medium",
+        expected_attendees: 100,
+        estimated_budget: 300,
+        duration_hours: 2.5
+    },
+    {
+        title: "Inter-Club Sports Day",
+        description: "A friendly sports tournament competing against other university clubs.",
+        objectives: ["Physical health", "Inter-club relations"],
+        structure_rounds: [{ "round_name": "Matches", "description": "Football & Basketball", "duration": "3h" }],
+        rules: ["Fair play"],
+        registration_fields: [{ "label": "Sport Preference", "type": "single_choice", "required": true, "options": ["Football", "Basketball"] }],
+        event_type: "Sports",
+        target_audience: "Athletes",
+        difficulty_level: "Medium",
+        expected_attendees: 80,
+        estimated_budget: 500,
+        duration_hours: 4
+    },
+    {
+        title: "Guest Lecture: Industry Trends",
+        description: "An expert speaker discusses the latest trends in the industry.",
+        objectives: ["Education", "Industry insight"],
+        structure_rounds: [{ "round_name": "Keynote", "description": "Presentation", "duration": "1h" }],
+        rules: ["Phones on silent"],
+        registration_fields: [],
+        event_type: "Academic",
+        target_audience: "Major Students",
+        difficulty_level: "Easy",
+        expected_attendees: 100,
+        estimated_budget: 200,
+        duration_hours: 1.5
+    },
+    {
+        title: "Hack The Campus",
+        description: "A hackathon focused on solving problems specifically for the university campus.",
+        objectives: ["Innovation", "Campus improvement"],
+        structure_rounds: [{ "round_name": "Hacking", "description": "Build solutions", "duration": "6h" }],
+        rules: ["Must use open data"],
+        registration_fields: [{ "label": "Team Members", "type": "textarea", "required": true }],
+        event_type: "Technical",
+        target_audience: "All Students",
+        difficulty_level: "Hard",
+        expected_attendees: 50,
+        estimated_budget: 800,
+        duration_hours: 8
+    }
+];
 
 export const generateEventIdeas = async (
     clubName: string,
@@ -283,84 +499,81 @@ export const generateEventIdeas = async (
     clubDescription: string,
     customPrompt?: string
 ): Promise<any[]> => {
-    // Cache removed for "Surprise Me" variety
-    // const cacheKey = `ideas_${clubName}_${customPrompt || 'auto'}`;
-    // const cached = getCached(cacheKey);
-    // if (cached) {
-    //     console.log("Using cached AI response for:", clubName);
-    //     return cached;
-    // }
+    // Random seed to ensure uniqueness every single time
+    const randomSeed = Math.floor(Math.random() * 1000000);
+    const existingEvents = getEventHistory(clubName);
 
-    console.log("Generating event ideas for:", clubName);
-    const systemPrompt = "You are a creative director for a university student club.";
+    console.log("Generating event ideas for:", clubName, "Seed:", randomSeed, "Ignoring:", existingEvents.length);
+
+    const systemPrompt = "You are a creative director. Brainstorm UNIQUE event ideas. OUTPUT VALID JSON ONLY. Escape all special characters.";
     const userPrompt = `
+    Request ID: ${randomSeed}
+    
     Club Name: ${clubName}
     Category: ${clubCategory}
     Mission: ${clubDescription}
+    
+    PREVIOUSLY GENERATED IDEAS (DO NOT REPEAT THESE):
+    ${existingEvents.join(", ")}
 
     ${customPrompt ? `THE USER HAS A SPECIFIC REQUEST: "${customPrompt}".` : ''}
-    ${customPrompt ? `Generate 3 event ideas specifically tailored to this request.` : `Suggest 3 unique, high-engagement, and FUN technical/creative event ideas.`}
+    ${customPrompt ? `Generate 3 tailored event ideas.` : `Suggest 3 unique, high-engagement event ideas. AVOID GENERIC IDEAS.`}
     
     CRITICAL INSTRUCTIONS:
-    1. Focus on "easy to organize" but "interesting" events.
-    2. Even "Hard" events should be operationally simple.
-    3. Include detailed breakdown: Objectives, Rounds/Structure, and Rules.
-    4. EVENT TYPE MUST BE ONE OF: "Technical", "Cultural", "Academic", "Sports", "Other". Do NOT invent new types.
-    5. Include 'registration_fields': A list of custom fields needed for registration (e.g., Team Name, GitHub Repo).
+    1. Output strictly valid JSON.
+    2. No unescaped newlines inside strings. Use \\n.
+    3. Detailed breakdown: Objectives, Rounds, Rules.
+    4. EVENT TYPE MUST BE ONE OF: "Technical", "Cultural", "Academic", "Sports", "Other".
+    5. Include 'registration_fields'.
 
-    Return ONLY a valid JSON array of objects with this structure:
+    Return ONLY JSON (No markdown):
     [
       {
-        "title": "Event Title",
-        "description": "Short summary (2 sentences).",
-        "objectives": ["Objective 1", "Objective 2"],
-        "structure_rounds": [
-          { "round_name": "Round 1: Quiz", "description": "Details...", "duration": "30 mins" },
-          { "round_name": "Round 2: Build", "description": "Details...", "duration": "1 hour" }
-        ],
-        "rules": ["Rule 1", "Rule 2", "Rule 3"],
-        "registration_fields": [
-          { "label": "Team Name", "type": "text", "required": true },
-          { "label": "GitHub Repo", "type": "url", "required": false }
-        ],
+        "title": "Unique Title",
+        "description": "Summary.",
+        "objectives": ["Obj 1"],
+        "structure_rounds": [{ "round_name": "R1", "description": "Desc", "duration": "30m" }],
+        "rules": ["Rule 1"],
+        "registration_fields": [{ "label": "Name", "type": "text", "required": true }],
         "event_type": "Technical",
-        "target_audience": "Who should attend?",
-        "difficulty_level": "Easy" | "Medium" | "Hard",
+        "target_audience": "All",
+        "difficulty_level": "Medium",
         "expected_attendees": 50,
         "estimated_budget": 1000,
         "duration_hours": 2
       }
     ]
-    Do not include markdown. Pure JSON.
     `;
 
     try {
-        const text = await callSambaNovaAPI(systemPrompt, userPrompt);
-        const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        const parsed = JSON.parse(cleanJson);
+        // Lowered temp slightly to 0.9 for better JSON stability while keeping creativity
+        const text = await callSambaNovaAPI(systemPrompt, userPrompt, 0.9);
+        const events = cleanAndParseJSON(text);
 
-        // setCached(cacheKey, parsed);
-        return parsed;
+        // Save new ideas to history
+        if (Array.isArray(events)) {
+            saveEventHistory(clubName, events);
+        }
+
+        return events;
 
     } catch (error) {
-        console.warn("AI Quota Limit/Error (Switching to Offline Template):", error);
-        return [
-            {
-                title: "Networking Mixer",
-                description: "A casual evening for members to connect and share ideas.",
-                objectives: ["Network with peers", "Share project ideas"],
-                structure_rounds: [{ "round_name": "Ice Breaker", "description": "Fun intro game", "duration": "30m" }],
-                rules: ["Be respectful", "Have fun"],
-                registration_fields: [
-                    { "label": "Dietary Preference", "type": "text", "required": false }
-                ],
-                event_type: "Cultural",
-                target_audience: "All Students",
-                difficulty_level: "Easy",
-                expected_attendees: 30,
-                estimated_budget: 500,
-                duration_hours: 2
-            }
-        ];
+
+
+        // Filter out previously seen fallback events to maintain "Uniqueness" illusion
+        const availableFallbacks = FALLBACK_EVENTS.filter(
+            e => !existingEvents.includes(e.title)
+        );
+
+        // If we ran out of fallbacks, just use all of them (better than nothing)
+        const pool = availableFallbacks.length >= 3 ? availableFallbacks : FALLBACK_EVENTS;
+
+        const shuffled = [...pool].sort(() => 0.5 - Math.random());
+        const selected = shuffled.slice(0, 3);
+
+        // Save these to history too so we don't repeat them immediately
+        saveEventHistory(clubName, selected);
+
+        return selected;
     }
 };

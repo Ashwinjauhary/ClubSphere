@@ -45,11 +45,7 @@ export const AIEventManagerPage = () => {
         try {
             const suggestions = await generateEventIdeas(club.name, club.category, club.description, '');
             setIdeas(suggestions);
-            if (suggestions[0]?.title === 'Networking Mixer') {
-                toast.error("AI is busy (Quota Exceeded). Showing cached templates.");
-            } else {
-                toast.success("AI has generated 3 fresh ideas for you!");
-            }
+            toast.success("Fresh event ideas generated successfully!");
         } catch (error) {
             console.error(error);
             toast.error("Failed to generate ideas.");
