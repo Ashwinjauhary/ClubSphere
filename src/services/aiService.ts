@@ -1,84 +1,81 @@
-// This service now connects to SambaNova Cloud (Llama 3.1)
-// API Docs: https://cloud.sambanova.ai/apis
-
+// This service now connects to Google Gemini API (Flash 1.5)
 import type { AIAnalysisResult } from '../types';
 
-const SAMBANOVA_API_KEY = import.meta.env.VITE_SAMBANOVA_API_KEY || "";
-if (!SAMBANOVA_API_KEY) {
-    console.warn("Missing VITE_SAMBANOVA_API_KEY in .env file");
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
+if (!GEMINI_API_KEY) {
+    console.warn("Missing VITE_GEMINI_API_KEY in .env file");
 }
-const BASE_URL = "https://api.sambanova.ai/v1/chat/completions";
-const MODEL = "Meta-Llama-3.1-8B-Instruct";
 
-// Helper for caching
-// Helper for caching (Removed as SambaNova has no free tier quota issues)
+const BASE_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
 // Circuit Breaker Key
 const CIRCUIT_BREAKER_KEY = "ai_api_circuit_breaker_until";
 
-// Generic Helper for SambaNova Calls
-async function callSambaNovaAPI(systemPrompt: string, userPrompt: string, temperature: number = 0.7): Promise<string> {
+// Generic Helper for Gemini Calls (Replaces SambaNova)
+async function callGeminiAPI(systemPrompt: string, userPrompt: string, temperature: number = 0.7): Promise<string> {
     // 1. Check Circuit Breaker (Persistent)
     const circuitOpenUntil = parseInt(localStorage.getItem(CIRCUIT_BREAKER_KEY) || "0", 10);
     if (Date.now() < circuitOpenUntil) {
-        // Circuit is open, skip API call entirely
         throw new Error("Local Circuit Breaker: Skipping API call (Rate Limit Cooldown)");
     }
 
-    const messages = [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-    ];
+    // Combine System & User Prompt for Gemini (Simple Text Mode)
+    const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
+
+    const requestBody = {
+        contents: [{
+            parts: [{ text: fullPrompt }]
+        }],
+        generationConfig: {
+            temperature: temperature,
+            topP: 0.9,
+            maxOutputTokens: 2048,
+        }
+    };
 
     const maxRetries = 3;
-
 
     for (let i = 0; i < maxRetries; i++) {
         try {
             const response = await fetch(BASE_URL, {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${SAMBANOVA_API_KEY}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model: MODEL,
-                    messages: messages,
-                    temperature: temperature,
-                    top_p: 0.9
-                })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody)
             });
 
             if (response.status === 429) {
                 // 2. Trip Circuit Breaker for 60 seconds (Persist to LocalStorage)
                 const cooldownUntil = Date.now() + 60000;
                 localStorage.setItem(CIRCUIT_BREAKER_KEY, cooldownUntil.toString());
-
-                // Instant Failover
                 throw new Error("Rate limit exceeded (Circuit Breaker Tripped for 60s)");
             }
 
             if (!response.ok) {
                 const err = await response.text();
-                throw new Error(`SambaNova API Error: ${response.status} - ${err}`);
+                throw new Error(`Gemini API Error: ${response.status} - ${err}`);
             }
 
             const data = await response.json();
-            return data.choices[0].message.content;
+
+            // Extract text from Gemini response structure
+            if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+                return data.candidates[0].content.parts[0].text;
+            } else {
+                throw new Error("Invalid Gemini Response Structure");
+            }
 
         } catch (error) {
             // Only retry for network/server errors, not rate limits
             if (i === maxRetries - 1 || (error as Error).message.includes("Rate limit") || (error as Error).message.includes("Circuit")) {
-                // Don't log error for expected rate limits to keep console clean
                 if ((error as Error).message.includes("Rate limit") || (error as Error).message.includes("Circuit")) {
                     throw error;
                 }
-                console.warn("SambaNova Call Failed:", error);
+                console.warn("Gemini Call Failed:", error);
                 throw error;
             }
         }
     }
-    throw new Error("SambaNova API unreachable");
+    throw new Error("Gemini API unreachable");
 }
 
 // Helper to clean and parse AI JSON response
@@ -100,7 +97,7 @@ const cleanAndParseJSON = (text: string): any => {
         return JSON.parse(clean);
     } catch (e) {
         // Fallback: Try to escape unescaped control characters within strings
-        console.warn("JSON Parse failed, attempting to sanitize control characters...", e);
+        // console.warn("JSON Parse failed, attempting to sanitize...", e);
         const sanitized = clean.replace(/[\u0000-\u0019]+/g, "");
         return JSON.parse(sanitized);
     }
@@ -138,7 +135,7 @@ export const analyzeReportWithAI = async (reportText: string): Promise<AIAnalysi
     `;
 
     try {
-        const text = await callSambaNovaAPI(systemPrompt, userPrompt);
+        const text = await callGeminiAPI(systemPrompt, userPrompt);
         return cleanAndParseJSON(text);
     } catch (error) {
         console.error("AI Analysis Failed:", error);
@@ -174,7 +171,7 @@ export const generateEventDescription = async (
     `;
 
     try {
-        return await callSambaNovaAPI(systemPrompt, userPrompt);
+        return await callGeminiAPI(systemPrompt, userPrompt);
     } catch (error) {
         return `Join us for ${title}, a ${eventType} taking place on ${date} at ${venue}. Don't miss this opportunity to learn, network, and have fun! (Fallback)`;
     }
@@ -198,7 +195,7 @@ export const generateClubBio = async (
     `;
 
     try {
-        return await callSambaNovaAPI(systemPrompt, userPrompt);
+        return await callGeminiAPI(systemPrompt, userPrompt);
     } catch (error) {
         return `${name} is a premier ${category} club dedicated to ${mission}. Join us to be part of a vibrant community! (Fallback)`;
     }
@@ -230,7 +227,7 @@ export const generateFeedbackForm = async (
     `;
 
     try {
-        const text = await callSambaNovaAPI(systemPrompt, userPrompt);
+        const text = await callGeminiAPI(systemPrompt, userPrompt);
         return cleanAndParseJSON(text);
     } catch (error) {
         console.error("AI Form Generation Failed:", error);
@@ -273,17 +270,23 @@ export const generateFormSchema = async (
     `;
 
     try {
-        const text = await callSambaNovaAPI(systemPrompt, userPromptText);
+        const text = await callGeminiAPI(systemPrompt, userPromptText);
         return cleanAndParseJSON(text);
     } catch (error) {
 
+        // Dynamic Fallback based on prompt
+        const fallbackTitle = userPrompt.length < 50 ? userPrompt.charAt(0).toUpperCase() + userPrompt.slice(1) : "Event Registration Form";
+
         return {
-            title: "New Form",
-            description: "Please fill out this form.",
+            title: fallbackTitle,
+            description: `Registration form for ${fallbackTitle}. Please fill out the details below.`,
             theme: "classic-blue",
-            settings: { limit_one_response_per_user: false, accepting_responses: true, thank_you_message: "Thank you!" },
+            settings: { limit_one_response_per_user: false, accepting_responses: true, thank_you_message: "Thank you for registering!" },
             questions: [
-                { id: "fallback_1", type: "text", label: "Example Question", required: true }
+                { id: "f1", type: "text", label: "Full Name", required: true },
+                { id: "f2", type: "text", label: "Email Address", required: true },
+                { id: "f3", type: "text", label: "Phone Number", required: false },
+                { id: "f4", type: "text", label: "Comments / Requirements", required: false }
             ]
         };
     }
@@ -321,7 +324,7 @@ export const suggestPOMapping = async (
     `;
 
     try {
-        const text = await callSambaNovaAPI(systemPrompt, userPrompt);
+        const text = await callGeminiAPI(systemPrompt, userPrompt);
         return cleanAndParseJSON(text);
     } catch (error) {
         console.error("AI PO Mapping Failed:", error);
@@ -547,7 +550,7 @@ export const generateEventIdeas = async (
 
     try {
         // Lowered temp slightly to 0.9 for better JSON stability while keeping creativity
-        const text = await callSambaNovaAPI(systemPrompt, userPrompt, 0.9);
+        const text = await callGeminiAPI(systemPrompt, userPrompt, 0.9);
         const events = cleanAndParseJSON(text);
 
         // Save new ideas to history
