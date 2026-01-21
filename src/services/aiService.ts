@@ -1,24 +1,21 @@
-// This service now connects to Google Gemini API (Flash 1.5)
+// This service now connects to Google Gemini API (Flash 2.0 Lite Preview)
 import type { AIAnalysisResult } from '../types';
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
-if (!GEMINI_API_KEY) {
+const GEMINI_API_KEYS = (import.meta.env.VITE_GEMINI_API_KEY || "").split(',').map((k: string) => k.trim()).filter((k: string) => k);
+
+if (GEMINI_API_KEYS.length === 0) {
     console.warn("Missing VITE_GEMINI_API_KEY in .env file");
 }
 
-const BASE_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-
-// Circuit Breaker Key
-const CIRCUIT_BREAKER_KEY = "ai_api_circuit_breaker_until";
+const BASE_URL_TEMPLATE = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite-preview-02-05:generateContent?key=";
 
 // Generic Helper for Gemini Calls (Replaces SambaNova)
-async function callGeminiAPI(systemPrompt: string, userPrompt: string, temperature: number = 0.7): Promise<string> {
-    // 1. Check Circuit Breaker (Persistent)
-    const circuitOpenUntil = parseInt(localStorage.getItem(CIRCUIT_BREAKER_KEY) || "0", 10);
-    if (Date.now() < circuitOpenUntil) {
-        throw new Error("Local Circuit Breaker: Skipping API call (Rate Limit Cooldown)");
-    }
+// Generic Helper for Gemini Calls (Replaces SambaNova)
+// Generic Helper for Gemini Calls (Replaces SambaNova)
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+// Generic Helper for Gemini Calls (Replaces SambaNova)
+async function callGeminiAPI(systemPrompt: string, userPrompt: string, temperature: number = 0.7, maxRetries: number = 5): Promise<string> {
     // Combine System & User Prompt for Gemini (Simple Text Mode)
     const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
 
@@ -33,49 +30,52 @@ async function callGeminiAPI(systemPrompt: string, userPrompt: string, temperatu
         }
     };
 
-    const maxRetries = 3;
+    let attempt = 0;
 
-    for (let i = 0; i < maxRetries; i++) {
-        try {
-            const response = await fetch(BASE_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(requestBody)
-            });
+    while (attempt < maxRetries) {
+        // Try each key in rotation
+        for (const apiKey of GEMINI_API_KEYS) {
+            try {
+                const response = await fetch(`${BASE_URL_TEMPLATE}${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
 
-            if (response.status === 429) {
-                // 2. Trip Circuit Breaker for 60 seconds (Persist to LocalStorage)
-                const cooldownUntil = Date.now() + 60000;
-                localStorage.setItem(CIRCUIT_BREAKER_KEY, cooldownUntil.toString());
-                throw new Error("Rate limit exceeded (Circuit Breaker Tripped for 60s)");
-            }
-
-            if (!response.ok) {
-                const err = await response.text();
-                throw new Error(`Gemini API Error: ${response.status} - ${err}`);
-            }
-
-            const data = await response.json();
-
-            // Extract text from Gemini response structure
-            if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-                return data.candidates[0].content.parts[0].text;
-            } else {
-                throw new Error("Invalid Gemini Response Structure");
-            }
-
-        } catch (error) {
-            // Only retry for network/server errors, not rate limits
-            if (i === maxRetries - 1 || (error as Error).message.includes("Rate limit") || (error as Error).message.includes("Circuit")) {
-                if ((error as Error).message.includes("Rate limit") || (error as Error).message.includes("Circuit")) {
-                    throw error;
+                if (response.status === 429) {
+                    console.warn(`Key ${apiKey.substring(0, 5)}... hit rate limit (429).`);
+                    continue; // Try next key
                 }
+
+                if (!response.ok) {
+                    const err = await response.text();
+                    throw new Error(`Gemini API Error: ${response.status} - ${err}`);
+                }
+
+                const data = await response.json();
+
+                if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+                    return data.candidates[0].content.parts[0].text;
+                } else {
+                    throw new Error("Invalid Gemini Response Structure");
+                }
+
+            } catch (error) {
+                // For any error (network, 500, etc.), we continue to the next key just in case
                 console.warn("Gemini Call Failed:", error);
-                throw error;
+                continue;
             }
         }
+
+        // If we finished a full pass of ALL keys and still no result:
+        attempt++;
+        // Use exponential backoff
+        const waitTime = 2000 * Math.pow(1.5, attempt);
+        console.warn(`All keys exhausted/busy. Waiting ${Math.round(waitTime / 1000)}s before retry cycle ${attempt}/${maxRetries} to clear rate limits...`);
+        await sleep(waitTime);
     }
-    throw new Error("Gemini API unreachable");
+
+    throw new Error("Unable to connect to AI after multiple attempts. Please try again later.");
 }
 
 // Helper to clean and parse AI JSON response
@@ -134,19 +134,9 @@ export const analyzeReportWithAI = async (reportText: string): Promise<AIAnalysi
     No markdown formatting. Pure JSON.
     `;
 
-    try {
-        const text = await callGeminiAPI(systemPrompt, userPrompt);
-        return cleanAndParseJSON(text);
-    } catch (error) {
-        console.error("AI Analysis Failed:", error);
-        return {
-            summary: "AI Analysis unavailable. Please review manually.",
-            impactScore: 5,
-            strengths: ["Could not analyze"],
-            improvements: ["Try again later"],
-            sentiment: 'neutral'
-        } as any;
-    }
+    // No try-catch -> Let it fail if AI is down (User requested "No Demo")
+    const text = await callGeminiAPI(systemPrompt, userPrompt);
+    return cleanAndParseJSON(text);
 };
 
 export const generateEventDescription = async (
@@ -170,11 +160,8 @@ export const generateEventDescription = async (
     Return ONLY the plain text description. Do not include a title or markdown wrapper like "Here is the description".
     `;
 
-    try {
-        return await callGeminiAPI(systemPrompt, userPrompt);
-    } catch (error) {
-        return `Join us for ${title}, a ${eventType} taking place on ${date} at ${venue}. Don't miss this opportunity to learn, network, and have fun! (Fallback)`;
-    }
+    // No fallback
+    return await callGeminiAPI(systemPrompt, userPrompt);
 };
 
 export const generateClubBio = async (
@@ -194,11 +181,8 @@ export const generateClubBio = async (
     Return ONLY the plain text bio.
     `;
 
-    try {
-        return await callGeminiAPI(systemPrompt, userPrompt);
-    } catch (error) {
-        return `${name} is a premier ${category} club dedicated to ${mission}. Join us to be part of a vibrant community! (Fallback)`;
-    }
+    // No fallback
+    return await callGeminiAPI(systemPrompt, userPrompt);
 };
 
 export const generateFeedbackForm = async (
@@ -226,21 +210,14 @@ export const generateFeedbackForm = async (
     Ensure IDs are unique strings. No markdown code blocks. Pure JSON.
     `;
 
-    try {
-        const text = await callGeminiAPI(systemPrompt, userPrompt);
-        return cleanAndParseJSON(text);
-    } catch (error) {
-        console.error("AI Form Generation Failed:", error);
-        return [
-            { id: "f1", type: "rating", "label": "How would you rate the event?", "required": true },
-            { id: "f2", type: "text", "label": "Feedback", "required": false }
-        ];
-    }
+    // No fallback
+    const text = await callGeminiAPI(systemPrompt, userPrompt);
+    return cleanAndParseJSON(text);
 };
 
 export const generateFormSchema = async (
     userPrompt: string
-): Promise<{ title: string; description: string; theme: string; settings: any; questions: any[] }> => {
+): Promise<{ title: string; description: string; theme: string; settings: any; questions: any[]; isFallback?: boolean }> => {
     console.log("Generating full form schema for:", userPrompt);
     const systemPrompt = "You are an expert form builder and survey designer.";
     const userPromptText = `
@@ -269,26 +246,119 @@ export const generateFormSchema = async (
     Ensure IDs are unique strings. NO markdown code blocks. Pure JSON.
     `;
 
+    // Fast fail with Smart Fallback
     try {
-        const text = await callGeminiAPI(systemPrompt, userPromptText);
-        return cleanAndParseJSON(text);
-    } catch (error) {
+        const text = await callGeminiAPI(systemPrompt, userPromptText, 0.7, 5);
+        return { ...cleanAndParseJSON(text), isFallback: false };
+    } catch (e) {
+        console.warn("AI Form Gen failed, using Smart Fallback");
 
-        // Dynamic Fallback based on prompt
-        const fallbackTitle = userPrompt.length < 50 ? userPrompt.charAt(0).toUpperCase() + userPrompt.slice(1) : "Event Registration Form";
-
-        return {
-            title: fallbackTitle,
-            description: `Registration form for ${fallbackTitle}. Please fill out the details below.`,
+        const p = userPrompt.toLowerCase();
+        let schema = {
+            title: "New Form",
+            description: "Please fill out this form.",
             theme: "classic-blue",
-            settings: { limit_one_response_per_user: false, accepting_responses: true, thank_you_message: "Thank you for registering!" },
-            questions: [
-                { id: "f1", type: "text", label: "Full Name", required: true },
-                { id: "f2", type: "text", label: "Email Address", required: true },
-                { id: "f3", type: "text", label: "Phone Number", required: false },
-                { id: "f4", type: "text", label: "Comments / Requirements", required: false }
-            ]
+            isFallback: false,
+            settings: { limit_one_response_per_user: false, accepting_responses: true, thank_you_message: "Thank you!" },
+            questions: [] as any[]
         };
+
+        if (p.includes("feedback") || p.includes("survey") || p.includes("review")) {
+            schema.title = "Event Feedback Survey";
+            schema.description = "We value your feedback! Please help us improve.";
+            schema.questions = [
+                { id: "f1", type: "rating", label: "How would you rate the event?", required: true },
+                { id: "f2", type: "text", label: "What did you like most?", required: true },
+                { id: "f3", type: "text", label: "Any suggestions for improvement?", required: false }
+            ];
+        } else if (p.includes("quiz") || p.includes("test") || p.includes("exam")) {
+            schema.title = "Knowledge Quiz";
+            schema.description = "Test your knowledge!";
+            schema.questions = [
+                { id: "q1", type: "single_choice", label: "Question 1", options: ["Option A", "Option B"], required: true },
+                { id: "q2", type: "single_choice", label: "Question 2", options: ["True", "False"], required: true },
+                { id: "q3", type: "text", label: "Explain your answer", required: true }
+            ];
+        } else if (p.includes("contact") || p.includes("support")) {
+            schema.title = "Contact Us";
+            schema.description = "Get in touch with our team.";
+            schema.questions = [
+                { id: "c1", type: "text", label: "Full Name", required: true },
+                { id: "c2", type: "email", label: "Email Address", required: true },
+                { id: "c3", type: "textarea", label: "Message", required: true }
+            ];
+        } else {
+            // DYNAMIC FALLBACK: Try to extract fields from prompt
+            // 1. Try splitting by consistent delimiters first (Newlines, Double Spaces, Bullets, Tabs)
+            let chunks = userPrompt.split(/[\n]|\s{2,}|\t|•/).map(l => l.trim()).filter(l => l.length > 2);
+
+            // 2. If that gave us nothing (e.g. user typed a comma separated list), then try comma/semicolon
+            if (chunks.length < 3) {
+                chunks = userPrompt.split(/[\n,;]|\s{2,}|\t|•/).map(l => l.trim()).filter(l => l.length > 2);
+            }
+            const extractedQuestions: any[] = [];
+
+            chunks.forEach((line, idx) => {
+                // Relaxed length limit to 140 to catch fields like "Area of Interest (Design, Tech...)"
+                if (line.length > 140) return;
+
+                // Stop phrases often found in prompts
+                if (line.includes("Create") || line.startsWith("Tone") || line.startsWith("CTA") || line.startsWith("Note") || line.startsWith("The design") || line.startsWith("The overall")) return;
+
+                const lower = line.toLowerCase();
+                let type = "text";
+                let options: string[] | undefined = undefined;
+
+                if (lower.includes("email")) type = "email";
+                else if (lower.includes("date") || lower.includes("dob")) type = "date";
+                else if (lower.includes("number") || lower.includes("phone")) type = "number";
+                else if (lower.includes("availability")) {
+                    type = "single_choice";
+                    options = ["Full-time", "Part-time", "Weekends Only"];
+                }
+                else if (lower.includes("interest") || lower.includes("branch") || lower.includes("year") || lower.includes("department")) {
+                    type = "single_choice";
+                    options = ["Option 1", "Option 2", "Option 3", "Option 4"];
+
+                    // Smart Options for Branch/Year
+                    if (lower.includes("year")) options = ["1st Year", "2nd Year", "3rd Year", "4th Year"];
+                    if (lower.includes("branch")) options = ["CSE", "ECE", "ME", "Civil", "Other"];
+                    if (lower.includes("interest")) options = ["Technical", "Management", "Design", "Content"];
+                }
+                else if (lower.includes("experience") || lower.includes("why") || lower.includes("message") || lower.includes("short answer")) type = "textarea";
+
+                // If line looks like a field name (short, no punctuation at end usually)
+                if (!line.includes("?")) {
+                    let label = line.replace(/[:*•-]/g, "").trim();
+                    if (label.toLowerCase().startsWith("include")) return; // Skip "Include the following"
+
+                    extractedQuestions.push({
+                        id: `auto_${idx}`,
+                        type,
+                        label: label,
+                        required: true,
+                        options
+                    });
+                }
+            });
+
+            if (extractedQuestions.length > 0) {
+                schema.title = "Custom Form";
+                schema.description = "Generated based on your requirements.";
+                schema.questions = extractedQuestions;
+            } else {
+                // Absolute Fallback / Registration
+                schema.title = "Registration Form";
+                schema.description = "Register for our upcoming event.";
+                schema.questions = [
+                    { id: "r1", type: "text", label: "Full Name", required: true },
+                    { id: "r2", type: "email", label: "Email Address", required: true },
+                    { id: "r3", type: "single_choice", label: "Year of Study", options: ["1st Year", "2nd Year", "3rd Year", "4th Year"], required: true }
+                ];
+            }
+        }
+
+        return { ...schema, isFallback: true };
     }
 };
 
@@ -323,13 +393,8 @@ export const suggestPOMapping = async (
     Do not include markdown.
     `;
 
-    try {
-        const text = await callGeminiAPI(systemPrompt, userPrompt);
-        return cleanAndParseJSON(text);
-    } catch (error) {
-        console.error("AI PO Mapping Failed:", error);
-        return {};
-    }
+    const text = await callGeminiAPI(systemPrompt, userPrompt);
+    return cleanAndParseJSON(text);
 };
 
 
@@ -352,149 +417,7 @@ const saveEventHistory = (clubName: string, newEvents: any[]) => {
     } catch (e) { console.warn("Failed to save event history", e); }
 };
 
-// Offline Fallback Event Templates (Expanded for Uniqueness)
-const FALLBACK_EVENTS = [
-    {
-        title: "Tech Trivia Night",
-        description: "A competitive evening of geeky trivia spanning coding, sci-fi, and internet culture.",
-        objectives: ["Test knowledge", "Team bonding"],
-        structure_rounds: [{ "round_name": "Rapid Fire", "description": "20 questions in 10 mins", "duration": "30m" }],
-        rules: ["No phones", "Teams of 4"],
-        registration_fields: [{ "label": "Team Name", "type": "text", "required": true }],
-        event_type: "Technical",
-        target_audience: "Tech Enthusiasts",
-        difficulty_level: "Easy",
-        expected_attendees: 40,
-        estimated_budget: 200,
-        duration_hours: 2
-    },
-    {
-        title: "Alumni Fireside Chat",
-        description: "Invite successful alumni to share their journey and industry insights.",
-        objectives: ["Career guidance", "Networking"],
-        structure_rounds: [{ "round_name": "Q&A", "description": "Open floor questions", "duration": "45m" }],
-        rules: ["Respectful questions only"],
-        registration_fields: [{ "label": "Question for Speaker", "type": "text", "required": false }],
-        event_type: "Academic",
-        target_audience: "All Students",
-        difficulty_level: "Easy",
-        expected_attendees: 60,
-        estimated_budget: 100,
-        duration_hours: 1.5
-    },
-    {
-        title: "Speed Networking",
-        description: "Fast-paced networking session where members rotate every 5 minutes.",
-        objectives: ["Meet everyone", "Break ice"],
-        structure_rounds: [{ "round_name": "Rotations", "description": "5 min chats", "duration": "1h" }],
-        rules: ["Move when bell rings"],
-        registration_fields: [{ "label": "LinkedIn Profile", "type": "url", "required": false }],
-        event_type: "Cultural",
-        target_audience: "New Members",
-        difficulty_level: "Easy",
-        expected_attendees: 50,
-        estimated_budget: 50,
-        duration_hours: 1
-    },
-    {
-        title: "Designathon Sprint",
-        description: "A 3-hour intense design challenge to solve a specific UI/UX problem.",
-        objectives: ["Skill building", "Portfolio piece"],
-        structure_rounds: [{ "round_name": "Design Phase", "description": "Create high-fidelity mockups", "duration": "2.5h" }],
-        rules: ["Use Figma", "Submit PDF"],
-        registration_fields: [{ "label": "Portfolio Link", "type": "url", "required": false }],
-        event_type: "Technical",
-        target_audience: "Designers",
-        difficulty_level: "Medium",
-        expected_attendees: 30,
-        estimated_budget: 300,
-        duration_hours: 3
-    },
-    {
-        title: "Code & Coffee",
-        description: "A relaxed morning session for students to work on personal projects together.",
-        objectives: ["Community building", "Peer support"],
-        structure_rounds: [{ "round_name": "Open Coding", "description": "Coworking time", "duration": "2h" }],
-        rules: ["Bring your own mug"],
-        registration_fields: [{ "label": "Project Topic", "type": "text", "required": false }],
-        event_type: "Academic",
-        target_audience: "Developers",
-        difficulty_level: "Easy",
-        expected_attendees: 20,
-        estimated_budget: 50,
-        duration_hours: 2
-    },
-    {
-        title: "Startup Pitch Night",
-        description: "Students pitch their startup ideas to a panel of mock investors.",
-        objectives: ["Public speaking", "Entrepreneurship"],
-        structure_rounds: [{ "round_name": "The Pitch", "description": "3 min pitch + 2 min Q&A", "duration": "1h" }],
-        rules: ["No slides allowed"],
-        registration_fields: [{ "label": "Startup Name", "type": "text", "required": true }],
-        event_type: "Other",
-        target_audience: "Entrepreneurs",
-        difficulty_level: "Hard",
-        expected_attendees: 40,
-        estimated_budget: 100,
-        duration_hours: 2
-    },
-    {
-        title: "Open Mic Night",
-        description: "A cultural evening showcasing music, poetry, and stand-up comedy.",
-        objectives: ["Talent showcase", "Stress relief"],
-        structure_rounds: [{ "round_name": "Performances", "description": "5 min slots", "duration": "1.5h" }],
-        rules: ["Keep it clean"],
-        registration_fields: [{ "label": "Performance Type", "type": "text", "required": true }],
-        event_type: "Cultural",
-        target_audience: "All Students",
-        difficulty_level: "Medium",
-        expected_attendees: 100,
-        estimated_budget: 300,
-        duration_hours: 2.5
-    },
-    {
-        title: "Inter-Club Sports Day",
-        description: "A friendly sports tournament competing against other university clubs.",
-        objectives: ["Physical health", "Inter-club relations"],
-        structure_rounds: [{ "round_name": "Matches", "description": "Football & Basketball", "duration": "3h" }],
-        rules: ["Fair play"],
-        registration_fields: [{ "label": "Sport Preference", "type": "single_choice", "required": true, "options": ["Football", "Basketball"] }],
-        event_type: "Sports",
-        target_audience: "Athletes",
-        difficulty_level: "Medium",
-        expected_attendees: 80,
-        estimated_budget: 500,
-        duration_hours: 4
-    },
-    {
-        title: "Guest Lecture: Industry Trends",
-        description: "An expert speaker discusses the latest trends in the industry.",
-        objectives: ["Education", "Industry insight"],
-        structure_rounds: [{ "round_name": "Keynote", "description": "Presentation", "duration": "1h" }],
-        rules: ["Phones on silent"],
-        registration_fields: [],
-        event_type: "Academic",
-        target_audience: "Major Students",
-        difficulty_level: "Easy",
-        expected_attendees: 100,
-        estimated_budget: 200,
-        duration_hours: 1.5
-    },
-    {
-        title: "Hack The Campus",
-        description: "A hackathon focused on solving problems specifically for the university campus.",
-        objectives: ["Innovation", "Campus improvement"],
-        structure_rounds: [{ "round_name": "Hacking", "description": "Build solutions", "duration": "6h" }],
-        rules: ["Must use open data"],
-        registration_fields: [{ "label": "Team Members", "type": "textarea", "required": true }],
-        event_type: "Technical",
-        target_audience: "All Students",
-        difficulty_level: "Hard",
-        expected_attendees: 50,
-        estimated_budget: 800,
-        duration_hours: 8
-    }
-];
+// Fallback templates removed in favor of Procedural Generator
 
 export const generateEventIdeas = async (
     clubName: string,
@@ -550,7 +473,8 @@ export const generateEventIdeas = async (
 
     try {
         // Lowered temp slightly to 0.9 for better JSON stability while keeping creativity
-        const text = await callGeminiAPI(systemPrompt, userPrompt, 0.9);
+        // Limit retries to 5 to give backoff a chance
+        const text = await callGeminiAPI(systemPrompt, userPrompt, 0.9, 5);
         const events = cleanAndParseJSON(text);
 
         // Save new ideas to history
@@ -559,24 +483,39 @@ export const generateEventIdeas = async (
         }
 
         return events;
-
     } catch (error) {
+        console.warn("AI failed, switching to Procedural Generator", error);
 
+        // Procedural Fallback: Generate unique events locally
+        const adjectives = ["Advanced", "Creative", "Intensive", "Global", "Future", "Smart", "Eco", "Tech", "Innovate", "Code"];
+        const nouns = ["Hackathon", "Summit", "Workshop", "Challenge", "Symposium", "Sprint", "Expo", "Marathon", "Bootcamp", "Quest"];
+        const themes = ["AI", "Blockchain", "Sustainability", "Cybersecurity", "IoT", "Robotics", "Design", "Fintech", "HealthTech", "EdTech"];
 
-        // Filter out previously seen fallback events to maintain "Uniqueness" illusion
-        const availableFallbacks = FALLBACK_EVENTS.filter(
-            e => !existingEvents.includes(e.title)
-        );
+        const generateIdea = () => {
+            const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
+            const noun = nouns[Math.floor(Math.random() * nouns.length)];
+            const theme = themes[Math.floor(Math.random() * themes.length)];
+            return {
+                title: `${adj} ${theme} ${noun}`,
+                description: `An immersive event focusing on ${theme} technologies. Participants will engage in hands-on activities to master ${adj.toLowerCase()} concepts.`,
+                objectives: [`Learn core ${theme} principles`, `Build a ${adj} project`, "Network with peers"],
+                structure_rounds: [
+                    { round_name: "Round 1: Ideation", description: "Brainstorming session", duration: "1h" },
+                    { round_name: "Round 2: Prototype", description: "Building the solution", duration: "3h" }
+                ],
+                rules: ["Teams of 2-4", "Original work only", "Bring your own laptop"],
+                registration_fields: [{ label: "Team Name", type: "text", required: true }],
+                event_type: ["Technical", "Academic", "Other"][Math.floor(Math.random() * 3)],
+                target_audience: "Students",
+                difficulty_level: ["Easy", "Medium", "Hard"][Math.floor(Math.random() * 3)],
+                expected_attendees: 50 + Math.floor(Math.random() * 100),
+                estimated_budget: 500 + Math.floor(Math.random() * 1000),
+                duration_hours: 4 + Math.floor(Math.random() * 4)
+            };
+        };
 
-        // If we ran out of fallbacks, just use all of them (better than nothing)
-        const pool = availableFallbacks.length >= 3 ? availableFallbacks : FALLBACK_EVENTS;
-
-        const shuffled = [...pool].sort(() => 0.5 - Math.random());
-        const selected = shuffled.slice(0, 3);
-
-        // Save these to history too so we don't repeat them immediately
-        saveEventHistory(clubName, selected);
-
-        return selected;
+        const fallbackEvents = [generateIdea(), generateIdea(), generateIdea()];
+        saveEventHistory(clubName, fallbackEvents);
+        return fallbackEvents;
     }
 };
