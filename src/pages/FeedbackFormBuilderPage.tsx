@@ -44,7 +44,7 @@ export const FeedbackFormBuilderPage = () => {
             title: 'Event Feedback',
             description: 'Please search your thoughts on the event.',
             questions: [
-                { id: crypto.randomUUID(), type: 'rating', label: 'Overall Experience', required: true }
+                { id: Math.random().toString(36).substring(2, 9), type: 'rating', label: 'Overall Experience', required: true }
             ]
         }
     });
@@ -61,7 +61,7 @@ export const FeedbackFormBuilderPage = () => {
             // Mock topic for now, ideally user inputs it
             const questions = await generateFeedbackForm(eventTitle, 'Event', 'General');
             // Ensure IDs are unique
-            const formattedQuestions = questions.map((q: any) => ({ ...q, id: crypto.randomUUID() }));
+            const formattedQuestions = questions.map((q: any) => ({ ...q, id: Math.random().toString(36).substring(2, 9) }));
             replace(formattedQuestions);
         } catch (error) {
             console.error(error);
@@ -186,7 +186,7 @@ export const FeedbackFormBuilderPage = () => {
                     <Button
                         type="button"
                         variant="outline"
-                        onClick={() => append({ id: crypto.randomUUID(), type: 'text', label: '', required: false })}
+                        onClick={() => append({ id: Math.random().toString(36).substring(2, 9), type: 'text', label: '', required: false })}
                     >
                         <Plus className="h-4 w-4 mr-2" /> Add Question
                     </Button>

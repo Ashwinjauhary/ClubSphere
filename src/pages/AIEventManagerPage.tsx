@@ -179,7 +179,7 @@ export const AIEventManagerPage = () => {
                                     className="w-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-md py-6 text-lg"
                                 >
                                     {generating && !customPrompt ? <Loader2 className="h-5 w-5 mr-2 animate-spin" /> : null}
-                                    Surprise Me
+                                    {generating && !customPrompt ? "Optimizing Connection..." : "Surprise Me"}
                                 </Button>
                             </div>
 
