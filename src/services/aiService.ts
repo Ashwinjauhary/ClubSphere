@@ -220,7 +220,8 @@ export const generateFormSchema = async (
     const userPromptText = `
     Create a form schema for: "${userPrompt}".
     
-    Strictly follow this JSON structure. Do not add extra fields. Limit to 5-7 questions max.
+    Strictly follow this JSON structure. Do not add extra fields. 
+    If the user specifies a number of questions, respect it (max 15). Otherwise generate 5-7 questions.
     
     {
       "title": "Title",
