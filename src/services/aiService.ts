@@ -13,7 +13,7 @@ const MODEL_NAME = "ALLaM-7B-Instruct-preview";
 // Generic Helper for Sambanova Calls
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-async function callSambaNovaAPI(systemPrompt: string, userPrompt: string, temperature: number = 0.7, maxRetries: number = 3): Promise<string> {
+async function callSambaNovaAPI(systemPrompt: string, userPrompt: string, temperature: number = 0.5, maxRetries: number = 3): Promise<string> {
     const messages = [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
@@ -22,8 +22,9 @@ async function callSambaNovaAPI(systemPrompt: string, userPrompt: string, temper
     const requestBody = {
         model: MODEL_NAME,
         messages: messages,
-        temperature: temperature,
-        top_p: 0.9,
+        temperature: temperature, // Use provided temperature (default 0.5)
+        top_p: 0.1, // Restrict token reuse
+        stop: ["<|eot_id|>", "<|end_of_text|>"], // Ensure it stops
     };
 
     let attempt = 0;
@@ -87,8 +88,11 @@ const cleanAndParseJSON = (text: string): any => {
     }
 
     try {
+        // Remove any trailing commas which might break JSON
+        clean = clean.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']');
         return JSON.parse(clean);
     } catch (e) {
+        console.warn("Initial JSON Parse Failed, retrying sanitizer...", clean.substring(0, 100));
         // Fallback: Try to escape unescaped control characters within strings
         const sanitized = clean.replace(/[\u0000-\u0019]+/g, "");
         try {
@@ -212,31 +216,32 @@ export const generateFormSchema = async (
     userPrompt: string
 ): Promise<{ title: string; description: string; theme: string; settings: any; questions: any[]; isFallback?: boolean }> => {
     console.log("Generating full form schema for:", userPrompt);
-    const systemPrompt = "You are an expert form builder and survey designer.";
+    const systemPrompt = "You are an expert form builder. You must output ONLY valid JSON. Do not deviate. Do not loop.";
     const userPromptText = `
-    Based on this request: "${userPrompt}", create a complete form structure.
+    Create a form schema for: "${userPrompt}".
     
-    Return ONLY a valid JSON object with this structure:
+    Strictly follow this JSON structure. Do not add extra fields. Limit to 5-7 questions max.
+    
     {
-      "title": "Professional Form Title",
-      "description": "A welcoming description encouraging users to fill the form.",
+      "title": "Title",
+      "description": "Description",
       "theme": "classic-blue", 
       "settings": {
         "limit_one_response_per_user": false,
         "accepting_responses": true,
-        "thank_you_message": "Thank you for your submission!"
+        "thank_you_message": "Thank you!"
       },
       "questions": [
-        { "id": "q1", "type": "text", "label": "Full Name", "required": true },
-        { "id": "q2", "type": "single_choice", "label": "Department", "required": true, "options": ["HR", "IT", "Sales"] },
-        { "id": "q3", "type": "file_upload", "label": "Upload Resume", "required": true, "accept_file_types": [".pdf", ".docx"] }
+        { "id": "q1", "type": "text", "label": "Name", "required": true }
       ]
     }
     
-    Supported Themes: 'classic-blue', 'modern-purple', 'fresh-green', 'warm-orange', 'professional-gray', 'elegant-pink'.
-    Supported Question Types: text, textarea, number, email, date, single_choice, multiple_choice, dropdown, rating, file_upload, description.
-
-    Ensure IDs are unique strings. NO markdown code blocks. Pure JSON.
+    Supported Question Types: text, textarea, number, email, date, single_choice, multiple_choice, dropdown, rating, file_upload.
+    
+    CRITICAL: 
+    1. Output strictly valid JSON. 
+    2. No markdown. No code blocks.
+    3. NO infinite loops.
     `;
 
     try {
