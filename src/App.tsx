@@ -7,6 +7,7 @@ import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { ScrollToTop } from './components/ScrollToTop';
 import { Toaster } from 'sonner';
 import { LandingPage } from './pages/LandingPage';
+import { SEO } from './components/SEO';
 
 import { DashboardLayout } from './layouts/DashboardLayout';
 import { DashboardPage } from './pages/DashboardPage';
@@ -83,6 +84,7 @@ function App() {
       <Toaster position="top-right" richColors toastOptions={{ className: 'mt-14 sm:mt-0' }} />
       <ScrollToTop />
       <div className="min-h-screen bg-transparent text-gray-900 font-sans">
+        <SEO />
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />

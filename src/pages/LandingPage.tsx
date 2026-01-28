@@ -4,6 +4,7 @@ import { useAuthStore } from '../store/authStore';
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ParticlesBackground } from '../components/ui/ParticlesBackground';
+import { SEO } from '../components/SEO';
 
 export const LandingPage = () => {
     const navigate = useNavigate();
@@ -20,6 +21,7 @@ export const LandingPage = () => {
 
     return (
         <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-brand-600 selection:text-white overflow-x-hidden">
+            <SEO title="ClubSphere - Home" />
             {/* Navbar */}
             <nav className="fixed w-full z-50 bg-white/90 backdrop-blur-md border-b-2 border-gray-100">
                 <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
