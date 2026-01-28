@@ -1,69 +1,110 @@
 import { Outlet } from 'react-router-dom';
-import { Sidebar } from '../components/Sidebar';
+import { ModernSidebar } from '../components/ModernSidebar';
 import { useState } from 'react';
 import { Menu } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { AppUpdater } from '../components/AppUpdater';
 import { ParticlesBackground } from '../components/ui/ParticlesBackground';
+import { Box, IconButton, Typography, useTheme, useMediaQuery } from '@mui/material';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
 
 export const DashboardLayout = () => {
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const location = useLocation();
+    const [mobileOpen, setMobileOpen] = useState(false);
+    const [isCollapsed, setIsCollapsed] = useState(false);
+    const theme = useTheme();
+    const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
+
+    const handleDrawerToggle = () => {
+        setMobileOpen(!mobileOpen);
+    };
+
+    const handleCollapseToggle = () => {
+        setIsCollapsed(!isCollapsed);
+    };
+
+    // Initialize width from localStorage or default
+    const [sidebarWidth, setSidebarWidth] = useState(() => {
+        const saved = localStorage.getItem('sidebarWidth');
+        return saved ? parseInt(saved, 10) : 320; // Increased default from 280 to 320
+    });
+
+    const handleWidthChange = (newWidth: number) => {
+        setSidebarWidth(newWidth);
+        localStorage.setItem('sidebarWidth', newWidth.toString());
+    };
+
+
+    const collapsedDrawerWidth = 80;
 
     return (
-        <div className="flex h-screen w-full overflow-hidden bg-gray-50 font-sans text-gray-900 relative">
-            {/* Global Particles Background */}
-            <div className="absolute inset-0 z-0 pointer-events-none">
+        <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'grey.50' }}>
+            {/* Global Particles Background - moved to a lower z-index via CSS in component or wrapper */}
+            <div className="absolute inset-0 z-0 pointer-events-none fixed">
                 <ParticlesBackground />
             </div>
 
             <AppUpdater />
-            {/* Mobile sidebar backdrop */}
-            <AnimatePresence>
-                {sidebarOpen && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-40 lg:hidden"
-                        onClick={() => setSidebarOpen(false)}
-                    />
+
+            <ModernSidebar
+                mobileOpen={mobileOpen}
+                onMobileClose={handleDrawerToggle}
+                isCollapsed={isCollapsed}
+                onCollapseToggle={handleCollapseToggle}
+                width={sidebarWidth}
+                onWidthChange={handleWidthChange}
+            />
+
+            <Box
+                component="main"
+                sx={{
+                    flexGrow: 1,
+                    p: 3,
+                    width: { lg: `calc(100% - ${isCollapsed ? collapsedDrawerWidth : sidebarWidth}px)` },
+                    transition: theme.transitions.create(['width', 'margin'], {
+                        easing: theme.transitions.easing.easeInOut, // Smoother easing
+                        duration: 300, // Slightly longer duration for smoothness
+                    }),
+                    display: 'flex',
+                    flexDirection: 'column',
+                    minHeight: '100vh',
+                    position: 'relative',
+                    zIndex: 1
+                }}
+            >
+                {/* Mobile Header */}
+                {!isDesktop && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, mt: 1 }}>
+                        <IconButton
+                            color="inherit"
+                            aria-label="open drawer"
+                            edge="start"
+                            onClick={handleDrawerToggle}
+                            sx={{ mr: 2, display: { lg: 'none' } }}
+                        >
+                            <Menu />
+                        </IconButton>
+                        <Typography variant="h6" noWrap component="div" fontWeight="bold">
+                            ClubSphere
+                        </Typography>
+                    </Box>
                 )}
-            </AnimatePresence>
 
-            {/* Sidebar Container */}
-            <div className={`
-                fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 cubic-bezier(0.4, 0, 0.2, 1)
-                lg:relative lg:translate-x-0 h-full
-                ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-            `}>
-                <div className="h-full bg-white flex flex-col">
-                    <Sidebar onClose={() => setSidebarOpen(false)} />
+                <div className="max-w-[1600px] mx-auto w-full pb-4 flex-grow">
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={location.pathname}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            transition={{ duration: 0.3, ease: "easeInOut" }}
+                            style={{ width: '100%', height: '100%' }}
+                        >
+                            <Outlet />
+                        </motion.div>
+                    </AnimatePresence>
                 </div>
-            </div>
-
-            {/* Main content */}
-            <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-                {/* Mobile header */}
-                <div className="lg:hidden bg-white border-b border-gray-100 px-4 py-4 flex items-center justify-between sticky top-0 z-30 pt-[calc(1rem+env(safe-area-inset-top))]">
-                    <button
-                        onClick={() => setSidebarOpen(true)}
-                        className="p-2 -ml-2 rounded-md hover:bg-gray-50 active:scale-95 transition-all text-gray-600"
-                        aria-label="Open menu"
-                    >
-                        <Menu className="h-6 w-6" />
-                    </button>
-                    <span className="text-lg font-bold text-gray-900 font-display">
-                        CLUBSPHERE
-                    </span>
-                    <div className="w-10" />
-                </div>
-
-                <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 lg:p-8 scrollbar-thin pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-10">
-                    <div className="max-w-[1600px] mx-auto pb-4">
-                        <Outlet />
-                    </div>
-                </main>
-            </div>
-        </div>
+            </Box>
+        </Box>
     );
 };

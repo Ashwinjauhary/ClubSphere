@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Users, Calendar, TrendingUp } from 'lucide-react';
+import { Button } from '@mui/material';
 import { useAuthStore } from '../store/authStore';
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
@@ -29,18 +30,34 @@ export const LandingPage = () => {
                         <span className="text-2xl font-black text-brand-600 tracking-tighter uppercase">ClubSphere</span>
                     </div>
                     <div className="flex gap-4 items-center">
-                        <button
+                        <Button
                             onClick={() => navigate('/login')}
-                            className="text-base font-bold text-slate-600 hover:text-slate-900 transition-colors uppercase tracking-wide"
+                            color="inherit" // or customize with sx
+                            sx={{ fontWeight: 'bold', color: 'slate.600', '&:hover': { color: 'slate.900' }, textTransform: 'uppercase', letterSpacing: '0.025em' }}
                         >
                             Log in
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                            variant="contained"
                             onClick={() => navigate('/register')}
-                            className="bg-brand-600 text-white px-6 py-2.5 rounded-xl text-base font-bold hover:bg-brand-700 transition-all shadow-[0_4px_0_0_#0369a1] hover:shadow-[0_2px_0_0_#0369a1] hover:translate-y-[2px] active:shadow-none active:translate-y-[4px]"
+                            sx={{
+                                borderRadius: '0.75rem', // rounded-xl
+                                paddingX: 3,
+                                paddingY: 1.2,
+                                fontWeight: 'bold',
+                                boxShadow: '0 4px 0 0 #0369a1',
+                                '&:hover': {
+                                    boxShadow: '0 2px 0 0 #0369a1',
+                                    transform: 'translateY(2px)',
+                                },
+                                '&:active': {
+                                    boxShadow: 'none',
+                                    transform: 'translateY(4px)',
+                                }
+                            }}
                         >
                             Get Started
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </nav>
@@ -74,12 +91,30 @@ export const LandingPage = () => {
                     </p>
 
                     <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-                        <button
+                        <Button
+                            variant="contained"
+                            size="large"
                             onClick={() => navigate('/login')}
-                            className="px-10 py-5 bg-brand-600 text-white text-lg font-bold rounded-2xl hover:bg-brand-700 transition-all shadow-[0_6px_0_0_#0369a1] hover:shadow-[0_3px_0_0_#0369a1] hover:translate-y-[3px] active:shadow-none active:translate-y-[6px] flex items-center gap-3"
+                            endIcon={<ArrowRight className="h-6 w-6" />}
+                            sx={{
+                                px: 5,
+                                py: 2.5,
+                                fontSize: '1.125rem', // text-lg
+                                borderRadius: '1rem', // rounded-2xl
+                                fontWeight: 'bold',
+                                boxShadow: '0 6px 0 0 #0369a1',
+                                '&:hover': {
+                                    boxShadow: '0 3px 0 0 #0369a1',
+                                    transform: 'translateY(3px)',
+                                },
+                                '&:active': {
+                                    boxShadow: 'none',
+                                    transform: 'translateY(6px)',
+                                }
+                            }}
                         >
-                            Login <ArrowRight className="h-6 w-6" />
-                        </button>
+                            Login
+                        </Button>
                         <a
                             href="#mobile-app"
                             className="px-10 py-5 bg-white text-slate-700 border-2 border-slate-200 text-lg font-bold rounded-2xl hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center gap-2"

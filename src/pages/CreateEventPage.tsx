@@ -9,7 +9,7 @@ import { ArrowLeft, Calendar, MapPin, DollarSign, Type, Users } from 'lucide-rea
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'sonner';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { ImageUpload } from '../components/ui/ImageUpload';
 
 const eventSchema = z.object({
@@ -29,6 +29,7 @@ export const CreateEventPage = () => {
     const navigate = useNavigate();
     const { user } = useAuthStore();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const isSubmittingRef = useRef(false);
 
     const {
         register,
@@ -41,6 +42,8 @@ export const CreateEventPage = () => {
     });
 
     const onSubmit = async (data: EventForm) => {
+        if (isSubmittingRef.current) return;
+        isSubmittingRef.current = true;
         setIsSubmitting(true);
         try {
             // Get user's club
@@ -73,6 +76,7 @@ export const CreateEventPage = () => {
             toast.error('Failed to create event');
         } finally {
             setIsSubmitting(false);
+            isSubmittingRef.current = false;
         }
     };
 

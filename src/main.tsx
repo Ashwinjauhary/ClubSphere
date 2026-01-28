@@ -5,12 +5,17 @@ import { Analytics } from '@vercel/analytics/react';
 import './index.css'
 import './responsive.css'
 import App from './App.tsx'
+import { ThemeProvider, CssBaseline } from '@mui/material';
+import theme from './theme';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <HelmetProvider>
-      <App />
-      <Analytics />
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <App />
+        <Analytics />
+      </ThemeProvider>
     </HelmetProvider>
   </StrictMode>,
 )

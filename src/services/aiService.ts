@@ -25,6 +25,7 @@ async function callSambaNovaAPI(systemPrompt: string, userPrompt: string, temper
         temperature: temperature, // Use provided temperature (default 0.5)
         top_p: 0.1, // Restrict token reuse
         stop: ["<|eot_id|>", "<|end_of_text|>"], // Ensure it stops
+        max_tokens: 1000 // Ensure response is not truncated
     };
 
     let attempt = 0;
@@ -412,36 +413,61 @@ export const generateEventIdeas = async (
     const randomSeed = Math.floor(Math.random() * 1000000);
     const existingEvents = getEventHistory(clubName);
 
-    console.log("Generating event ideas for:", clubName, "Seed:", randomSeed, "Ignoring:", existingEvents.length);
+    const creativeDirections = [
+        "Focus on futuristic and cutting-edge technology.",
+        "Focus on community building and social impact.",
+        "Focus on hands-on practical skills and workshops.",
+        "Focus on fun, relaxation, and team bonding.",
+        "Focus on career development and industry networking.",
+        "Focus on interdisciplinary collaboration.",
+        "Focus on competitive challenges and hackathons.",
+        "Focus on sustainability and eco-friendly initiatives."
+    ];
+    const randomDirection = creativeDirections[Math.floor(Math.random() * creativeDirections.length)];
+    const uniqueSeed = `${Date.now()}-${randomSeed}`;
 
-    const systemPrompt = "You are a creative director. Brainstorm UNIQUE event ideas. OUTPUT VALID JSON ONLY. Escape all special characters.";
+    console.log("Generating event ideas for:", clubName, "Seed:", uniqueSeed, "Direction:", randomDirection);
+
+    const bannedTerms = ["CodeCraft", "Tech Trek", "TechTrek", "Code Quest", "Coding Olympics", "Hackathon", "Marathon", "Symposium"];
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const forbiddenLetter = letters[Math.floor(Math.random() * letters.length)];
+
+    // Updated prompt for conciseness
+    const systemPrompt = `You are a creative director. Brainstorm UNIQUE and UNCONVENTIONAL event ideas. 
+    You are FORBIDDEN from using these overused words/titles: ${bannedTerms.join(", ")}.
+    Be unpredictable but CONCISE. Output must be valid, complete JSON. Do not cut off.`;
+
     const userPrompt = `
-    Request ID: ${randomSeed}
+    Request ID: ${uniqueSeed}
     
     Club Name: ${clubName}
     Category: ${clubCategory}
     Mission: ${clubDescription}
     
-    PREVIOUSLY GENERATED IDEAS (DO NOT REPEAT THESE):
+    CREATIVE DIRECTION: ${randomDirection}
+    CHAOS CONSTRAINT: Do not start any event title with the letter '${forbiddenLetter}'.
+    
+    PREVIOUSLY GENERATED IDEAS (ABSOLUTELY DO NOT REPEAT):
     ${existingEvents.join(", ")}
 
     ${customPrompt ? `THE USER HAS A SPECIFIC REQUEST: "${customPrompt}".` : ''}
-    ${customPrompt ? `Generate 3 tailored event ideas.` : `Suggest 3 unique, high-engagement event ideas. AVOID GENERIC IDEAS.`}
+    ${customPrompt ? `Generate 3 tailored event ideas.` : `Suggest 3 unique, high-engagement event ideas. Make them distinct from each other. Do NOT use generic names.`}
     
     CRITICAL INSTRUCTIONS:
-    1. Output strictly valid JSON.
-    2. No unescaped newlines inside strings. Use \\n.
-    3. Detailed breakdown: Objectives, Rounds, Rules.
+    1. Output strictly valid, COMPLETE JSON.
+    2. Keep descriptions under 30 words to save tokens.
+    3. Detailed breakdown: Objectives, Rounds, Rules (Keep brief).
     4. EVENT TYPE MUST BE ONE OF: "Technical", "Cultural", "Academic", "Sports", "Other".
     5. Include 'registration_fields'.
+    6. Ensure the ideas are DIVERSE.
 
     Return ONLY JSON (No markdown):
     [
       {
         "title": "Unique Title",
-        "description": "Summary.",
+        "description": "Short summary.",
         "objectives": ["Obj 1"],
-        "structure_rounds": [{ "round_name": "R1", "description": "Desc", "duration": "30m" }],
+        "structure_rounds": [{ "round_name": "R1", "description": "Brief desc", "duration": "30m" }],
         "rules": ["Rule 1"],
         "registration_fields": [{ "label": "Name", "type": "text", "required": true }],
         "event_type": "Technical",
@@ -455,47 +481,17 @@ export const generateEventIdeas = async (
     `;
 
     try {
-        const text = await callSambaNovaAPI(systemPrompt, userPrompt, 0.9, 3);
+        // Increased max_tokens to ensuring completion
+        const text = await callSambaNovaAPI(systemPrompt, userPrompt, 1.0, 3);
         const events = cleanAndParseJSON(text);
 
         if (Array.isArray(events)) {
             saveEventHistory(clubName, events);
+            return events;
         }
-
-        return events;
+        throw new Error("Invalid response format");
     } catch (error) {
-        console.warn("AI failed, switching to Procedural Generator", error);
-
-        // Procedural Fallback: Generate unique events locally
-        const adjectives = ["Advanced", "Creative", "Intensive", "Global", "Future", "Smart", "Eco", "Tech", "Innovate", "Code"];
-        const nouns = ["Hackathon", "Summit", "Workshop", "Challenge", "Symposium", "Sprint", "Expo", "Marathon", "Bootcamp", "Quest"];
-        const themes = ["AI", "Blockchain", "Sustainability", "Cybersecurity", "IoT", "Robotics", "Design", "Fintech", "HealthTech", "EdTech"];
-
-        const generateIdea = () => {
-            const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
-            const noun = nouns[Math.floor(Math.random() * nouns.length)];
-            const theme = themes[Math.floor(Math.random() * themes.length)];
-            return {
-                title: `${adj} ${theme} ${noun}`,
-                description: `An immersive event focusing on ${theme} technologies. Participants will engage in hands-on activities to master ${adj.toLowerCase()} concepts.`,
-                objectives: [`Learn core ${theme} principles`, `Build a ${adj} project`, "Network with peers"],
-                structure_rounds: [
-                    { round_name: "Round 1: Ideation", description: "Brainstorming session", duration: "1h" },
-                    { round_name: "Round 2: Prototype", description: "Building the solution", duration: "3h" }
-                ],
-                rules: ["Teams of 2-4", "Original work only", "Bring your own laptop"],
-                registration_fields: [{ label: "Team Name", type: "text", required: true }],
-                event_type: ["Technical", "Academic", "Other"][Math.floor(Math.random() * 3)],
-                target_audience: "Students",
-                difficulty_level: ["Easy", "Medium", "Hard"][Math.floor(Math.random() * 3)],
-                expected_attendees: 50 + Math.floor(Math.random() * 100),
-                estimated_budget: 500 + Math.floor(Math.random() * 1000),
-                duration_hours: 4 + Math.floor(Math.random() * 4)
-            };
-        };
-
-        const fallbackEvents = [generateIdea(), generateIdea(), generateIdea()];
-        saveEventHistory(clubName, fallbackEvents);
-        return fallbackEvents;
+        console.error("AI Generation Failed:", error);
+        throw error; // Re-throw to let the UI handle it (show error toast instead of fake data)
     }
 };
