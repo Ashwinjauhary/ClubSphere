@@ -1,78 +1,71 @@
-// This service now connects to Google Gemini API (Flash 2.0 Lite Preview)
+// This service now connects to Sambanova AI (OpenAI Compatible)
 import type { AIAnalysisResult } from '../types';
 
-const GEMINI_API_KEYS = (import.meta.env.VITE_GEMINI_API_KEY || "").split(',').map((k: string) => k.trim()).filter((k: string) => k);
+const SAMBANOVA_API_KEY = import.meta.env.VITE_SAMBANOVA_API_KEY || "";
 
-if (GEMINI_API_KEYS.length === 0) {
-    console.warn("Missing VITE_GEMINI_API_KEY in .env file");
+if (!SAMBANOVA_API_KEY) {
+    console.warn("Missing VITE_SAMBANOVA_API_KEY in .env file");
 }
 
-const BASE_URL_TEMPLATE = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite-preview-02-05:generateContent?key=";
+const BASE_URL = "https://api.sambanova.ai/v1/chat/completions";
+const MODEL_NAME = "ALLaM-7B-Instruct-preview";
 
-// Generic Helper for Gemini Calls (Replaces SambaNova)
-// Generic Helper for Gemini Calls (Replaces SambaNova)
-// Generic Helper for Gemini Calls (Replaces SambaNova)
+// Generic Helper for Sambanova Calls
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Generic Helper for Gemini Calls (Replaces SambaNova)
-async function callGeminiAPI(systemPrompt: string, userPrompt: string, temperature: number = 0.7, maxRetries: number = 5): Promise<string> {
-    // Combine System & User Prompt for Gemini (Simple Text Mode)
-    const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
+async function callSambaNovaAPI(systemPrompt: string, userPrompt: string, temperature: number = 0.7, maxRetries: number = 3): Promise<string> {
+    const messages = [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+    ];
 
     const requestBody = {
-        contents: [{
-            parts: [{ text: fullPrompt }]
-        }],
-        generationConfig: {
-            temperature: temperature,
-            topP: 0.9,
-            maxOutputTokens: 2048,
-        }
+        model: MODEL_NAME,
+        messages: messages,
+        temperature: temperature,
+        top_p: 0.9,
     };
 
     let attempt = 0;
 
     while (attempt < maxRetries) {
-        // Try each key in rotation
-        for (const apiKey of GEMINI_API_KEYS) {
-            try {
-                const response = await fetch(`${BASE_URL_TEMPLATE}${apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(requestBody)
-                });
+        try {
+            const response = await fetch(BASE_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${SAMBANOVA_API_KEY}`
+                },
+                body: JSON.stringify(requestBody)
+            });
 
-                if (response.status === 429) {
-                    console.warn(`Key ${apiKey.substring(0, 5)}... hit rate limit (429).`);
-                    continue; // Try next key
-                }
-
-                if (!response.ok) {
-                    const err = await response.text();
-                    throw new Error(`Gemini API Error: ${response.status} - ${err}`);
-                }
-
-                const data = await response.json();
-
-                if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-                    return data.candidates[0].content.parts[0].text;
-                } else {
-                    throw new Error("Invalid Gemini Response Structure");
-                }
-
-            } catch (error) {
-                // For any error (network, 500, etc.), we continue to the next key just in case
-                console.warn("Gemini Call Failed:", error);
+            if (response.status === 429) {
+                console.warn(`Sambanova rate limit hit (429).`);
+                attempt++;
+                const waitTime = 2000 * Math.pow(1.5, attempt);
+                await sleep(waitTime);
                 continue;
             }
-        }
 
-        // If we finished a full pass of ALL keys and still no result:
-        attempt++;
-        // Use exponential backoff
-        const waitTime = 2000 * Math.pow(1.5, attempt);
-        console.warn(`All keys exhausted/busy. Waiting ${Math.round(waitTime / 1000)}s before retry cycle ${attempt}/${maxRetries} to clear rate limits...`);
-        await sleep(waitTime);
+            if (!response.ok) {
+                const err = await response.text();
+                throw new Error(`Sambanova API Error: ${response.status} - ${err}`);
+            }
+
+            const data = await response.json();
+
+            if (data.choices && data.choices[0] && data.choices[0].message) {
+                return data.choices[0].message.content.trim();
+            } else {
+                throw new Error("Invalid Sambanova Response Structure");
+            }
+
+        } catch (error) {
+            console.warn("Sambanova Call Failed:", error);
+            attempt++;
+            if (attempt >= maxRetries) throw error;
+            await sleep(1000 * attempt);
+        }
     }
 
     throw new Error("Unable to connect to AI after multiple attempts. Please try again later.");
@@ -97,9 +90,13 @@ const cleanAndParseJSON = (text: string): any => {
         return JSON.parse(clean);
     } catch (e) {
         // Fallback: Try to escape unescaped control characters within strings
-        // console.warn("JSON Parse failed, attempting to sanitize...", e);
         const sanitized = clean.replace(/[\u0000-\u0019]+/g, "");
-        return JSON.parse(sanitized);
+        try {
+            return JSON.parse(sanitized);
+        } catch (e2) {
+            console.warn("JSON Parse Failed", clean);
+            throw e2;
+        }
     }
 };
 
@@ -134,8 +131,7 @@ export const analyzeReportWithAI = async (reportText: string): Promise<AIAnalysi
     No markdown formatting. Pure JSON.
     `;
 
-    // No try-catch -> Let it fail if AI is down (User requested "No Demo")
-    const text = await callGeminiAPI(systemPrompt, userPrompt);
+    const text = await callSambaNovaAPI(systemPrompt, userPrompt);
     return cleanAndParseJSON(text);
 };
 
@@ -160,8 +156,7 @@ export const generateEventDescription = async (
     Return ONLY the plain text description. Do not include a title or markdown wrapper like "Here is the description".
     `;
 
-    // No fallback
-    return await callGeminiAPI(systemPrompt, userPrompt);
+    return await callSambaNovaAPI(systemPrompt, userPrompt);
 };
 
 export const generateClubBio = async (
@@ -181,8 +176,7 @@ export const generateClubBio = async (
     Return ONLY the plain text bio.
     `;
 
-    // No fallback
-    return await callGeminiAPI(systemPrompt, userPrompt);
+    return await callSambaNovaAPI(systemPrompt, userPrompt);
 };
 
 export const generateFeedbackForm = async (
@@ -210,8 +204,7 @@ export const generateFeedbackForm = async (
     Ensure IDs are unique strings. No markdown code blocks. Pure JSON.
     `;
 
-    // No fallback
-    const text = await callGeminiAPI(systemPrompt, userPrompt);
+    const text = await callSambaNovaAPI(systemPrompt, userPrompt);
     return cleanAndParseJSON(text);
 };
 
@@ -246,9 +239,8 @@ export const generateFormSchema = async (
     Ensure IDs are unique strings. NO markdown code blocks. Pure JSON.
     `;
 
-    // Fast fail with Smart Fallback
     try {
-        const text = await callGeminiAPI(systemPrompt, userPromptText, 0.7, 5);
+        const text = await callSambaNovaAPI(systemPrompt, userPromptText, 0.7, 3);
         return { ...cleanAndParseJSON(text), isFallback: false };
     } catch (e) {
         console.warn("AI Form Gen failed, using Smart Fallback");
@@ -289,21 +281,15 @@ export const generateFormSchema = async (
             ];
         } else {
             // DYNAMIC FALLBACK: Try to extract fields from prompt
-            // 1. Try splitting by consistent delimiters first (Newlines, Double Spaces, Bullets, Tabs)
             let chunks = userPrompt.split(/[\n]|\s{2,}|\t|•/).map(l => l.trim()).filter(l => l.length > 2);
-
-            // 2. If that gave us nothing (e.g. user typed a comma separated list), then try comma/semicolon
             if (chunks.length < 3) {
                 chunks = userPrompt.split(/[\n,;]|\s{2,}|\t|•/).map(l => l.trim()).filter(l => l.length > 2);
             }
             const extractedQuestions: any[] = [];
 
             chunks.forEach((line, idx) => {
-                // Relaxed length limit to 140 to catch fields like "Area of Interest (Design, Tech...)"
                 if (line.length > 140) return;
-
-                // Stop phrases often found in prompts
-                if (line.includes("Create") || line.startsWith("Tone") || line.startsWith("CTA") || line.startsWith("Note") || line.startsWith("The design") || line.startsWith("The overall")) return;
+                if (line.includes("Create") || line.startsWith("Tone") || line.startsWith("CTA") || line.startsWith("Note")) return;
 
                 const lower = line.toLowerCase();
                 let type = "text";
@@ -319,19 +305,15 @@ export const generateFormSchema = async (
                 else if (lower.includes("interest") || lower.includes("branch") || lower.includes("year") || lower.includes("department")) {
                     type = "single_choice";
                     options = ["Option 1", "Option 2", "Option 3", "Option 4"];
-
-                    // Smart Options for Branch/Year
                     if (lower.includes("year")) options = ["1st Year", "2nd Year", "3rd Year", "4th Year"];
                     if (lower.includes("branch")) options = ["CSE", "ECE", "ME", "Civil", "Other"];
                     if (lower.includes("interest")) options = ["Technical", "Management", "Design", "Content"];
                 }
                 else if (lower.includes("experience") || lower.includes("why") || lower.includes("message") || lower.includes("short answer")) type = "textarea";
 
-                // If line looks like a field name (short, no punctuation at end usually)
                 if (!line.includes("?")) {
                     let label = line.replace(/[:*•-]/g, "").trim();
-                    if (label.toLowerCase().startsWith("include")) return; // Skip "Include the following"
-
+                    if (label.toLowerCase().startsWith("include")) return;
                     extractedQuestions.push({
                         id: `auto_${idx}`,
                         type,
@@ -347,7 +329,6 @@ export const generateFormSchema = async (
                 schema.description = "Generated based on your requirements.";
                 schema.questions = extractedQuestions;
             } else {
-                // Absolute Fallback / Registration
                 schema.title = "Registration Form";
                 schema.description = "Register for our upcoming event.";
                 schema.questions = [
@@ -393,10 +374,9 @@ export const suggestPOMapping = async (
     Do not include markdown.
     `;
 
-    const text = await callGeminiAPI(systemPrompt, userPrompt);
+    const text = await callSambaNovaAPI(systemPrompt, userPrompt);
     return cleanAndParseJSON(text);
 };
-
 
 
 // Helper to manage event history
@@ -417,15 +397,12 @@ const saveEventHistory = (clubName: string, newEvents: any[]) => {
     } catch (e) { console.warn("Failed to save event history", e); }
 };
 
-// Fallback templates removed in favor of Procedural Generator
-
 export const generateEventIdeas = async (
     clubName: string,
     clubCategory: string,
     clubDescription: string,
     customPrompt?: string
 ): Promise<any[]> => {
-    // Random seed to ensure uniqueness every single time
     const randomSeed = Math.floor(Math.random() * 1000000);
     const existingEvents = getEventHistory(clubName);
 
@@ -472,12 +449,9 @@ export const generateEventIdeas = async (
     `;
 
     try {
-        // Lowered temp slightly to 0.9 for better JSON stability while keeping creativity
-        // Limit retries to 5 to give backoff a chance
-        const text = await callGeminiAPI(systemPrompt, userPrompt, 0.9, 5);
+        const text = await callSambaNovaAPI(systemPrompt, userPrompt, 0.9, 3);
         const events = cleanAndParseJSON(text);
 
-        // Save new ideas to history
         if (Array.isArray(events)) {
             saveEventHistory(clubName, events);
         }
