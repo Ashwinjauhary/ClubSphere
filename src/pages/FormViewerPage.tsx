@@ -30,6 +30,15 @@ export const FormViewerPage = () => {
 
     const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm();
 
+    // Helper to normalize options - ensures they're always strings for rendering
+    const normalizeOption = (opt: any): string => {
+        if (typeof opt === 'string') return opt;
+        if (typeof opt === 'object' && opt !== null) {
+            return opt.label || opt.value || String(opt);
+        }
+        return String(opt);
+    };
+
     useEffect(() => {
         if (formId) fetchForm();
     }, [formId, user]);
@@ -49,7 +58,16 @@ export const FormViewerPage = () => {
                 return;
             }
 
-            setForm(data);
+            // Normalize options in questions to fix any corrupted data
+            const normalizedForm = {
+                ...data,
+                questions: data.questions.map((q: any) => ({
+                    ...q,
+                    options: q.options ? q.options.map((opt: any) => normalizeOption(opt)) : q.options
+                }))
+            };
+
+            setForm(normalizedForm);
 
             // Check settings
             if (data.settings?.limit_one_response_per_user && user) {
@@ -229,9 +247,10 @@ export const FormViewerPage = () => {
                             {q.type === 'dropdown' && (
                                 <select {...register(q.id, { required: q.required })} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm p-3 border">
                                     <option value="">Select an option</option>
-                                    {(q.options || []).map((opt: string) => (
-                                        <option key={opt} value={opt}>{opt}</option>
-                                    ))}
+                                    {(q.options || []).map((opt: any, idx: number) => {
+                                        const optValue = normalizeOption(opt);
+                                        return <option key={`${q.id}-opt-${idx}`} value={optValue}>{optValue}</option>;
+                                    })}
                                 </select>
                             )}
 
@@ -257,33 +276,39 @@ export const FormViewerPage = () => {
 
                             {q.type === 'single_choice' && (
                                 <div className="space-y-2">
-                                    {(q.options || []).map((opt: string) => (
-                                        <label key={opt} className="flex items-center space-x-3">
-                                            <input
-                                                type="radio"
-                                                value={opt}
-                                                {...register(q.id, { required: q.required })}
-                                                className={`h-4 w-4 focus:ring-brand-500 border-gray-300 ${theme.bg.replace('bg-', 'text-')}`}
-                                            />
-                                            <span className="text-gray-700">{opt}</span>
-                                        </label>
-                                    ))}
+                                    {(q.options || []).map((opt: any, idx: number) => {
+                                        const optValue = normalizeOption(opt);
+                                        return (
+                                            <label key={`${q.id}-opt-${idx}`} className="flex items-center space-x-3">
+                                                <input
+                                                    type="radio"
+                                                    value={optValue}
+                                                    {...register(q.id, { required: q.required })}
+                                                    className={`h-4 w-4 focus:ring-brand-500 border-gray-300 ${theme.bg.replace('bg-', 'text-')}`}
+                                                />
+                                                <span className="text-gray-700">{optValue}</span>
+                                            </label>
+                                        );
+                                    })}
                                 </div>
                             )}
 
                             {(q.type === 'multiple_choice' || q.type === 'checkboxes') && (
                                 <div className="space-y-2">
-                                    {(q.options || []).map((opt: string) => (
-                                        <label key={opt} className="flex items-center space-x-3">
-                                            <input
-                                                type="checkbox"
-                                                value={opt}
-                                                {...register(q.id, { required: q.required })}
-                                                className={`h-4 w-4 focus:ring-brand-500 border-gray-300 rounded ${theme.bg.replace('bg-', 'text-')}`}
-                                            />
-                                            <span className="text-gray-700">{opt}</span>
-                                        </label>
-                                    ))}
+                                    {(q.options || []).map((opt: any, idx: number) => {
+                                        const optValue = normalizeOption(opt);
+                                        return (
+                                            <label key={`${q.id}-opt-${idx}`} className="flex items-center space-x-3">
+                                                <input
+                                                    type="checkbox"
+                                                    value={optValue}
+                                                    {...register(q.id, { required: q.required })}
+                                                    className={`h-4 w-4 focus:ring-brand-500 border-gray-300 rounded ${theme.bg.replace('bg-', 'text-')}`}
+                                                />
+                                                <span className="text-gray-700">{optValue}</span>
+                                            </label>
+                                        );
+                                    })}
                                 </div>
                             )}
 

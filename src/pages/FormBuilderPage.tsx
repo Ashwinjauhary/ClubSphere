@@ -93,10 +93,16 @@ export const FormBuilderPage = () => {
                 .single();
             if (error) throw error;
             if (data) {
+                // Normalize options in existing questions to fix any corrupted data
+                const normalizedQuestions = data.questions.map((q: any) => ({
+                    ...q,
+                    options: q.options ? normalizeOptions(q.options) : q.options
+                }));
+
                 reset({
                     title: data.title,
                     description: data.description,
-                    questions: data.questions,
+                    questions: normalizedQuestions,
                     theme: data.theme || 'classic-blue',
                     // @ts-ignore - Handle legacy data gracefully
                     settings: data.settings || {
@@ -124,6 +130,19 @@ export const FormBuilderPage = () => {
         }
     };
 
+    // Helper to normalize options - ensures they're always strings, not objects
+    const normalizeOptions = (options: any): string[] => {
+        if (!options || !Array.isArray(options)) return [];
+        return options.map((opt: any) => {
+            if (typeof opt === 'string') return opt;
+            if (typeof opt === 'object' && opt !== null) {
+                // Handle {label, value} or {label} or {value} formats
+                return opt.label || opt.value || String(opt);
+            }
+            return String(opt);
+        });
+    };
+
     const handleAIGenerate = async () => {
         if (!prompt) return;
         setGenerating(true);
@@ -133,7 +152,7 @@ export const FormBuilderPage = () => {
             const formattedQuestions = questions.map((q: any) => ({
                 ...q,
                 id: Math.random().toString(36).substring(2, 9) + Date.now().toString(36), // Safe ID generator
-                options: q.options || (q.type.includes('choice') || q.type === 'dropdown' ? ['Yes', 'No'] : [])
+                options: normalizeOptions(q.options || (q.type.includes('choice') || q.type === 'dropdown' ? ['Yes', 'No'] : []))
             }));
 
             setValue('title', title);
