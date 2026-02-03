@@ -24,19 +24,69 @@ export const QRScanner = ({ onScan, onClose }: QRScannerProps) => {
                 });
                 scannerRef.current = scanner;
 
-                await scanner.start(
-                    { facingMode: "environment" },
-                    {
-                        fps: 10,
-                        qrbox: { width: 250, height: 250 },
-                        aspectRatio: 1.0
-                    },
-                    onScanSuccess,
-                    undefined
-                );
+                // Try with environment camera first (back camera on mobile)
+                try {
+                    await scanner.start(
+                        { facingMode: "environment" },
+                        {
+                            fps: 10,
+                            qrbox: { width: 250, height: 250 },
+                            aspectRatio: 1.0
+                        },
+                        onScanSuccess,
+                        undefined
+                    );
+                } catch (envError) {
+                    console.warn("Environment camera failed, trying user camera:", envError);
+
+                    // Fallback to user camera (front camera)
+                    try {
+                        await scanner.start(
+                            { facingMode: "user" },
+                            {
+                                fps: 10,
+                                qrbox: { width: 250, height: 250 },
+                                aspectRatio: 1.0
+                            },
+                            onScanSuccess,
+                            undefined
+                        );
+                    } catch (userError) {
+                        console.warn("User camera failed, trying any available camera:", userError);
+
+                        // Last fallback: try any available camera
+                        const devices = await Html5Qrcode.getCameras();
+                        if (devices && devices.length > 0) {
+                            await scanner.start(
+                                devices[0].id,
+                                {
+                                    fps: 10,
+                                    qrbox: { width: 250, height: 250 },
+                                    aspectRatio: 1.0
+                                },
+                                onScanSuccess,
+                                undefined
+                            );
+                        } else {
+                            throw new Error("No cameras found on this device");
+                        }
+                    }
+                }
             } catch (err: any) {
                 console.error("Error starting scanner:", err);
-                setCameraError("Failed to access camera. Please ensure permissions are granted.");
+                let errorMessage = "Failed to access camera. ";
+
+                if (err.name === 'NotAllowedError' || err.message?.includes('Permission')) {
+                    errorMessage += "Please grant camera permissions in your browser settings.";
+                } else if (err.name === 'NotFoundError' || err.message?.includes('No cameras')) {
+                    errorMessage += "No camera found on this device.";
+                } else if (err.name === 'NotReadableError') {
+                    errorMessage += "Camera is already in use by another application.";
+                } else {
+                    errorMessage += "Please ensure camera permissions are granted and try again.";
+                }
+
+                setCameraError(errorMessage);
             }
         };
 
@@ -107,9 +157,16 @@ export const QRScanner = ({ onScan, onClose }: QRScannerProps) => {
 
                     {/* Camera Error */}
                     {cameraError && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-6 text-center">
-                            <XCircle className="h-12 w-12 text-red-500 mb-2" />
-                            <p>{cameraError}</p>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-6 text-center bg-black/80">
+                            <XCircle className="h-16 w-16 text-red-500 mb-4" />
+                            <p className="text-lg font-semibold mb-2">Camera Access Failed</p>
+                            <p className="text-sm text-gray-300 mb-6">{cameraError}</p>
+                            <button
+                                onClick={() => window.location.reload()}
+                                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
+                            >
+                                Retry
+                            </button>
                         </div>
                     )}
 

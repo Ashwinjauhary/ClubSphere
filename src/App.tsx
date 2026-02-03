@@ -42,6 +42,7 @@ import { ClubHighlightsPage } from './pages/ClubHighlightsPage';
 import { SuperAdminPage } from './pages/SuperAdminPage';
 import { GalleryManagementPage } from './pages/GalleryManagementPage';
 import { EventScannerPage } from './pages/EventScannerPage';
+import { AttendanceScannerPage } from './pages/AttendanceScannerPage';
 import { FeedbackFormPage } from './pages/FeedbackFormPage';
 import { FeedbackFormBuilderPage } from './pages/FeedbackFormBuilderPage';
 import { EventFeedbackStatsPage } from './pages/EventFeedbackStatsPage';
@@ -131,6 +132,7 @@ function App() {
               <Route path="/forms/:id/edit" element={<FormBuilderPage />} />
               <Route path="/forms/:id/stats" element={<FormStatsPage />} />
               <Route path="/scan-form" element={<QRScannerFormPage />} />
+              <Route path="/attendance-scanner" element={<AttendanceScannerPage />} />
 
               <Route path="/events/new" element={<CreateEventPage />} />
               <Route path="/members" element={<ClubMembersPage />} />

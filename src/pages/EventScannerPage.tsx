@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { useAuthStore } from '../store/authStore';
 import { QRScanner } from '../components/QRScanner';
 import { ArrowLeft, CheckCircle, Search } from 'lucide-react';
 import { format } from 'date-fns';
@@ -9,7 +8,6 @@ import { format } from 'date-fns';
 export const EventScannerPage = () => {
     const { id } = useParams<{ id: string }>(); // Event ID
     const navigate = useNavigate();
-    const { user } = useAuthStore();
 
     // State
     const [eventTitle, setEventTitle] = useState('');
@@ -53,53 +51,78 @@ export const EventScannerPage = () => {
     };
 
     const fetchRecentLogs = async () => {
-        await supabase
-            .from('event_attendance')
-            .select(`
-                *,
-                event_registrations (
-                    user_id,
-                    profiles:user_id ( full_name, role ) 
-                )
-            `)
-            .order('scanned_at', { ascending: false })
-            .limit(10);
+        try {
+            // Step 1: Get attendance records with registration info
+            const { data: attendanceRecords, error: attendanceError } = await supabase
+                .from('event_attendance')
+                .select(`
+                    id,
+                    scanned_at,
+                    registration_id
+                `)
+                .order('scanned_at', { ascending: false })
+                .limit(50); // Get more initially, we'll filter
 
-        // Filter manually for this event if join is tricky, or rely on registration_id linkage
-        // Better query:
-        // JOIN event_registrations ON event_attendance.registration_id = event_registrations.id
-        // WHERE event_registrations.event_id = id
+            if (attendanceError) throw attendanceError;
+            if (!attendanceRecords || attendanceRecords.length === 0) {
+                setScannedLogs([]);
+                return;
+            }
 
-        // Supabase nested filtering:
-        const { data: logs } = await supabase
-            .from('event_attendance')
-            .select(`
-                scanned_at,
-                event_registrations!inner (
-                    event_id,
-                    profiles ( full_name, email )
-                )
-            `)
-            .eq('event_registrations.event_id', id)
-            .order('scanned_at', { ascending: false })
-            .limit(10);
+            // Step 2: Get registration details from participants table
+            const registrationIds = attendanceRecords.map(a => a.registration_id);
+            const { data: registrations, error: regError } = await supabase
+                .from('participants')
+                .select('id, event_id, user_id, full_name')
+                .in('id', registrationIds)
+                .eq('event_id', id);
 
-        if (logs) setScannedLogs(logs);
+            if (regError) throw regError;
+            if (!registrations || registrations.length === 0) {
+                setScannedLogs([]);
+                return;
+            }
+
+            // Step 3: Merge data (participants already has full_name)
+            const logsWithDetails = attendanceRecords
+                .map(attendance => {
+                    const registration = registrations.find(r => r.id === attendance.registration_id);
+                    if (!registration) return null;
+
+                    return {
+                        id: attendance.id,
+                        scanned_at: attendance.scanned_at,
+                        event_registrations: {
+                            profiles: {
+                                full_name: registration.full_name || 'Unknown',
+                                email: ''
+                            }
+                        }
+                    };
+                })
+                .filter(log => log !== null)
+                .slice(0, 10); // Take only 10 for display
+
+            setScannedLogs(logsWithDetails);
+        } catch (error) {
+            console.error('Error fetching recent logs:', error);
+            setScannedLogs([]);
+        }
     };
 
     const handleScan = async (decodedText: string) => {
         console.log("Scanned:", decodedText);
         // Logic:
-        // 1. Find registration by qr_code_hash
+        // 1. Find registration by qr_code_hash in participants table
         // 2. Verify it matches this event
         // 3. Mark as attended
         // 4. Log attendance
 
         try {
-            // Step 1: Lookup Registration
+            // Step 1: Lookup Registration in participants table
             const { data: registration, error } = await supabase
-                .from('event_registrations')
-                .select('*')
+                .from('participants')
+                .select('id, event_id, user_id, qr_code_hash, role')
                 .eq('qr_code_hash', decodedText)
                 .single();
 
@@ -107,23 +130,24 @@ export const EventScannerPage = () => {
 
             if (registration.event_id !== id) throw new Error('Wrong Event: This ticket is for a different event.');
 
-            if (registration.status === 'attended') throw new Error('Already Checked In: This ticket was already used.');
+            // Check if already attended by looking in event_attendance table
+            const { data: existingAttendance } = await supabase
+                .from('event_attendance')
+                .select('id')
+                .eq('registration_id', registration.id)
+                .maybeSingle();
 
-            if (registration.status === 'cancelled') throw new Error('Cancelled Ticket: Registration was cancelled.');
+            if (existingAttendance) throw new Error('Already Checked In: This ticket was already used.');
 
-            // Step 2: Mark as Attended
-            const { error: updateError } = await supabase
-                .from('event_registrations')
-                .update({ status: 'attended' })
-                .eq('id', registration.id);
+            // Step 2: Log attendance in event_attendance table
+            const { error: attendanceError } = await supabase
+                .from('event_attendance')
+                .insert({
+                    registration_id: registration.id,
+                    scanned_at: new Date().toISOString()
+                });
 
-            if (updateError) throw updateError;
-
-            // Step 3: Create Log
-            await supabase.from('event_attendance').insert({
-                registration_id: registration.id,
-                scanned_by: user?.id
-            });
+            if (attendanceError) throw attendanceError;
 
             // Refresh UI
             fetchStats();
@@ -180,26 +204,31 @@ export const EventScannerPage = () => {
                     <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Recent Activity</h3>
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 divide-y divide-gray-100">
                         {scannedLogs.length > 0 ? (
-                            scannedLogs.map((log: any) => (
-                                <div key={log.scanned_at} className="p-4 flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-                                            <CheckCircle className="h-4 w-4 text-green-600" />
+                            scannedLogs.map((log: any) => {
+                                const profile = log.event_registrations?.profiles;
+                                const displayName = profile?.full_name || profile?.email || 'Unknown';
+
+                                return (
+                                    <div key={log.id || log.scanned_at} className="p-4 flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+                                                <CheckCircle className="h-4 w-4 text-green-600" />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-bold text-gray-900">
+                                                    {displayName}
+                                                </p>
+                                                <p className="text-xs text-gray-500">
+                                                    {format(new Date(log.scanned_at), 'h:mm:ss a')}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className="text-sm font-bold text-gray-900">
-                                                {log.event_registrations.profiles.full_name || log.event_registrations.profiles.email}
-                                            </p>
-                                            <p className="text-xs text-gray-500">
-                                                {format(new Date(log.scanned_at), 'h:mm:ss a')}
-                                            </p>
-                                        </div>
+                                        <span className="text-xs font-semibold bg-green-50 text-green-700 px-2 py-1 rounded-full">
+                                            Verified
+                                        </span>
                                     </div>
-                                    <span className="text-xs font-semibold bg-green-50 text-green-700 px-2 py-1 rounded-full">
-                                        Verified
-                                    </span>
-                                </div>
-                            ))
+                                );
+                            })
                         ) : (
                             <div className="p-8 text-center text-gray-400 text-sm">
                                 No scans yet today.

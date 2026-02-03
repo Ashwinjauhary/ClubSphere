@@ -76,6 +76,9 @@ export const EventRegistrationPage = () => {
                 ? `TEAM-${Math.random().toString(36).substring(2, 7).toUpperCase()}`
                 : null;
 
+            // Generate unique QR code hash for scanning
+            const qrCodeHash = crypto.randomUUID();
+
             const { error } = await supabase.from('participants').insert({
                 event_id: event.id,
                 user_id: user.id,
@@ -84,6 +87,7 @@ export const EventRegistrationPage = () => {
                 department: data.department,
                 section: data.section,
                 team_code: teamCode,
+                qr_code_hash: qrCodeHash, // Add QR code hash for scanning
                 role: 'Participant' // Default
             });
 
