@@ -27,7 +27,9 @@ import {
     Shield,
     ChevronLeft,
     ChevronRight,
-    Search
+    Search,
+    BrainCircuit,
+    Trophy
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { Notifications } from './Notifications';
@@ -231,6 +233,8 @@ export const ModernSidebar = ({
                         <>
                             {renderSectionHeader('General Access')}
                             {renderLink('/dashboard', LayoutDashboard, 'Dashboard')}
+                            {renderLink('/daily-quiz', BrainCircuit, 'Daily Quiz')}
+                            {renderLink('/leaderboard', Trophy, 'Leaderboard')}
                             {renderLink('/events', Calendar, 'Events')}
                             {renderLink('/clubs', Users, 'Clubs')}
                             {renderLink('/wall', Users, 'Clubs Wall')}
@@ -245,6 +249,8 @@ export const ModernSidebar = ({
                         <>
                             {renderSectionHeader('Overview')}
                             {renderLink('/dashboard', LayoutDashboard, 'Dashboard')}
+                            {renderLink('/daily-quiz', BrainCircuit, 'Daily Quiz')}
+                            {renderLink('/leaderboard', Trophy, 'Leaderboard')}
                             {renderLink('/events', Calendar, 'Events')}
                             {renderLink('/clubs', Users, 'Clubs')}
                             {renderLink('/wall', Users, 'Clubs Wall')}
@@ -292,6 +298,8 @@ export const ModernSidebar = ({
 
                             {renderSectionHeader('General Access')}
                             {renderLink('/dashboard', LayoutDashboard, 'Dashboard')}
+                            {renderLink('/daily-quiz', BrainCircuit, 'Daily Quiz')}
+                            {renderLink('/leaderboard', Trophy, 'Leaderboard')}
                             {renderLink('/events', Calendar, 'Events')}
                             {renderLink('/clubs', Users, 'Clubs')}
                             {renderLink('/wall', Users, 'Clubs Wall')}

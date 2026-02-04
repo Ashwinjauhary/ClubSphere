@@ -17,6 +17,11 @@ const API_KEY_POOLS = {
         import.meta.env.VITE_SAMBANOVA_FORMS_KEY_1,
         import.meta.env.VITE_SAMBANOVA_FORMS_KEY_2,
         import.meta.env.VITE_SAMBANOVA_FORMS_KEY_3
+    ].filter(Boolean),
+    quiz: [
+        import.meta.env.VITE_SAMBANOVA_QUIZ_KEY_1,
+        import.meta.env.VITE_SAMBANOVA_QUIZ_KEY_2,
+        import.meta.env.VITE_SAMBANOVA_QUIZ_KEY_3
     ].filter(Boolean)
 };
 
@@ -35,10 +40,11 @@ const BASE_URL = "https://api.sambanova.ai/v1/chat/completions";
 const SERVICE_MODELS = {
     events: "Qwen3-235B",                       // Best for creative & detailed event generation (235B - most powerful)
     reports: "Meta-Llama-3.3-70B-Instruct",     // Best for analytical & structured reports (70B - balanced)
-    forms: "Meta-Llama-3.1-8B-Instruct"         // Stable and fast for form generation (DeepSeek-V3.2 has compatibility issues)
+    forms: "Meta-Llama-3.1-8B-Instruct",        // Stable and fast for form generation
+    quiz: "Meta-Llama-3.3-70B-Instruct"         // High accuracy for technical questions
 };
 
-type ServiceType = 'events' | 'reports' | 'forms';
+type ServiceType = 'events' | 'reports' | 'forms' | 'quiz';
 
 // Generic Helper for Sambanova Calls
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -47,7 +53,8 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 const keyIndexTracker: Record<ServiceType, number> = {
     events: 0,
     reports: 0,
-    forms: 0
+    forms: 0,
+    quiz: 0 // Initialize quiz key tracker
 };
 
 async function callSambaNovaAPI(
@@ -584,4 +591,38 @@ export const generateEventIdeas = async (
         console.error("AI Generation Failed:", error);
         throw error; // Re-throw to let the UI handle it (show error toast instead of fake data)
     }
+};
+
+export const generateDailyQuizQuestions = async (
+    topic: string,
+    difficulty: string = "Mixed"
+): Promise<any[]> => {
+    console.log("Generating daily quiz questions for:", topic);
+    const systemPrompt = "You are a computer science professor creating a daily quiz.";
+    const userPrompt = `
+    Generate 10 multiple-choice questions for a BCA (Bachelor of Computer Applications) student.
+    
+    Topic: ${topic}
+    Difficulty: ${difficulty}
+    
+    Focus on conceptual clarity and practical knowledge.
+    
+    Return ONLY a JSON array of objects:
+    [
+      {
+        "question": "What does SQL stand for?",
+        "options": ["Structured Query Language", "Strong Question Language", "Structured Quick Language", "Simple Query Logic"],
+        "correct_answer": "Structured Query Language",
+        "explanation": "SQL is the standard language for relational database management systems."
+      }
+    ]
+    
+    Ensure:
+    1. "options" has exactly 4 items.
+    2. "correct_answer" matches one of the options EXACTLY.
+    3. No markdown. Pure JSON.
+    `;
+
+    const text = await callSambaNovaAPI(systemPrompt, userPrompt, 'quiz', 0.7);
+    return cleanAndParseJSON(text);
 };

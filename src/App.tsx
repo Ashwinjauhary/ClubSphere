@@ -51,6 +51,8 @@ import { QRScannerFormPage } from './pages/QRScannerFormPage';
 import { EventRegistrationPage } from './pages/EventRegistrationPage';
 import { EventMediaPage } from './pages/EventMediaPage';
 import { AIEventManagerPage } from './pages/AIEventManagerPage';
+import { DailyQuizPage } from './pages/DailyQuizPage';
+import { LeaderboardPage } from './pages/LeaderboardPage';
 
 
 function App() {
@@ -141,6 +143,12 @@ function App() {
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/super-admin" element={<SuperAdminPage />} />
               <Route path="/club-admin/ai-events" element={<AIEventManagerPage />} />
+              <Route path="/club-admin/ai-events" element={<AIEventManagerPage />} />
+
+              {/* Daily Quiz & Gamification */}
+              <Route path="/daily-quiz" element={<DailyQuizPage />} />
+              <Route path="/leaderboard" element={<LeaderboardPage />} />
+
               {/* Add other protected routes here */}
             </Route>
           </Route>
