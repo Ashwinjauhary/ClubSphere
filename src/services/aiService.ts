@@ -1,50 +1,117 @@
-// This service now connects to Sambanova AI (OpenAI Compatible)
+// This service now connects to Sambanova AI (OpenAI Compatible) with Multi-Key Rotation
 import type { AIAnalysisResult } from '../types';
 
-const SAMBANOVA_API_KEY = import.meta.env.VITE_SAMBANOVA_API_KEY || "";
+// API Key Pools - 3 keys per service for rotation
+const API_KEY_POOLS = {
+    events: [
+        import.meta.env.VITE_SAMBANOVA_EVENTS_KEY_1,
+        import.meta.env.VITE_SAMBANOVA_EVENTS_KEY_2,
+        import.meta.env.VITE_SAMBANOVA_EVENTS_KEY_3
+    ].filter(Boolean),
+    reports: [
+        import.meta.env.VITE_SAMBANOVA_REPORTS_KEY_1,
+        import.meta.env.VITE_SAMBANOVA_REPORTS_KEY_2,
+        import.meta.env.VITE_SAMBANOVA_REPORTS_KEY_3
+    ].filter(Boolean),
+    forms: [
+        import.meta.env.VITE_SAMBANOVA_FORMS_KEY_1,
+        import.meta.env.VITE_SAMBANOVA_FORMS_KEY_2,
+        import.meta.env.VITE_SAMBANOVA_FORMS_KEY_3
+    ].filter(Boolean)
+};
 
-if (!SAMBANOVA_API_KEY) {
-    console.warn("Missing VITE_SAMBANOVA_API_KEY in .env file");
-}
+// Validate at least one key exists for each service
+Object.entries(API_KEY_POOLS).forEach(([service, keys]) => {
+    if (keys.length === 0) {
+        console.warn(`No API keys configured for ${service} service. Please add keys to .env`);
+    } else {
+        console.log(`${service} service: ${keys.length} API key(s) configured`);
+    }
+});
 
 const BASE_URL = "https://api.sambanova.ai/v1/chat/completions";
-const MODEL_NAME = "ALLaM-7B-Instruct-preview";
+
+// Service-specific models optimized for their tasks (using available Sambanova models)
+const SERVICE_MODELS = {
+    events: "Qwen3-235B",                       // Best for creative & detailed event generation (235B - most powerful)
+    reports: "Meta-Llama-3.3-70B-Instruct",     // Best for analytical & structured reports (70B - balanced)
+    forms: "Meta-Llama-3.1-8B-Instruct"         // Stable and fast for form generation (DeepSeek-V3.2 has compatibility issues)
+};
+
+type ServiceType = 'events' | 'reports' | 'forms';
 
 // Generic Helper for Sambanova Calls
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-async function callSambaNovaAPI(systemPrompt: string, userPrompt: string, temperature: number = 0.5, maxRetries: number = 3): Promise<string> {
+// Track current key index for each service (round-robin rotation)
+const keyIndexTracker: Record<ServiceType, number> = {
+    events: 0,
+    reports: 0,
+    forms: 0
+};
+
+async function callSambaNovaAPI(
+    systemPrompt: string,
+    userPrompt: string,
+    serviceType: ServiceType = 'events',
+    temperature: number = 0.5,
+    maxRetries: number = 3
+): Promise<string> {
     const messages = [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
     ];
 
+    // Use service-specific model
+    const modelName = SERVICE_MODELS[serviceType];
+
+    // Model-specific stop tokens
+    const stopTokens = modelName.includes("DeepSeek")
+        ? ["<｜end▁of▁sentence｜>"]  // DeepSeek stop token
+        : ["<|eot_id|>", "<|end_of_text|>"];  // Llama/Qwen stop tokens
+
     const requestBody = {
-        model: MODEL_NAME,
+        model: modelName,
         messages: messages,
-        temperature: temperature, // Use provided temperature (default 0.5)
-        top_p: 0.1, // Restrict token reuse
-        stop: ["<|eot_id|>", "<|end_of_text|>"], // Ensure it stops
-        max_tokens: 1000 // Ensure response is not truncated
+        temperature: temperature,
+        top_p: 0.1,
+        stop: stopTokens,
+        max_tokens: serviceType === 'events' ? 2000 : 1000  // More tokens for creative event generation
     };
 
+    const keyPool = API_KEY_POOLS[serviceType];
+    if (keyPool.length === 0) {
+        throw new Error(`No API keys available for ${serviceType} service`);
+    }
+
     let attempt = 0;
+    let lastError: Error | null = null;
 
     while (attempt < maxRetries) {
+        // Get current key from pool (round-robin)
+        const currentKeyIndex = keyIndexTracker[serviceType] % keyPool.length;
+        const currentKey = keyPool[currentKeyIndex];
+
         try {
+            console.log(`[${serviceType}] Using ${modelName} with key #${currentKeyIndex + 1} (Attempt ${attempt + 1}/${maxRetries})`);
+
             const response = await fetch(BASE_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${SAMBANOVA_API_KEY}`
+                    'Authorization': `Bearer ${currentKey}`
                 },
                 body: JSON.stringify(requestBody)
             });
 
             if (response.status === 429) {
-                console.warn(`Sambanova rate limit hit (429).`);
+                console.warn(`[${serviceType}] Rate limit hit on key #${currentKeyIndex + 1}. Rotating to next key...`);
+
+                // Rotate to next key
+                keyIndexTracker[serviceType] = (keyIndexTracker[serviceType] + 1) % keyPool.length;
+
                 attempt++;
-                const waitTime = 2000 * Math.pow(1.5, attempt);
+                const waitTime = 1000 * Math.pow(1.5, attempt);
                 await sleep(waitTime);
                 continue;
             }
@@ -57,40 +124,63 @@ async function callSambaNovaAPI(systemPrompt: string, userPrompt: string, temper
             const data = await response.json();
 
             if (data.choices && data.choices[0] && data.choices[0].message) {
+                // Success! Rotate to next key for next request (load balancing)
+                keyIndexTracker[serviceType] = (keyIndexTracker[serviceType] + 1) % keyPool.length;
                 return data.choices[0].message.content.trim();
             } else {
                 throw new Error("Invalid Sambanova Response Structure");
             }
 
         } catch (error) {
-            console.warn("Sambanova Call Failed:", error);
+            console.warn(`[${serviceType}] Call failed on key #${currentKeyIndex + 1}:`, error);
+            lastError = error as Error;
+
+            // Rotate to next key on error
+            keyIndexTracker[serviceType] = (keyIndexTracker[serviceType] + 1) % keyPool.length;
+
             attempt++;
-            if (attempt >= maxRetries) throw error;
+            if (attempt >= maxRetries) break;
             await sleep(1000 * attempt);
         }
     }
 
-    throw new Error("Unable to connect to AI after multiple attempts. Please try again later.");
+    throw lastError || new Error(`Unable to connect to AI after ${maxRetries} attempts across all available keys.`);
 }
 
 // Helper to clean and parse AI JSON response
 const cleanAndParseJSON = (text: string): any => {
+    // 1. Remove markdown code blocks
     let clean = text.replace(/```json/g, '').replace(/```/g, '').trim();
 
-    // Find the first outer bracket/brace
-    const firstChar = clean.match(/^[\s\n]*([{\[])/);
-    if (firstChar) {
-        const start = clean.indexOf(firstChar[1]);
-        const endChar = firstChar[1] === '{' ? '}' : ']';
-        const end = clean.lastIndexOf(endChar);
-        if (end > start) {
-            clean = clean.substring(start, end + 1);
-        }
+    // 2. Find the index of the first '[' or '{'
+    const firstBracket = clean.indexOf('[');
+    const firstBrace = clean.indexOf('{');
+
+    let start = -1;
+    if (firstBracket !== -1 && firstBrace !== -1) {
+        start = Math.min(firstBracket, firstBrace);
+    } else if (firstBracket !== -1) {
+        start = firstBracket;
+    } else if (firstBrace !== -1) {
+        start = firstBrace;
+    }
+
+    // 3. Find the index of the last ']' or '}'
+    const lastBracket = clean.lastIndexOf(']');
+    const lastBrace = clean.lastIndexOf('}');
+    let end = Math.max(lastBracket, lastBrace);
+
+    // 4. Extract the substring if valid start/end found
+    if (start !== -1 && end !== -1 && end > start) {
+        clean = clean.substring(start, end + 1);
+    } else {
+        // Fallback: if no brackets found, it might be heavily malformed, but let's try strict mode or just fail gracefully later
+        console.warn("No JSON brackets found in response:", text.substring(0, 50) + "...");
     }
 
     try {
-        // Remove any trailing commas which might break JSON
-        clean = clean.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']');
+        // Remove valid trailing commas (e.g., [1, 2,] -> [1, 2])
+        clean = clean.replace(/,(\s*[\]}])/g, '$1');
         return JSON.parse(clean);
     } catch (e) {
         console.warn("Initial JSON Parse Failed, retrying sanitizer...", clean.substring(0, 100));
@@ -136,7 +226,7 @@ export const analyzeReportWithAI = async (reportText: string): Promise<AIAnalysi
     No markdown formatting. Pure JSON.
     `;
 
-    const text = await callSambaNovaAPI(systemPrompt, userPrompt);
+    const text = await callSambaNovaAPI(systemPrompt, userPrompt, 'reports');
     return cleanAndParseJSON(text);
 };
 
@@ -161,7 +251,7 @@ export const generateEventDescription = async (
     Return ONLY the plain text description. Do not include a title or markdown wrapper like "Here is the description".
     `;
 
-    return await callSambaNovaAPI(systemPrompt, userPrompt);
+    return await callSambaNovaAPI(systemPrompt, userPrompt, 'events');
 };
 
 export const generateClubBio = async (
@@ -181,7 +271,7 @@ export const generateClubBio = async (
     Return ONLY the plain text bio.
     `;
 
-    return await callSambaNovaAPI(systemPrompt, userPrompt);
+    return await callSambaNovaAPI(systemPrompt, userPrompt, 'events');
 };
 
 export const generateFeedbackForm = async (
@@ -209,7 +299,7 @@ export const generateFeedbackForm = async (
     Ensure IDs are unique strings. No markdown code blocks. Pure JSON.
     `;
 
-    const text = await callSambaNovaAPI(systemPrompt, userPrompt);
+    const text = await callSambaNovaAPI(systemPrompt, userPrompt, 'forms');
     return cleanAndParseJSON(text);
 };
 
@@ -247,7 +337,7 @@ export const generateFormSchema = async (
     `;
 
     try {
-        const text = await callSambaNovaAPI(systemPrompt, userPromptText, 0.7, 3);
+        const text = await callSambaNovaAPI(systemPrompt, userPromptText, 'forms', 0.7, 3);
         return { ...cleanAndParseJSON(text), isFallback: false };
     } catch (e) {
         console.warn("AI Form Gen failed, using Smart Fallback");
@@ -381,7 +471,7 @@ export const suggestPOMapping = async (
     Do not include markdown.
     `;
 
-    const text = await callSambaNovaAPI(systemPrompt, userPrompt);
+    const text = await callSambaNovaAPI(systemPrompt, userPrompt, 'events');
     return cleanAndParseJSON(text);
 };
 
@@ -482,7 +572,7 @@ export const generateEventIdeas = async (
 
     try {
         // Increased max_tokens to ensuring completion
-        const text = await callSambaNovaAPI(systemPrompt, userPrompt, 1.0, 3);
+        const text = await callSambaNovaAPI(systemPrompt, userPrompt, 'events', 1.0, 3);
         const events = cleanAndParseJSON(text);
 
         if (Array.isArray(events)) {

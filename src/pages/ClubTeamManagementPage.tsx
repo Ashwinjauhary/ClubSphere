@@ -8,12 +8,14 @@ import { motion } from 'framer-motion';
 interface Ambassador {
     name: string;
     role: string;
+    email: string;
 }
 
 interface CommitteeMember {
     name: string;
     role: string;
     details: string;
+    email: string;
 }
 
 type TeamMemberType = 'ambassador' | 'committee';
@@ -36,7 +38,8 @@ export const ClubTeamManagementPage = () => {
     const [formData, setFormData] = useState({
         name: '',
         role: '',
-        details: ''
+        details: '',
+        email: ''
     });
 
     useEffect(() => {
@@ -71,7 +74,7 @@ export const ClubTeamManagementPage = () => {
 
     const handleAdd = () => {
         setEditingIndex(null);
-        setFormData({ name: '', role: '', details: '' });
+        setFormData({ name: '', role: '', details: '', email: '' });
         setShowModal(true);
     };
 
@@ -79,10 +82,10 @@ export const ClubTeamManagementPage = () => {
         setEditingIndex(index);
         if (activeTab === 'ambassador') {
             const member = ambassadors[index];
-            setFormData({ name: member.name, role: member.role, details: '' });
+            setFormData({ name: member.name, role: member.role, details: '', email: member.email || '' });
         } else {
             const member = committee[index];
-            setFormData({ name: member.name, role: member.role, details: member.details });
+            setFormData({ name: member.name, role: member.role, details: member.details, email: member.email || '' });
         }
         setShowModal(true);
     };
@@ -115,7 +118,7 @@ export const ClubTeamManagementPage = () => {
     };
 
     const handleSave = async () => {
-        if (!formData.name || !formData.role) {
+        if (!formData.name || !formData.role || !formData.email) {
             alert('Please fill in all required fields.');
             return;
         }
@@ -129,7 +132,8 @@ export const ClubTeamManagementPage = () => {
             if (activeTab === 'ambassador') {
                 const newMember: Ambassador = {
                     name: formData.name,
-                    role: formData.role
+                    role: formData.role,
+                    email: formData.email
                 };
 
                 let updatedAmbassadors;
@@ -150,7 +154,8 @@ export const ClubTeamManagementPage = () => {
                 const newMember: CommitteeMember = {
                     name: formData.name,
                     role: formData.role,
-                    details: formData.details
+                    details: formData.details,
+                    email: formData.email
                 };
 
                 let updatedCommittee;
@@ -170,7 +175,7 @@ export const ClubTeamManagementPage = () => {
             }
 
             setShowModal(false);
-            setFormData({ name: '', role: '', details: '' });
+            setFormData({ name: '', role: '', details: '', email: '' });
             alert('Team member saved successfully!');
         } catch (error) {
             console.error('Error saving:', error);
@@ -214,8 +219,8 @@ export const ClubTeamManagementPage = () => {
                     <button
                         onClick={() => setActiveTab('ambassador')}
                         className={`flex-1 px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'ambassador'
-                                ? 'bg-brand-600 text-white shadow-md'
-                                : 'text-gray-500 hover:text-gray-900'
+                            ? 'bg-brand-600 text-white shadow-md'
+                            : 'text-gray-500 hover:text-gray-900'
                             }`}
                     >
                         Ambassadors ({ambassadors.length})
@@ -223,8 +228,8 @@ export const ClubTeamManagementPage = () => {
                     <button
                         onClick={() => setActiveTab('committee')}
                         className={`flex-1 px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'committee'
-                                ? 'bg-brand-600 text-white shadow-md'
-                                : 'text-gray-500 hover:text-gray-900'
+                            ? 'bg-brand-600 text-white shadow-md'
+                            : 'text-gray-500 hover:text-gray-900'
                             }`}
                     >
                         Core Committee ({committee.length})
@@ -261,6 +266,7 @@ export const ClubTeamManagementPage = () => {
                                             <div>
                                                 <h3 className="text-lg font-bold text-gray-900">{member.name}</h3>
                                                 <p className="text-sm text-gray-500 font-medium">{member.role}</p>
+                                                {member.email && <p className="text-xs text-gray-400 mt-1">{member.email}</p>}
                                             </div>
                                         </div>
                                         <div className="flex gap-2">
@@ -304,6 +310,7 @@ export const ClubTeamManagementPage = () => {
                                                 {member.role}
                                             </p>
                                             <p className="text-xs text-gray-500 font-mono">{member.details}</p>
+                                            {member.email && <p className="text-xs text-gray-400 mt-1">{member.email}</p>}
                                         </div>
                                     </div>
                                     <div className="flex gap-2">
@@ -371,6 +378,19 @@ export const ClubTeamManagementPage = () => {
                                                 ? 'e.g., Associate Professor'
                                                 : 'e.g., PRESIDENT'
                                         }
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Email *
+                                    </label>
+                                    <input
+                                        type="email"
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500"
+                                        placeholder="e.g., member@example.com"
                                     />
                                 </div>
 

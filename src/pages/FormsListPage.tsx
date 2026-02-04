@@ -23,10 +23,11 @@ import QRCode from 'qrcode';
 
 interface Form {
     id: string;
+    event_id: string;
     title: string;
     description: string;
     created_at: string;
-    is_published: boolean;
+    is_active: boolean; // Changed from is_published to match DB schema if needed, checking... actually DB has is_active
     _count?: {
         responses: number;
     }
@@ -54,8 +55,8 @@ export const FormsListPage = () => {
         try {
             // Fetch forms created by current admin
             const { data, error } = await supabase
-                .from('forms')
-                .select('*, form_responses(count)')
+                .from('feedback_forms')
+                .select('*, feedback_responses(count)')
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
@@ -63,7 +64,7 @@ export const FormsListPage = () => {
             // Format data to include response count
             const formatted = data.map((f: any) => ({
                 ...f,
-                _count: { responses: f.form_responses[0]?.count || 0 }
+                _count: { responses: f.feedback_responses[0]?.count || 0 }
             }));
 
             setForms(formatted);
@@ -79,7 +80,7 @@ export const FormsListPage = () => {
         if (!confirm('Are you sure you want to delete this form?')) return;
 
         try {
-            const { error } = await supabase.from('forms').delete().eq('id', id);
+            const { error } = await supabase.from('feedback_forms').delete().eq('id', id);
             if (error) throw error;
             setForms(forms.filter(f => f.id !== id));
             toast.success('Form deleted successfully');
@@ -167,22 +168,22 @@ export const FormsListPage = () => {
                                         <button
                                             onClick={async (e) => {
                                                 e.stopPropagation();
-                                                const newStatus = !form.is_published;
+                                                const newStatus = !form.is_active;
                                                 // Optimistic update
-                                                setForms(forms.map(f => f.id === form.id ? { ...f, is_published: newStatus } : f));
+                                                setForms(forms.map(f => f.id === form.id ? { ...f, is_active: newStatus } : f));
                                                 try {
-                                                    const { error } = await supabase.from('forms').update({ is_published: newStatus }).eq('id', form.id);
+                                                    const { error } = await supabase.from('feedback_forms').update({ is_active: newStatus }).eq('id', form.id);
                                                     if (error) throw error;
                                                     toast.success(newStatus ? 'Form published' : 'Form unpublished');
                                                 } catch (err) {
                                                     toast.error('Failed to update status');
                                                     // Revert
-                                                    setForms(forms.map(f => f.id === form.id ? { ...f, is_published: !newStatus } : f));
+                                                    setForms(forms.map(f => f.id === form.id ? { ...f, is_active: !newStatus } : f));
                                                 }
                                             }}
-                                            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${form.is_published ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                                            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${form.is_active ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
                                         >
-                                            {form.is_published ? 'Published' : 'Draft'}
+                                            {form.is_active ? 'Published' : 'Draft'}
                                         </button>
                                         <button onClick={() => deleteForm(form.id)} className="text-gray-400 hover:text-red-500">
                                             <Trash2 className="h-4 w-4" />
@@ -190,7 +191,7 @@ export const FormsListPage = () => {
                                     </div>
                                     <h3
                                         className="text-lg font-bold text-gray-900 mb-1 hover:text-brand-600 cursor-pointer truncate"
-                                        onClick={() => navigate(`/forms/${form.id}/edit`)}
+                                        onClick={() => navigate(`/events/${form.event_id}/feedback-builder`)} // Edit link -> builder
                                     >
                                         {form.title}
                                     </h3>
@@ -214,7 +215,7 @@ export const FormsListPage = () => {
                                             <span className="text-xs">View</span>
                                         </button>
                                         <button
-                                            onClick={() => navigate(`/forms/${form.id}/stats`)}
+                                            onClick={() => navigate(`/events/${form.event_id}/feedback-stats`)}
                                             className="flex flex-col items-center justify-center p-2 rounded hover:bg-gray-50 text-gray-600"
                                             title="Analytics"
                                         >
@@ -222,7 +223,7 @@ export const FormsListPage = () => {
                                             <span className="text-xs">Stats</span>
                                         </button>
                                         <button
-                                            onClick={() => navigate(`/forms/${form.id}/edit`)}
+                                            onClick={() => navigate(`/events/${form.event_id}/feedback-builder`)}
                                             className="flex flex-col items-center justify-center p-2 rounded hover:bg-gray-50 text-gray-600"
                                             title="Edit"
                                         >

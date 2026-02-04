@@ -82,15 +82,41 @@ export const ClubApplicationsPage = () => {
                 app.id === appId ? { ...app, status: newStatus } : app
             ));
 
-            // If approved, add to club_members
+            // If approved, add to club_members AND core_committee
             if (newStatus === 'approved') {
                 const app = applications.find(a => a.id === appId);
                 if (app) {
+                    // Add to club_members table
                     await supabase.from('club_members').insert({
                         club_id: app.club_id,
                         user_id: app.user_id,
                         role: 'member'
                     });
+
+                    // Fetch current club data to update core_committee
+                    const { data: clubData } = await supabase
+                        .from('clubs')
+                        .select('core_committee')
+                        .eq('id', app.club_id)
+                        .single();
+
+                    const currentCommittee = clubData?.core_committee || [];
+
+                    // Add new member to core_committee
+                    const newMember = {
+                        name: app.profiles.full_name,
+                        role: 'MEMBER',
+                        details: 'New Member',
+                        email: app.profiles.email
+                    };
+
+                    const updatedCommittee = [...currentCommittee, newMember];
+
+                    // Update clubs table with new committee
+                    await supabase
+                        .from('clubs')
+                        .update({ core_committee: updatedCommittee })
+                        .eq('id', app.club_id);
                 }
             }
 

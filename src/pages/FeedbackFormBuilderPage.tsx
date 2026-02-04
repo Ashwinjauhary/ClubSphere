@@ -73,24 +73,41 @@ export const FeedbackFormBuilderPage = () => {
 
     const onSubmit = async (data: FormValues) => {
         try {
-            const { error } = await supabase
-                .from('forms')
+            console.log('Submitting form data:', {
+                event_id: eventId,
+                title: data.title,
+                description: data.description,
+                questions: data.questions,
+                is_active: true
+            });
+
+            const { data: insertedData, error } = await supabase
+                .from('feedback_forms')
                 .insert({
                     event_id: eventId,
                     title: data.title,
                     description: data.description,
                     questions: data.questions,
-                    type: 'feedback',
-                    is_published: true,
-                    created_by: (await supabase.auth.getUser()).data.user?.id
-                });
+                    is_active: true
+                    // Note: created_by column doesn't exist in feedback_forms table
+                })
+                .select()
+                .single();
 
-            if (error) throw error;
-            alert("Feedback Form Created Successfully!");
+            if (error) {
+                console.error('Supabase insert error:', error);
+                console.error('Error code:', error.code);
+                console.error('Error message:', error.message);
+                console.error('Error details:', error.details);
+                throw error;
+            }
+
+            console.log('Form saved successfully:', insertedData);
+            alert("Feedback Form Published Successfully!");
             navigate(`/events/${eventId}`);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error saving form:', error);
-            alert('Failed to save form.');
+            alert(`Failed to save form: ${error?.message || 'Unknown error'}`);
         }
     };
 

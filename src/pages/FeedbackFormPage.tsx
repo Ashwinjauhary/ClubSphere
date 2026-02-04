@@ -40,14 +40,21 @@ export const FeedbackFormPage = () => {
                 .eq('is_active', true)
                 .maybeSingle();
 
-            if (error) throw error;
+            if (error) {
+                console.error('Supabase error details:', error);
+                throw error;
+            }
             if (!data) {
+                console.warn('No active feedback form found for event:', eventId);
                 setError('No active feedback form found for this event.');
             } else {
+                console.log('Form loaded successfully:', data);
                 setForm(data);
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error fetching form:', err);
+            console.error('Error message:', err?.message);
+            console.error('Error details:', err?.details);
             setError('Failed to load feedback form.');
         } finally {
             setLoading(false);
@@ -58,19 +65,54 @@ export const FeedbackFormPage = () => {
         if (!form) return;
         setSubmitting(true);
         try {
-            const { error } = await supabase
-                .from('feedback_responses')
-                .insert({
-                    form_id: form.id,
-                    user_id: user?.id || null, // Allow anonymous if configured (but we usually require auth for tracking)
-                    responses: data
-                });
+            console.log('=== FEEDBACK SUBMISSION START ===');
+            console.log('Form:', form);
+            console.log('User:', user);
+            console.log('Raw form data:', data);
 
-            if (error) throw error;
+            const submissionData = {
+                form_id: form.id,
+                user_id: user?.id, // Restored: Sending user_id for accurate tracking
+                responses: data
+            };
+
+            console.log('Submission payload:', JSON.stringify(submissionData, null, 2));
+
+            const { data: responseData, error } = await supabase
+                .from('feedback_responses')
+                .insert(submissionData)
+                .select();
+
+            console.log('Supabase response:', { data: responseData, error });
+
+            if (error) {
+                // Handle duplicate submission (Unique Constraint Violation)
+                if (error.code === '23505') {
+                    console.warn('Duplicate submission detected');
+                    alert("You have already submitted feedback for this event. You cannot submit again.");
+                    setSubmitted(true); // Treat as success to stop user from trying again
+                    return;
+                }
+
+                console.error('=== SUBMISSION ERROR ===');
+                console.error('Full error object:', error);
+                console.error('Error code:', error.code);
+                console.error('Error message:', error.message);
+                console.error('Error details:', error.details);
+                console.error('Error hint:', error.hint);
+                throw error;
+            }
+
+            console.log('=== SUBMISSION SUCCESS ===');
+            console.log('Response data:', responseData);
             setSubmitted(true);
-        } catch (err) {
-            console.error(error);
-            alert("Failed to submit feedback.");
+        } catch (err: any) {
+            // ... existing catch block ...
+            if (err?.code !== '23505') { // Don't alert generic error if we already handled duplicate above
+                console.error('=== CATCH BLOCK ERROR ===');
+                console.error('Error:', err);
+                alert(`Failed to submit feedback: ${err?.message || JSON.stringify(err)}`);
+            }
         } finally {
             setSubmitting(false);
         }
