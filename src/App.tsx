@@ -13,6 +13,7 @@ import { DashboardLayout } from './layouts/DashboardLayout';
 import { DashboardPage } from './pages/DashboardPage';
 import { ClubsPage } from './pages/ClubsPage';
 import { ClubDetailPage } from './pages/ClubDetailPage';
+import { ClubTeamManagementPage } from './pages/ClubTeamManagementPage';
 import { EventsPage } from './pages/EventsPage';
 import { EventDetailPage } from './pages/EventDetailPage';
 
@@ -102,6 +103,7 @@ function App() {
               <Route path="/clubs/new" element={<CreateClubPage />} />
               <Route path="/clubs/:id" element={<ClubDetailPage />} />
               <Route path="/clubs/:id/edit" element={<EditClubPage />} />
+              <Route path="/clubs/:id/team" element={<ClubTeamManagementPage />} />
               <Route path="/clubs/:id/gallery" element={<GalleryManagementPage />} />
               <Route path="/events" element={<EventsPage />} />
               <Route path="/events/:id" element={<EventDetailPage />} />

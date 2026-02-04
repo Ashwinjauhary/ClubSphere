@@ -38,11 +38,14 @@ export const ClubsPage = () => {
             .select('*')
             .order('name');
 
+        let fetchedClubs = data || [];
+
         if (error) {
             console.error('Error fetching clubs:', error);
-        } else {
-            setClubs(data || []);
+            fetchedClubs = [];
         }
+
+        setClubs(fetchedClubs);
         setLoading(false);
     };
 

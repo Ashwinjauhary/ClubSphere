@@ -1,12 +1,5 @@
--- 1. Setup Table Schema (Add missing columns for extended details)
-ALTER TABLE public.clubs ADD COLUMN IF NOT EXISTS vision text;
-ALTER TABLE public.clubs ADD COLUMN IF NOT EXISTS mission text[];
-ALTER TABLE public.clubs ADD COLUMN IF NOT EXISTS ambassadors jsonb DEFAULT '[]'::jsonb;
-ALTER TABLE public.clubs ADD COLUMN IF NOT EXISTS core_committee jsonb DEFAULT '[]'::jsonb;
-
--- 2. Seed Data
--- We use a temporary function or DO block to set variables if needed, but direct INSERT is easier.
--- We'll try to use the current user as admin, or fallback to the first user found.
+-- Restore deleted clubs with all details
+-- Using a CTE to get the first available user as admin
 
 WITH admin_user AS (
   SELECT id FROM auth.users ORDER BY created_at ASC LIMIT 1
@@ -27,40 +20,7 @@ INSERT INTO public.clubs (
     created_at
 )
 VALUES 
--- 1. Codester
-(
-    'Codester - Coding Club',
-    'codester-club',
-    'CODESTER is more than just a coding club—it is a dynamic hub of innovation, problem-solving, and technological advancement at PSITCHE. Managed by the Department of Computer Applications, the club provides students a structured environment to explore and enhance their programming skills.\n\nThe club CODESTER Offers:\na. Workshops & Hackathons\nb. Project Development & Collaboration\nc. Expert Guidance & Mentorship\nd. Competitive Programming Culture\ne. Networking & Career Opportunities',
-    'Technology',
-    2024,
-    '/logo_codester.png',
-    '',
-    'To cultivate a vibrant coding culture that empowers students to become innovative problem solvers and proficient programmers, equipping them with the skills necessary to thrive in the ever-evolving technology landscape.',
-    ARRAY[
-        'To provide a collaborative platform where students can enhance their coding skills through workshops, hackathons, and coding competitions.',
-        'To foster an environment that encourages creativity and teamwork, enabling participants to work on diverse projects and share knowledge.',
-        'To prepare students for successful careers in technology by offering mentorship, resources, and opportunities for real-world application of coding skills.',
-        'To promote continuous learning and exploration of new programming languages, tools, and technologies, ensuring participants stay updated with industry trends.'
-    ],
-    '[
-        {"name": "Mohammed Ahsan Raza Noori", "role": "Associate Professor"},
-        {"name": "Sweety Dixit", "role": "Senior Manager - Cultural Affairs"}
-    ]'::jsonb,
-    '[
-        {"name": "Ashwin Jauhary", "role": "PRESIDENT", "details": "PSITCHE-BCA-II-B | 24116002159"},
-        {"name": "Smita Gupta", "role": "VICE-PRESIDENT", "details": "PSITCHE-BCA-II-G | 24116002499"},
-        {"name": "Kartik Bajpei", "role": "CLUB REPRESENTATIVE", "details": "PSITCHE-BCA-II-D | 24116002271"},
-        {"name": "Krati Gupta", "role": "SECRETARY", "details": "PSITCHE-BCA-II-H | 24116002282"},
-        {"name": "Atharva Sharma", "role": "TECHNICAL HEAD", "details": "PSITCHE-BCA-II-B | 24116002161"},
-        {"name": "Siddhant Deep", "role": "CREATIVE HEAD", "details": "PSITCHE-BCA-II-G | 24116002494"},
-        {"name": "Subhi Sharma", "role": "CONTENT DEVELOPER", "details": "PSITCHE-BCA-II-G | 24116002509"},
-        {"name": "Naitik", "role": "SOCIAL MEDIA HEAD", "details": "PSITCHE-BCA-II-D | 24116002322"}
-    ]'::jsonb,
-    (SELECT id FROM admin_user),
-    NOW()
-),
--- 2. Logix
+-- 1. Logix
 (
     'The Logix - Technical Club',
     'logix-technical',
@@ -87,7 +47,7 @@ VALUES
     (SELECT id FROM admin_user),
     NOW()
 ),
--- 3. Stellar
+-- 2. Stellar
 (
     'The Stellar - Human Resource Club',
     'stellar-hr',
@@ -109,7 +69,7 @@ VALUES
     (SELECT id FROM admin_user),
     NOW()
 ),
--- 4. Prayas
+-- 3. Prayas
 (
     'The Prayas - The Eco Club',
     'prayas-eco',
@@ -134,12 +94,8 @@ VALUES
     (SELECT id FROM admin_user),
     NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
-    description = EXCLUDED.description,
-    vision = EXCLUDED.vision,
-    mission = EXCLUDED.mission,
-    ambassadors = EXCLUDED.ambassadors,
-    core_committee = EXCLUDED.core_committee,
-    logo_url = EXCLUDED.logo_url,
-    banner_url = EXCLUDED.banner_url;
+ON CONFLICT (slug) DO NOTHING;
 
+-- Verify restoration
+SELECT name, slug, vision IS NOT NULL as has_details FROM public.clubs
+WHERE slug IN ('logix-technical', 'stellar-hr', 'prayas-eco');

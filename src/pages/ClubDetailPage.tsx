@@ -21,6 +21,11 @@ interface ClubDetail {
         full_name: string;
         email: string;
     } | null;
+    // Extended for static data
+    vision?: string;
+    mission?: string[];
+    ambassadors?: { name: string; role: string }[];
+    core_committee?: { name: string; role: string; details: string }[];
 }
 
 interface ClubEvent {
@@ -111,6 +116,9 @@ export const ClubDetailPage = () => {
     const fetchClubDetails = async () => {
         try {
             setLoading(true);
+
+            setLoading(true);
+
             const { data } = await supabase
                 .from('clubs')
                 .select(`*, admin:profiles!admin_id ( full_name, email )`)
@@ -207,6 +215,12 @@ export const ClubDetailPage = () => {
                                     >
                                         <ImageIcon className="h-3.5 w-3.5" /> Manage Gallery
                                     </button>
+                                    <button
+                                        onClick={() => navigate(`/clubs/${club.id}/team`)}
+                                        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white border border-blue-500 text-blue-600 rounded-lg text-sm font-bold uppercase tracking-wide hover:bg-blue-50 transition-colors"
+                                    >
+                                        <Users className="h-3.5 w-3.5" /> Manage Team
+                                    </button>
                                 </>
                             ) : role === 'student' ? (
                                 hasApplied ? (
@@ -265,6 +279,15 @@ export const ClubDetailPage = () => {
                         >
                             Gallery
                         </button>
+                        {/* Show Team tab for any club that has committee data (static clubs) */}
+                        {(club.core_committee || club.ambassadors) && (
+                            <button
+                                onClick={() => setActiveTab('team')}
+                                className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'team' ? 'bg-brand-600 text-white shadow-md' : 'text-gray-500 hover:text-gray-900'}`}
+                            >
+                                Team
+                            </button>
+                        )}
                     </div>
 
                     <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 min-h-[400px] relative overflow-hidden">
@@ -351,10 +374,73 @@ export const ClubDetailPage = () => {
                                 </div>
                             </motion.div>
                         )}
+
+                        {activeTab === 'team' && (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="relative z-10"
+                            >
+                                <div className="flex items-center gap-4 mb-8">
+                                    <div className="h-8 w-1.5 bg-brand-500 rounded-full"></div>
+                                    <h2 className="text-2xl font-bold text-gray-900">Meet the Team</h2>
+                                </div>
+
+                                {/* Ambassadors Section */}
+                                {club.ambassadors && club.ambassadors.length > 0 && (
+                                    <div className="mb-10">
+                                        <h3 className="text-lg font-bold text-brand-600 uppercase tracking-widest mb-6 border-b border-gray-100 pb-2">
+                                            Ambassadors
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            {club.ambassadors.map((person, index) => (
+                                                <div key={index} className="bg-white border border-gray-100 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all text-center group">
+                                                    <div className="h-20 w-20 mx-auto rounded-full bg-brand-50 flex items-center justify-center text-brand-600 mb-4 group-hover:bg-brand-600 group-hover:text-white transition-colors">
+                                                        <Users className="h-8 w-8" />
+                                                    </div>
+                                                    <h4 className="font-bold text-gray-900 text-lg mb-1">{person.name}</h4>
+                                                    <p className="text-sm text-gray-500 font-medium">{person.role}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Core Committee Section */}
+                                {club.core_committee && club.core_committee.length > 0 && (
+                                    <div>
+                                        <h3 className="text-lg font-bold text-brand-600 uppercase tracking-widest mb-6 border-b border-gray-100 pb-2">
+                                            Core Committee
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            {club.core_committee.map((member, index) => (
+                                                <div key={index} className="bg-white border border-gray-100 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
+                                                    <div className="absolute top-0 left-0 w-1 h-full bg-brand-500 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300"></div>
+                                                    <div className="flex flex-col h-full">
+                                                        <div className="flex items-center justify-between mb-4">
+                                                            <div className="h-12 w-12 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
+                                                                <Users className="h-6 w-6" />
+                                                            </div>
+                                                            <span className="text-[10px] font-bold uppercase tracking-wider bg-brand-50 text-brand-700 px-2 py-1 rounded-full">
+                                                                {member.role}
+                                                            </span>
+                                                        </div>
+                                                        <h4 className="font-bold text-gray-900 text-lg mb-1">{member.name}</h4>
+                                                        <p className="text-xs text-gray-500 mt-auto pt-4 border-t border-gray-50 font-mono">
+                                                            {member.details}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </motion.div>
+                        )}
                     </div>
                 </div>
 
             </div>
-        </div>
+        </div >
     );
 };
