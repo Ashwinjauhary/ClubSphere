@@ -13,7 +13,9 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 [![Mobile Ready](https://img.shields.io/badge/Mobile-Capacitor%206-blue?style=flat-square)](https://capacitorjs.com)
-[![Status](https://img.shields.io/badge/Status-Active%20Development-success?style=flat-square)]()
+[![Status](https://img.shields.io/badge/Status-Live%20Production-success?style=flat-square)](https://clubsphere.in)
+
+**[Live Demo](https://clubsphere.in)** | **[Documentation](https://clubsphere.in/about)** | **[Report Bug](https://github.com/Ashwinjauhary/ClubSphere/issues)**
 
 </div>
 
@@ -31,15 +33,22 @@ Whether you are a student looking for the next hackathon, a club lead needing bu
 
 ### 🧠 AI-Powered Intelligence (Gemini 1.5)
 *   **Event Architect**: Staring at a blank page? The AI generates complete event proposals (Title, Budget, Rules, Schedule) based on just a club's mission.
-*   **Resilient Connectivity**: Features a **Multi-Key Rotation System** with aggressive retries (50+ attempts) and **Procedural Fallback generators**, ensuring the AI *never* leaves you hanging, even during API outages.
+*   **Resilient Connectivity**: Features a **Multi-Key Rotation System** with aggressive retries and **Procedural Fallback generators**, ensuring the AI *never* leaves you hanging.
 *   **Smart Reporting**: Auto-analyzes event metrics to generate "Dean-Ready" impact reports with sentiment analysis and strategic roadmaps.
+*   **Quiz Generator**: Instantly creates engagement quizzes based on event topics.
+
+### 🔍 SEO & Social Media Optimized (NEW)
+*   **100% SEO Score**: Fully optimized with Schema.org JSON-LD, Sitemap, and semantic HTML5.
+*   **Rich Previews**: Custom Open Graph and Twitter Card tags ensure links look premium on all social platforms.
+*   **Google Verified**: Official Knowledge Graph integration with verified social profiles and organization schema.
 
 ### 📱 Native & Mobile First
 *   **Android Native App**: Built with **Capacitor**, offering a truly native feel with haptic feedback, safe-area insets, and smooth transitions.
 *   **Offline-Ready PWA**: Installable on iOS and Desktop. Works even when the campus Wi-Fi drops.
 
 ### 🛠️ Powerful Tools
-*   **Dynamic Form Builder**: A Drag-and-Drop form creator (similar to Google Forms) with support for file uploads, ratings, and logic.
+*   **Dynamic Form Builder**: A Drag-and-Drop form creator with support for file uploads, ratings, and logic.
+*   **QR Attendance**: Fast, reliable QR code scanner for event check-ins and attendance tracking.
 *   **Role-Based Access Control (RBAC)**: Strict data isolation using Supabase RLS. Deans see everything; Club Leads see their club; Students see public events.
 *   **Real-Time Workflows**: Push notifications and live status updates for proposal approvals.
 
@@ -90,13 +99,12 @@ flowchart TD
 | **Frontend** | React 18, TypeScript | Core application logic and component structure. |
 | **Build Tool** | Vite | Lightning-fast HMR and optimized production builds. |
 | **Styling** | Tailwind CSS | Utility-first styling for rapid UI development. |
-| **Animations** | Framer Motion, GSAP | Complex page transitions and micro-interactions. |
+| **SEO** | React Helmet Async | Advanced meta tag management and structured data injection. |
 | **Mobile** | Capacitor 6 | Converting the React web app into a native Android APK. |
 | **Backend** | Supabase | Postgres Database, Auth, Storage, and Real-time listeners. |
 | **AI Model** | Gemini 1.5 Flash | High-speed text generation for creative and analytical tasks. |
-| **State** | Zustand | efficient, global state management without boilerplate. |
+| **State** | Zustand | Efficient, global state management without boilerplate. |
 | **Forms** | React Hook Form + Zod | Type-safe form validation and handling. |
-| **Icons** | Lucide React | Consistent, lightweight SVG icons. |
 
 ---
 
@@ -108,14 +116,15 @@ ClubSphere/
 ├── src/
 │   ├── components/
 │   │   ├── ui/             # Reusable UI atoms (Buttons, Cards, Modals)
-│   │   └── Layout.tsx      # Main application shell
+│   │   └── SEO.tsx         # Universal SEO & Meta Tag Manager
 │   ├── pages/              # Route components (Dashboard, Events, Login)
 │   ├── services/
-│   │   ├── aiService.ts    # Gemini integration (Retry logic, Fallbacks, Prompts)
+│   │   ├── aiService.ts    # Gemini integration (Retry logic, Fallbacks)
 │   │   └── supabase.ts     # Database client configuration
 │   ├── store/              # Zustand stores (Auth, Theme)
 │   ├── types/              # TypeScript interfaces (Global)
 │   └── App.tsx             # Main entry point with Routes
+├── public/                 # Static assets (sitemap.xml, robots.txt)
 ├── supabase/               # SQL migrations and Seed data
 ├── capacitor.config.ts     # Mobile build configuration
 └── vite.config.ts          # Build optimization settings
@@ -180,8 +189,8 @@ npx cap open android
 
 *   **Security**: No API keys are exposed in the client bundle (except public anon keys). RLS policies prevent unauthorized data access.
 *   **Performance**: Code splitting via Vite, lazy loading of heavy routes, and optimized image delivery.
-*   **Resilience**: The AI service implements an exponential backoff strategy and an automated procedural generator fallback to ensure 99.9% availability.
-*   **Accessibility**: All UI components follow ARIA standards for accessibility.
+*   **Resilience**: The AI service implements an exponential backoff strategy and an automated procedural generator fallback to ensure availability.
+*   **SEO**: Strict adherence to Google's rigorous standards (Sitemap, Robots.txt, Meta Tags).
 
 ---
 
