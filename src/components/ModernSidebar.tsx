@@ -330,12 +330,12 @@ export const ModernSidebar = ({
                                 fontSize: '0.9rem'
                             }}
                         >
-                            {user?.email?.charAt(0).toUpperCase()}
+                            {user?.user_metadata?.full_name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
                         </Avatar>
                         {!isCollapsed && (
                             <Box sx={{ overflow: 'hidden' }}>
                                 <Typography variant="subtitle2" noWrap>
-                                    Ashwin Jauhary
+                                    {user?.user_metadata?.full_name || 'User'}
                                 </Typography>
                                 <Typography variant="caption" color="text.secondary" noWrap display="block">
                                     {user?.email}
