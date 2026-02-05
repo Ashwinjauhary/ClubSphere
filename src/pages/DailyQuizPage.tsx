@@ -23,7 +23,7 @@ export const DailyQuizPage = () => {
         loadQuiz();
     }, []);
 
-    const loadQuiz = async () => {
+    const loadQuiz = async (retry = false) => {
         try {
             const today = new Date().toISOString().split('T')[0];
             const { data: { user } } = await supabase.auth.getUser();
@@ -38,14 +38,38 @@ export const DailyQuizPage = () => {
                 .maybeSingle();
 
             if (quizError) throw quizError;
+
+            // 2. LAZY GENERATION: If no quiz exists, trigger generation
             if (!quizData) {
-                setLoading(false);
-                return;
+                if (retry) {
+                    console.log("Quiz generation incomplete or failed on retry.");
+                    setLoading(false);
+                    return;
+                }
+
+                // Show generating message
+                toast.info("First visitor bonus! Generating today's quiz... 🧠");
+
+                // Call Edge Function
+                const { error: genError } = await supabase.functions.invoke('generate-daily-quiz', {
+                    body: {}
+                });
+
+                if (genError) {
+                    console.error("Generation failed:", genError);
+                    toast.error("Failed to generate quiz");
+                    setLoading(false);
+                    return;
+                }
+
+                // Wait 2 seconds for DB propagation then retry
+                setTimeout(() => loadQuiz(true), 2000);
+                return; // Exit this execution, retry will handle the rest
             }
 
             setQuiz(quizData);
 
-            // 2. Check Attempt (Only for students)
+            // 3. Check Attempt (Only for students)
             if (!isSpectator) {
                 const { data: attemptData } = await supabase
                     .from('quiz_attempts')
@@ -59,7 +83,7 @@ export const DailyQuizPage = () => {
                 }
             }
 
-            // 3. Load Questions (Always load if we have a quiz)
+            // 4. Load Questions (Always load if we have a quiz)
             const { data: qData, error: qError } = await supabase
                 .from('quiz_questions')
                 .select('id, question, options')
@@ -67,11 +91,11 @@ export const DailyQuizPage = () => {
 
             if (qError) throw qError;
             setQuestions(qData || []);
+            setLoading(false);
 
         } catch (error) {
             console.error('Error loading quiz:', error);
             toast.error('Failed to load daily quiz');
-        } finally {
             setLoading(false);
         }
     };
