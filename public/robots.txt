@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://club-sphere-sepia.vercel.app/sitemap.xml
+Sitemap: https://clubsphere.in/sitemap.xml

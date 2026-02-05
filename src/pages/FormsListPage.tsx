@@ -91,7 +91,7 @@ export const FormsListPage = () => {
     };
 
     const generateQRCode = async (formId: string) => {
-        const formUrl = `https://club-sphere-sepia.vercel.app/f/${formId}`;
+        const formUrl = `https://clubsphere.in/f/${formId}`;
         try {
             const dataUrl = await QRCode.toDataURL(formUrl, {
                 width: 300,
@@ -109,7 +109,7 @@ export const FormsListPage = () => {
     };
 
     const copyToClipboard = (formId: string) => {
-        const formUrl = `https://club-sphere-sepia.vercel.app/f/${formId}`;
+        const formUrl = `https://clubsphere.in/f/${formId}`;
         navigator.clipboard.writeText(formUrl);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
@@ -281,7 +281,7 @@ export const FormsListPage = () => {
                                 <input
                                     type="text"
                                     readOnly
-                                    value={`https://club-sphere-sepia.vercel.app/f/${shareModalForm.id}`}
+                                    value={`https://clubsphere.in/f/${shareModalForm.id}`}
                                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm bg-gray-50"
                                 />
                                 <Button

@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'ClubSphere',
   webDir: 'dist',
   server: {
-    url: 'https://club-sphere-sepia.vercel.app',
+    url: 'https://clubsphere.in',
     cleartext: true
   }
 };
