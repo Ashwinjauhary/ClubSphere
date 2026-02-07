@@ -25,7 +25,7 @@ const TOPICS = [
 ];
 
 // Difficulty levels
-const DIFFICULTIES = ["Easy", "Medium", "Hard", "Mixed"];
+const DIFFICULTIES = ["Easy", "Easy", "Medium", "Mixed"];
 
 serve(async (req: Request) => {
     // Handle CORS
@@ -70,14 +70,16 @@ serve(async (req: Request) => {
             throw new Error("Missing Sambanova API Key in Edge Function Secrets");
         }
 
-        const systemPrompt = "You are a computer science professor creating a daily quiz.";
+        const systemPrompt = "You are a friendly and engaging computer science mentor.";
         const userPrompt = `
     Generate 10 multiple-choice questions for a BCA (Bachelor of Computer Applications) student.
     
     Topic: ${topic}
-    Difficulty: ${difficulty}
+    Difficulty: ${difficulty} (Lean towards easier side)
     
-    Focus on conceptual clarity and practical knowledge.
+    Focus on conceptual clarity but make it fun and engaging.
+    Avoid overly complex syntax or obscure trivia.
+    Include "Did you know?" facts in the explanation occasionally.
     
     Return ONLY a JSON array of objects:
     [
@@ -85,7 +87,7 @@ serve(async (req: Request) => {
         "question": "What does SQL stand for?",
         "options": ["Structured Query Language", "Strong Question Language", "Structured Quick Language", "Simple Query Logic"],
         "correct_answer": "Structured Query Language",
-        "explanation": "SQL is the standard language for relational database management systems."
+        "explanation": "SQL is the standard language for relational database management systems. Did you know? SQL was originally called SEAL!"
       }
     ]
     
