@@ -8,24 +8,16 @@ const corsHeaders = {
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Topics for rotation
-const TOPICS = [
-    "Database Management Systems (DBMS)",
-    "Data Structures & Algorithms",
-    "Operating Systems",
-    "Computer Networks",
-    "Web Development (HTML/CSS/JS)",
-    "React & Modern Frontend",
-    "Python Programming",
-    "Java Programming",
-    "Cybersecurity Basics",
-    "Cloud Computing",
-    "Artificial Intelligence Basics",
-    "Software Engineering Principles"
+// Daily Categories for rotation
+const DAILY_CATEGORIES = [
+    { day: "Sunday", topic: "Mixed Mega Quiz (General Knowledge)", difficulty: "Mixed" },
+    { day: "Monday", topic: "Sports (Cricket, Football, Olympics & Traditional Sports)", difficulty: "Easy" },
+    { day: "Tuesday", topic: "Politics & Governance (Indian Constitution, World Leaders, Current Affairs)", difficulty: "Medium" },
+    { day: "Wednesday", topic: "Computer & Digital World (Tech History, Social Media, AI Trends)", difficulty: "Easy" },
+    { day: "Thursday", topic: "Business & Economics (Top Brands, Entrepreneurs, Economy Basics)", difficulty: "Medium" },
+    { day: "Friday", topic: "Entertainment & Science (Movies, Music, Basic Science Facts)", difficulty: "Easy" },
+    { day: "Saturday", topic: "History & Geography (World Wonders, Indian History, Capitals)", difficulty: "Medium" }
 ];
-
-// Difficulty levels
-const DIFFICULTIES = ["Easy", "Easy", "Medium", "Mixed"];
 
 serve(async (req: Request) => {
     // Handle CORS
@@ -39,11 +31,14 @@ serve(async (req: Request) => {
         const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
         const supabase = createClient(supabaseUrl, supabaseKey);
 
-        // 2. Select Topic & Difficulty
-        const today = new Date().toISOString().split('T')[0];
-        const seeding = new Date().getDate(); // Simple seeding based on day
-        const topic = TOPICS[seeding % TOPICS.length];
-        const difficulty = DIFFICULTIES[seeding % DIFFICULTIES.length];
+        // 2. Select Category based on Day of Week
+        const now = new Date();
+        const istOffset = 5.5 * 60 * 60 * 1000;
+        const istDate = new Date(now.getTime() + istOffset);
+
+        const dayIndex = istDate.getDay();
+        const { topic, difficulty } = DAILY_CATEGORIES[dayIndex];
+        const today = istDate.toISOString().split('T')[0];
 
         console.log(`Generating Quiz for ${today}: ${topic} (${difficulty})`);
 
@@ -70,31 +65,33 @@ serve(async (req: Request) => {
             throw new Error("Missing Sambanova API Key in Edge Function Secrets");
         }
 
-        const systemPrompt = "You are a friendly and engaging computer science mentor.";
+        const systemPrompt = "You are an expert General Knowledge quiz master, known for creating engaging and educational trivia for university students.";
         const userPrompt = `
-    Generate 10 multiple-choice questions for a BCA (Bachelor of Computer Applications) student.
+    Generate 10 multiple-choice questions for university students (primarily BBA and BCA).
     
-    Topic: ${topic}
-    Difficulty: ${difficulty} (Lean towards easier side)
+    Category/Topic: ${topic}
+    Difficulty: ${difficulty}
     
-    Focus on conceptual clarity but make it fun and engaging.
-    Avoid overly complex syntax or obscure trivia.
-    Include "Did you know?" facts in the explanation occasionally.
+    Guidelines:
+    1. Balance the questions so they are interesting for both technical (BCA) and management (BBA) students.
+    2. Focus on conceptual knowledge, famous personalities, major events, and fun facts.
+    3. Include "Did you know?" facts in the explanation to make it educational.
+    4. Keep the language simple, professional, and engaging.
     
     Return ONLY a JSON array of objects:
     [
       {
-        "question": "What does SQL stand for?",
-        "options": ["Structured Query Language", "Strong Question Language", "Structured Quick Language", "Simple Query Logic"],
-        "correct_answer": "Structured Query Language",
-        "explanation": "SQL is the standard language for relational database management systems. Did you know? SQL was originally called SEAL!"
+        "question": "Which company owns the social media platform Instagram?",
+        "options": ["Google", "Meta", "Microsoft", "Twitter"],
+        "correct_answer": "Meta",
+        "explanation": "Meta (formerly Facebook) acquired Instagram in 2012. Did you know? Instagram was originally called 'Burbn'!"
       }
     ]
     
     Ensure:
     1. "options" has exactly 4 items.
     2. "correct_answer" matches one of the options EXACTLY.
-    3. No markdown. Pure JSON.
+    3. No markdown formatting. Pure JSON output only.
     `;
 
         const response = await fetch("https://api.sambanova.ai/v1/chat/completions", {

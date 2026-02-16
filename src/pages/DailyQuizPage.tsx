@@ -161,22 +161,22 @@ export const DailyQuizPage = () => {
 
     if (attempt) {
         return (
-            <div className="max-w-2xl mx-auto py-12 px-4">
-                <div className="bg-white rounded-2xl shadow-xl overflow-hidden text-center p-8 border border-brand-100">
-                    <div className="inline-flex items-center justify-center w-20 h-20 bg-yellow-100 rounded-full mb-6">
+            <div className="max-w-2xl mx-auto py-6 sm:py-12 px-4">
+                <div className="bg-white rounded-2xl shadow-xl overflow-hidden text-center p-6 sm:p-8 border border-brand-100">
+                    <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-yellow-100 rounded-full mb-6">
                         <Trophy className="h-10 w-10 text-yellow-600" />
                     </div>
                     <h2 className="text-3xl font-bold text-gray-900 mb-2">Quiz Completed!</h2>
                     <p className="text-gray-500 mb-8">You have already attempted today's challenge.</p>
 
-                    <div className="grid grid-cols-2 gap-4 mb-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-8">
                         <div className="bg-blue-50 p-4 rounded-xl">
                             <span className="block text-sm text-blue-600 font-medium tracking-wide uppercase">Score</span>
-                            <span className="text-3xl font-black text-blue-900">{attempt.score}/{questions.length || attempt.total || '?'}</span>
+                            <span className="text-2xl sm:text-3xl font-black text-blue-900">{attempt.score}/{questions.length || attempt.total || '?'}</span>
                         </div>
                         <div className="bg-purple-50 p-4 rounded-xl">
                             <span className="block text-sm text-purple-600 font-medium tracking-wide uppercase">XP Earned</span>
-                            <span className="text-3xl font-black text-purple-900">+{attempt.xp_earned}</span>
+                            <span className="text-2xl sm:text-3xl font-black text-purple-900">+{attempt.xp_earned}</span>
                         </div>
                     </div>
 
@@ -191,7 +191,7 @@ export const DailyQuizPage = () => {
     const currentQ = questions[currentQIndex];
 
     return (
-        <div className="max-w-3xl mx-auto py-8 px-4">
+        <div className="max-w-3xl mx-auto py-4 sm:py-8 px-4">
             <PageHeader
                 title={`Daily Challenge: ${quiz.topic}`}
                 description={format(new Date(quiz.date), 'EEEE, MMMM do, yyyy')}
@@ -222,13 +222,13 @@ export const DailyQuizPage = () => {
                     />
                 </div>
 
-                <div className="p-8">
+                <div className="p-5 sm:p-8">
                     <div className="flex justify-between items-center mb-6">
                         <span className="text-sm font-medium text-gray-400">Question {currentQIndex + 1} of {questions.length}</span>
                         <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">10 XP</span>
                     </div>
 
-                    <h3 className="text-xl font-bold text-gray-900 mb-8 leading-relaxed">
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-6 sm:mb-8 leading-relaxed">
                         {currentQ.question}
                     </h3>
 
@@ -240,7 +240,7 @@ export const DailyQuizPage = () => {
                                     key={idx}
                                     onClick={() => handleAnswer(currentQ.id, option)}
                                     disabled={isSpectator}
-                                    className={`w-full text-left p-4 rounded-xl border-2 transition-all flex items-center justify-between group
+                                    className={`w-full text-left p-3 sm:p-4 rounded-xl border-2 transition-all flex items-center justify-between group
                                         ${isSelected
                                             ? 'border-brand-600 bg-brand-50 text-brand-900 shadow-sm'
                                             : isSpectator
@@ -249,19 +249,19 @@ export const DailyQuizPage = () => {
                                         }`}
                                 >
                                     <span className="flex items-center">
-                                        <span className={`w-8 h-8 rounded-full flex items-center justify-center mr-4 text-sm font-bold border ${isSelected ? 'bg-brand-600 text-white border-brand-600' : 'bg-white text-gray-400 border-gray-200'}`}>
+                                        <span className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center mr-3 sm:mr-4 text-xs sm:text-sm font-bold border ${isSelected ? 'bg-brand-600 text-white border-brand-600' : 'bg-white text-gray-400 border-gray-200'}`}>
                                             {String.fromCharCode(65 + idx)}
                                         </span>
-                                        {option}
+                                        <span className="text-sm sm:text-base">{option}</span>
                                     </span>
-                                    {isSelected && <CheckCircle2 className="h-5 w-5 text-brand-600" />}
+                                    {isSelected && <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-brand-600 flex-shrink-0 ml-2" />}
                                 </button>
                             );
                         })}
                     </div>
                 </div>
 
-                <div className="bg-gray-50 px-8 py-4 flex justify-between items-center border-t border-gray-100">
+                <div className="bg-gray-50 px-4 sm:px-8 py-4 flex justify-between items-center border-t border-gray-100">
                     <Button
                         variant="secondary"
                         onClick={() => setCurrentQIndex(i => Math.max(0, i - 1))}
@@ -289,6 +289,6 @@ export const DailyQuizPage = () => {
                     )}
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
