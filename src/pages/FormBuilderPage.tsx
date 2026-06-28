@@ -165,7 +165,7 @@ export const FormBuilderPage = () => {
             setValue('description', description);
             setValue('questions', formattedQuestions);
             if (theme) setValue('theme', theme);
-            if (settings) setValue('settings', settings);
+            if (settings) setValue('settings', settings as any);
 
             if (isFallback) {
                 toast("AI Busy: Smart Fallback Active", { icon: "🧠" });

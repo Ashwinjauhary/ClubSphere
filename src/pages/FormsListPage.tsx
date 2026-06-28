@@ -69,7 +69,7 @@ export const FormsListPage = () => {
             }));
 
             setForms(formatted);
-        } catch {
+        } catch (error: any) {
             console.error('Error fetching forms:', error);
             toast.error('Failed to load forms');
         } finally {
@@ -85,7 +85,7 @@ export const FormsListPage = () => {
             if (error) throw error;
             setForms(forms.filter(f => f.id !== id));
             toast.success('Form deleted successfully');
-        } catch {
+        } catch (error: any) {
             console.error('Error deleting form:', error);
             toast.error('Failed to delete form');
         }
@@ -103,7 +103,7 @@ export const FormsListPage = () => {
                 }
             });
             setQrDataUrl(dataUrl);
-        } catch {
+        } catch (error: any) {
             console.error('Error generating QR code:', error);
             toast.error('Failed to generate QR code');
         }
@@ -176,7 +176,7 @@ export const FormsListPage = () => {
                                                     const { error } = await supabase.from('feedback_forms').update({ is_active: newStatus }).eq('id', form.id);
                                                     if (error) throw error;
                                                     toast.success(newStatus ? 'Form published' : 'Form unpublished');
-                                                } catch {
+                                                } catch (error: any) {
                                                     toast.error('Failed to update status');
                                                     // Revert
                                                     setForms(forms.map(f => f.id === form.id ? { ...f, is_active: !newStatus } : f));
