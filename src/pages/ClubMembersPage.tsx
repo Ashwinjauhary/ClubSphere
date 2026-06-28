@@ -37,6 +37,7 @@ export const ClubMembersPage = () => {
         if (managedClubId) {
             fetchMembers();
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [managedClubId]);
 
     const fetchMembers = async () => {
@@ -60,8 +61,7 @@ export const ClubMembersPage = () => {
 
             if (error) throw error;
 
-            // @ts-ignore
-            setMembers(data || []);
+            setMembers((data as unknown as ClubMember[]) || []);
         } catch (error) {
             console.error('Error fetching members:', error);
         } finally {
@@ -91,6 +91,7 @@ export const ClubMembersPage = () => {
             }
 
             // 2. Update Name/Roll Number if provided
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const updates: any = {};
             if (newMemberRollNo && profile.roll_number !== newMemberRollNo) {
                 updates.roll_number = newMemberRollNo;
@@ -307,7 +308,7 @@ export const ClubMembersPage = () => {
                                         <div className="flex items-center">
                                             <div className="h-10 w-10 flex-shrink-0">
                                                 {member.profile.avatar_url ? (
-                                                    <img className="h-10 w-10 rounded-full object-cover" src={member.profile.avatar_url} alt="" />
+                                                    <img loading="lazy" decoding="async" className="h-10 w-10 rounded-full object-cover" src={member.profile.avatar_url} alt="" />
                                                 ) : (
                                                     <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
                                                         <Users className="h-5 w-5 text-gray-400" />

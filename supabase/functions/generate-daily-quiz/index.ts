@@ -56,15 +56,7 @@ serve(async (req: Request) => {
             });
         }
 
-        // 4. Generate Questions with Sambanova AI
-        // We need to pick an API Key. Deno env doesn't support arrays easily, so we'll grab one.
-        // Ideally we rotate, but for Cron, one valid key is enough. We'll try to get one.
-        const apiKey = Deno.env.get('VITE_SAMBANOVA_QUIZ_KEY_1') || Deno.env.get('SAMBANOVA_API_KEY');
-
-        if (!apiKey) {
-            throw new Error("Missing Sambanova API Key in Edge Function Secrets");
-        }
-
+        // 4. Generate Questions with Groq AI (via proxy)
         const systemPrompt = "You are an expert General Knowledge quiz master, known for creating engaging and educational trivia for university students.";
         const userPrompt = `
     Generate 10 multiple-choice questions for university students (primarily BBA and BCA).
@@ -94,30 +86,25 @@ serve(async (req: Request) => {
     3. No markdown formatting. Pure JSON output only.
     `;
 
-        const response = await fetch("https://api.sambanova.ai/v1/chat/completions", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
-            },
-            body: JSON.stringify({
-                model: "Meta-Llama-3.3-70B-Instruct",
-                messages: [
-                    { role: "system", content: systemPrompt },
-                    { role: "user", content: userPrompt }
-                ],
+        const { data: aiData, error: invokeError } = await supabase.functions.invoke('groq-proxy', {
+            body: {
+                service: 'quiz',
+                systemPrompt,
+                userPrompt,
                 temperature: 0.7,
-                top_p: 0.1,
-                max_tokens: 2000
-            })
+                maxTokens: 2000
+            }
         });
 
-        if (!response.ok) {
-            throw new Error(`AI API Error: ${await response.text()}`);
+        if (invokeError) {
+            throw new Error(`Groq Proxy Error: ${invokeError.message}`);
+        }
+        
+        if (aiData?.error) {
+            throw new Error(`Groq AI Error: ${aiData.error}`);
         }
 
-        const aiData = await response.json();
-        const rawText = aiData.choices[0]?.message?.content || "[]";
+        const rawText = aiData?.text || "[]";
 
         // 5. Parse JSON (Robust Cleaner)
         let clean = rawText.replace(/```json/g, '').replace(/```/g, '').trim();

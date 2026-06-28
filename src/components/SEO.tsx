@@ -6,6 +6,7 @@ interface SEOProps {
     image?: string;
     url?: string;
     type?: 'website' | 'article' | 'profile' | 'event';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     schema?: Record<string, any>;
     keywords?: string[];
     author?: string;

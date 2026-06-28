@@ -25,6 +25,7 @@ export const ClubHighlightsPage = () => {
     useEffect(() => {
         if (!id) return;
         fetchHighlights();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
     const fetchHighlights = async () => {
@@ -44,8 +45,8 @@ export const ClubHighlightsPage = () => {
                 .order('start_time', { ascending: false });
 
             if (error) throw error;
-            // @ts-ignore
-            setEvents(data || []);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            setEvents(data as any);
         } catch (error) {
             console.error('Error fetching highlights:', error);
         } finally {

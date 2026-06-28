@@ -17,11 +17,35 @@ const THEME_STYLES: Record<string, { bg: string, border: string, button: string,
     'elegant-pink': { bg: 'bg-pink-600', border: 'border-pink-800', button: 'bg-pink-600 hover:bg-pink-700', light: 'bg-pink-50' },
 };
 
+export interface FormQuestion {
+    id: string;
+    type: string;
+    title: string;
+    label?: string;
+    description?: string;
+    required?: boolean;
+    options?: string[];
+}
+
+export interface FormSchema {
+    id: string;
+    title: string;
+    header_image_url?: string;
+    description?: string;
+    theme?: string;
+    settings?: {
+        limit_one_response_per_user?: boolean;
+        accepting_responses?: boolean;
+        thank_you_message?: string;
+    };
+    questions: FormQuestion[];
+}
+
 export const FormViewerPage = () => {
     const { id: formId } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { user } = useAuthStore();
-    const [form, setForm] = useState<any>(null);
+    const [form, setForm] = useState<FormSchema | null>(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState(false);
@@ -31,16 +55,17 @@ export const FormViewerPage = () => {
     const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm();
 
     // Helper to normalize options - ensures they're always strings for rendering
-    const normalizeOption = (opt: any): string => {
+    const normalizeOption = (opt: unknown): string => {
         if (typeof opt === 'string') return opt;
         if (typeof opt === 'object' && opt !== null) {
-            return opt.label || opt.value || String(opt);
+            const o = opt as Record<string, unknown>; return (o.label as string) || (o.value as string) || String(opt);
         }
         return String(opt);
     };
 
     useEffect(() => {
         if (formId) fetchForm();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [formId, user]);
 
     const fetchForm = async () => {
@@ -61,9 +86,9 @@ export const FormViewerPage = () => {
             // Normalize options in questions to fix any corrupted data
             const normalizedForm = {
                 ...data,
-                questions: data.questions.map((q: any) => ({
+                questions: data.questions.map((q: FormQuestion) => ({
                     ...q,
-                    options: q.options ? q.options.map((opt: any) => normalizeOption(opt)) : q.options
+                    options: q.options ? q.options.map((opt: unknown) => normalizeOption(opt)) : q.options
                 }))
             };
 
@@ -104,7 +129,7 @@ export const FormViewerPage = () => {
         }
     };
 
-    const onSubmit = async (formData: any) => {
+    const onSubmit = async (formData: Record<string, unknown>) => {
         if (!form) return;
 
         // Final check for log in requirements
@@ -168,7 +193,7 @@ export const FormViewerPage = () => {
                     <CheckCircle className="h-8 w-8 text-green-600" />
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">Thank You!</h2>
-                <p className="text-gray-600 mb-8">{form.settings?.thank_you_message || "Your response has been recorded."}</p>
+                <p className="text-gray-600 mb-8">{(form?.settings?.thank_you_message as string) || "Your response has been recorded."}</p>
                 <Button onClick={() => navigate(user ? '/dashboard' : '/')} className="w-full">Return Home</Button>
             </div>
         </div>
@@ -207,7 +232,7 @@ export const FormViewerPage = () => {
                 <div className={`${theme.bg} px-6 py-8 text-white border-t-8 ${theme.border}`}>
                     <h1 className="text-3xl font-bold">{form.title}</h1>
                     {form.description && <p className="mt-2 text-white/90 whitespace-pre-line">{form.description}</p>}
-                    {form.settings?.limit_one_response_per_user && !user && (
+                    {Boolean(form?.settings?.limit_one_response_per_user) && !user && (
                         <div className="mt-4 p-3 bg-white/20 rounded-md text-sm backdrop-blur-sm">
                             ⚠️ You must be logged in to submit this form. <a href={`/login?redirect=/f/${formId}`} className="underline font-bold hover:text-white">Log in here</a>
                         </div>
@@ -215,7 +240,7 @@ export const FormViewerPage = () => {
                 </div>
 
                 <form onSubmit={handleSubmit(onSubmit)} className="p-8 space-y-8">
-                    {form.questions.map((q: any) => (
+                    {form.questions.map((q: FormQuestion) => (
                         <div key={q.id} className="space-y-2">
                             {q.type !== 'description' && (
                                 <label className="block text-base font-medium text-gray-900">
@@ -247,7 +272,7 @@ export const FormViewerPage = () => {
                             {q.type === 'dropdown' && (
                                 <select {...register(q.id, { required: q.required })} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm p-3 border">
                                     <option value="">Select an option</option>
-                                    {(q.options || []).map((opt: any, idx: number) => {
+                                    {(q.options || []).map((opt: unknown, idx: number) => {
                                         const optValue = normalizeOption(opt);
                                         return <option key={`${q.id}-opt-${idx}`} value={optValue}>{optValue}</option>;
                                     })}
@@ -276,7 +301,7 @@ export const FormViewerPage = () => {
 
                             {q.type === 'single_choice' && (
                                 <div className="space-y-2">
-                                    {(q.options || []).map((opt: any, idx: number) => {
+                                    {(q.options || []).map((opt: unknown, idx: number) => {
                                         const optValue = normalizeOption(opt);
                                         return (
                                             <label key={`${q.id}-opt-${idx}`} className="flex items-center space-x-3">
@@ -295,7 +320,7 @@ export const FormViewerPage = () => {
 
                             {(q.type === 'multiple_choice' || q.type === 'checkboxes') && (
                                 <div className="space-y-2">
-                                    {(q.options || []).map((opt: any, idx: number) => {
+                                    {(q.options || []).map((opt: unknown, idx: number) => {
                                         const optValue = normalizeOption(opt);
                                         return (
                                             <label key={`${q.id}-opt-${idx}`} className="flex items-center space-x-3">
@@ -358,7 +383,7 @@ export const FormViewerPage = () => {
                         <Button
                             type="submit"
                             loading={submitting || isSubmitting}
-                            disabled={!form.settings?.accepting_responses || (form.settings?.limit_one_response_per_user && !user)}
+                            disabled={!form?.settings?.accepting_responses || (Boolean(form?.settings?.limit_one_response_per_user) && !user)}
                             className={`w-full h-12 text-lg ${theme.button}`}
                         >
                             {!form.settings?.accepting_responses ? 'Not Accepting Responses' : 'Submit'}

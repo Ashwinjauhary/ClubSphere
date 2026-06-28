@@ -12,8 +12,11 @@ export const DailyQuizPage = () => {
     const { role } = useAuthStore();
     const isSpectator = role === 'admin' || role === 'dean' || role === 'super_admin';
     const [loading, setLoading] = useState(true);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [quiz, setQuiz] = useState<any>(null);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [questions, setQuestions] = useState<any[]>([]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [attempt, setAttempt] = useState<any>(null);
     const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
     const [submitting, setSubmitting] = useState(false);
@@ -21,6 +24,7 @@ export const DailyQuizPage = () => {
 
     useEffect(() => {
         loadQuiz();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const loadQuiz = async (retry = false) => {

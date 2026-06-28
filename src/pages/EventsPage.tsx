@@ -46,6 +46,7 @@ export const EventsPage = () => {
                 .order('start_time', { ascending: true });
 
             if (error) throw error;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             setEvents((data as any) || []);
         } catch (error) {
             console.error('Error fetching events:', error);
@@ -218,7 +219,7 @@ export const EventsPage = () => {
                                             animate={{ opacity: 1, y: 0 }}
                                             className="rounded-xl overflow-hidden shadow-lg"
                                         >
-                                            <img
+                                            <img loading="lazy" decoding="async"
                                                 src={selectedEvent.poster_url}
                                                 alt="Event Poster"
                                                 className="w-full h-64 object-cover"

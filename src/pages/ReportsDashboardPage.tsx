@@ -26,6 +26,7 @@ export const ReportsDashboardPage = () => {
         if (user) {
             fetchReports();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user]);
 
     const fetchReports = async () => {
@@ -40,8 +41,7 @@ export const ReportsDashboardPage = () => {
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
-            // @ts-ignore
-            setReports(data || []);
+            setReports((data as unknown as Report[]) || []);
         } catch (error) {
             console.error('Error fetching reports:', error);
         } finally {
@@ -51,8 +51,7 @@ export const ReportsDashboardPage = () => {
 
     const handleDownload = (report: Report) => {
         if (!report.generated_content) return;
-        // @ts-ignore
-        generateReportPDF(report.title, report.generated_content, []);
+        generateReportPDF(report.title, report.generated_content);
     };
 
     const handleDelete = async (id: string) => {

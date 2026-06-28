@@ -20,6 +20,7 @@ export const FeedbackFormPage = () => {
     const { user } = useAuthStore();
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [form, setForm] = useState<any>(null);
     const [submitted, setSubmitted] = useState(false);
     const [error, setError] = useState('');
@@ -28,6 +29,7 @@ export const FeedbackFormPage = () => {
 
     useEffect(() => {
         if (eventId) fetchForm();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [eventId]);
 
     const fetchForm = async () => {
@@ -51,6 +53,7 @@ export const FeedbackFormPage = () => {
                 console.log('Form loaded successfully:', data);
                 setForm(data);
             }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error('Error fetching form:', err);
             console.error('Error message:', err?.message);
@@ -61,6 +64,7 @@ export const FeedbackFormPage = () => {
         }
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const onSubmit = async (data: any) => {
         if (!form) return;
         setSubmitting(true);
@@ -106,6 +110,7 @@ export const FeedbackFormPage = () => {
             console.log('=== SUBMISSION SUCCESS ===');
             console.log('Response data:', responseData);
             setSubmitted(true);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             // ... existing catch block ...
             if (err?.code !== '23505') { // Don't alert generic error if we already handled duplicate above

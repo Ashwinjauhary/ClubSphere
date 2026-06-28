@@ -23,7 +23,9 @@ export const ClubCard = ({ club }: ClubCardProps) => {
     const [memberCount, setMemberCount] = useState<number>(0);
 
     useEffect(() => {
+         
         fetchMemberCount();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [club.id]);
 
     const fetchMemberCount = async () => {
@@ -51,7 +53,7 @@ export const ClubCard = ({ club }: ClubCardProps) => {
                 <div className="h-28 w-28 rounded-full bg-white shadow-md p-1.5 ring-4 ring-white mb-5 transition-transform duration-300 group-hover:scale-105">
                     <div className="h-full w-full rounded-full overflow-hidden bg-gray-50 flex items-center justify-center border border-gray-100">
                         {club.logo_url ? (
-                            <img
+                            <img loading="lazy" decoding="async"
                                 src={club.logo_url}
                                 alt={`${club.name} logo`}
                                 className="w-full h-full object-contain p-1"

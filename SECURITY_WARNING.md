@@ -7,8 +7,8 @@ Your `.env` file contains **real API keys** that were visible in the screenshot 
 ### IMMEDIATE ACTION REQUIRED:
 
 1. **Rotate ALL API Keys** 🔄
-   - Go to Sambanova dashboard
-   - Regenerate all 9 API keys
+   - Go to Groq dashboard
+   - Regenerate all 12 API keys
    - Update `.env` with new keys
    - Never share screenshots of `.env` again
 
@@ -24,7 +24,7 @@ Your `.env` file contains **real API keys** that were visible in the screenshot 
    - **NEVER** call AI APIs directly from frontend in production
    - Create Supabase Edge Functions as proxy
    - Store API keys in Supabase secrets
-   - Frontend → Edge Function → Sambanova
+   - Frontend → Edge Function → Groq
 
 ## Current Risk Level: 🔴 HIGH
 
@@ -39,7 +39,7 @@ Frontend (React)
     ↓
 Supabase Edge Function (Proxy)
     ↓ (API keys stored in secrets)
-Sambanova API
+Groq API
 ```
 
 **DO NOT DEPLOY** until keys are rotated and proxy is implemented!

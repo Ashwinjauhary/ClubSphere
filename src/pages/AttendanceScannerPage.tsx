@@ -97,6 +97,7 @@ export const AttendanceScannerPage = () => {
             setAttendanceData(attendanceInfo);
             setScanHistory(prev => [attendanceInfo, ...prev.slice(0, 9)]); // Keep last 10 scans
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error(error);
             throw error; // Pass back to scanner for error UI

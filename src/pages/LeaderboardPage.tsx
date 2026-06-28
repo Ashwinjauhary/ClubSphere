@@ -4,11 +4,12 @@ import { Loader2, Medal, Crown, Zap } from 'lucide-react';
 
 export const LeaderboardPage = () => {
     const [loading, setLoading] = useState(true);
-    const [users, setUsers] = useState<any[]>([]);
+    const [users, setUsers] = useState<Record<string, unknown>[]>([]);
     const [period, setPeriod] = useState<'weekly' | 'all_time'>('weekly');
 
     useEffect(() => {
         fetchLeaderboard();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [period]);
 
     const fetchLeaderboard = async () => {
@@ -82,7 +83,7 @@ export const LeaderboardPage = () => {
                                             <div className="flex items-center">
                                                 <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 font-bold mr-2 sm:mr-4 border-2 border-white shadow-sm overflow-hidden flex-shrink-0">
                                                     {user.avatar_url ? (
-                                                        <img src={user.avatar_url} alt="" className="h-full w-full object-cover" />
+                                                        <img loading="lazy" decoding="async" src={user.avatar_url} alt="" className="h-full w-full object-cover" />
                                                     ) : (
                                                         user.full_name?.charAt(0) || 'U'
                                                     )}

@@ -21,7 +21,7 @@ export const QRScannerFormPage = () => {
             } else {
                 setError('Invalid form QR code. Please scan a valid form QR code.');
             }
-        } catch (err) {
+        } catch {
             setError('Invalid QR code format. Please scan a valid form QR code.');
         }
     };

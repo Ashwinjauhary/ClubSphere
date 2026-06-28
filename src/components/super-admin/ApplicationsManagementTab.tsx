@@ -20,6 +20,7 @@ export const ApplicationsManagementTab = () => {
     const [statusFilter, setStatusFilter] = useState<string>('all');
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/immutability
         fetchApplications();
     }, []);
 
@@ -39,8 +40,11 @@ export const ApplicationsManagementTab = () => {
         } else {
             const applicationsWithDetails = data?.map(app => ({
                 ...app,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 club_name: (app.clubs as any)?.name || 'Unknown Club',
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 user_name: (app.profiles as any)?.full_name || 'Unknown',
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 user_email: (app.profiles as any)?.email || ''
             })) || [];
             setApplications(applicationsWithDetails);

@@ -23,6 +23,7 @@ export const ClubManagementTab = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/immutability
         fetchClubs();
     }, []);
 
@@ -41,6 +42,7 @@ export const ClubManagementTab = () => {
         } else {
             const clubsWithAdmin = data?.map(club => ({
                 ...club,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 admin_name: (club.profiles as any)?.full_name || 'No admin'
             })) || [];
             setClubs(clubsWithAdmin);

@@ -34,6 +34,7 @@ export const EventMediaPage = () => {
             fetchMedia();
             fetchEventTitle();
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [eventId]);
 
     const fetchEventTitle = async () => {
@@ -229,7 +230,7 @@ export const EventMediaPage = () => {
                                     layout
                                     className="group relative aspect-[4/5] rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 bg-gray-900"
                                 >
-                                    <img
+                                    <img loading="lazy" decoding="async"
                                         src={asset.url}
                                         alt={asset.caption || 'Event photo'}
                                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-90 group-hover:opacity-100"

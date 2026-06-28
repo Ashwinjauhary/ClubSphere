@@ -51,7 +51,7 @@ export const EventCard = ({
             {/* Image Section */}
             <div className="relative w-full bg-gray-100 rounded-t-2xl overflow-hidden">
                 {imageUrl ? (
-                    <img
+                    <img loading="lazy" decoding="async"
                         src={imageUrl}
                         alt={title}
                         className="w-full h-auto object-contain block"

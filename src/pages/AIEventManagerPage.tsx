@@ -7,17 +7,47 @@ import { Button } from '../components/ui/Button';
 import { toast } from 'sonner';
 import { Sparkles, ArrowRight, Users, DollarSign, Clock, Loader2, ArrowLeft } from 'lucide-react';
 
+export interface Club {
+    id: string;
+    name: string;
+    category?: string;
+    description?: string;
+    admin_id?: string;
+}
+
+export interface AIEventRound {
+    round_name: string;
+    description: string;
+    duration: string;
+}
+
+export interface AIEventIdea {
+    title: string;
+    description: string;
+    event_type: string;
+    difficulty_level?: string;
+    target_audience: string;
+    estimated_budget: string;
+    duration_hours: number;
+    expected_attendees?: string | number;
+    objectives?: string[];
+    structure_rounds?: AIEventRound[];
+    rules?: string[];
+    registration_fields?: unknown[];
+}
+
 export const AIEventManagerPage = () => {
     const navigate = useNavigate();
     const { user } = useAuthStore();
-    const [club, setClub] = useState<any>(null);
+    const [club, setClub] = useState<Club | null>(null);
     const [loading, setLoading] = useState(true);
     const [generating, setGenerating] = useState(false);
-    const [ideas, setIdeas] = useState<any[]>([]);
+    const [ideas, setIdeas] = useState<AIEventIdea[]>([]);
     const [customPrompt, setCustomPrompt] = useState('');
 
     useEffect(() => {
         if (user) fetchUserClub();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user]);
 
     const fetchUserClub = async () => {
@@ -43,8 +73,8 @@ export const AIEventManagerPage = () => {
         if (!club) return;
         setGenerating(true);
         try {
-            const suggestions = await generateEventIdeas(club.name, club.category, club.description, '');
-            setIdeas(suggestions);
+            const suggestions = await generateEventIdeas(club.name, club.category || '', club.description || '', '');
+            setIdeas(suggestions as AIEventIdea[]);
             toast.success("Fresh event ideas generated successfully!");
         } catch (error) {
             console.error(error);
@@ -62,8 +92,8 @@ export const AIEventManagerPage = () => {
         }
         setGenerating(true);
         try {
-            const suggestions = await generateEventIdeas(club.name, club.category, club.description, customPrompt);
-            setIdeas(suggestions);
+            const suggestions = await generateEventIdeas(club.name, club.category || '', club.description || '', customPrompt);
+            setIdeas(suggestions as AIEventIdea[]);
             toast.success("Generated ideas based on your prompt!");
         } catch (error) {
             console.error(error);
@@ -73,7 +103,8 @@ export const AIEventManagerPage = () => {
         }
     };
 
-    const createDraft = async (idea: any) => {
+    const createDraft = async (idea: AIEventIdea) => {
+        if (!club) return;
         try {
             const startTime = new Date();
             startTime.setDate(startTime.getDate() + 14); // Default to 2 weeks from now
@@ -266,7 +297,7 @@ export const AIEventManagerPage = () => {
                                                 <div>
                                                     <strong className="block text-gray-700 mb-1">Structure:</strong>
                                                     <div className="space-y-2">
-                                                        {idea.structure_rounds.map((r: any, i: number) => (
+                                                        {idea.structure_rounds.map((r: AIEventRound, i: number) => (
                                                             <div key={i} className="pl-2 border-l-2 border-brand-200">
                                                                 <p className="font-semibold text-gray-800">{r.round_name}</p>
                                                                 <p>{r.description}</p>

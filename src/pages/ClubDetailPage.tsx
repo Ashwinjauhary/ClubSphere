@@ -59,6 +59,7 @@ export const ClubDetailPage = () => {
         fetchMemberCount();
         fetchGalleryImages();
         if (user) checkApplicationStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id, user]);
 
     const fetchGalleryImages = async () => {
@@ -170,7 +171,7 @@ export const ClubDetailPage = () => {
                             <div className="absolute -inset-1 rounded-full bg-blue-50"></div>
                             <div className="relative h-28 w-28 rounded-full bg-white border-4 border-white shadow-md overflow-hidden">
                                 {club.logo_url ? (
-                                    <img src={club.logo_url} alt={club.name} className="h-full w-full object-cover" />
+                                    <img loading="lazy" decoding="async" src={club.logo_url} alt={club.name} className="h-full w-full object-cover" />
                                 ) : (
                                     <div className="h-full w-full bg-gray-100 flex items-center justify-center text-gray-400">
                                         <Users className="h-10 w-10" />
@@ -329,7 +330,7 @@ export const ClubDetailPage = () => {
                                         <div key={event.id} className="border border-gray-100 rounded-xl p-4 hover:shadow-md transition-shadow bg-white">
                                             <div className="aspect-video bg-gray-100 rounded-lg mb-4 overflow-hidden">
                                                 {event.poster_url ? (
-                                                    <img src={event.poster_url} className="w-full h-full object-cover" />
+                                                    <img loading="lazy" decoding="async" src={event.poster_url} className="w-full h-full object-cover" />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center text-gray-300">
                                                         <Calendar className="h-8 w-8" />
@@ -363,7 +364,7 @@ export const ClubDetailPage = () => {
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                     {galleryImages.map(img => (
                                         <div key={img.id} className="aspect-square bg-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all">
-                                            <img src={img.image_url} alt={img.caption || 'Gallery'} className="w-full h-full object-cover" />
+                                            <img loading="lazy" decoding="async" src={img.image_url} alt={img.caption || 'Gallery'} className="w-full h-full object-cover" />
                                         </div>
                                     ))}
                                     {galleryImages.length === 0 && (

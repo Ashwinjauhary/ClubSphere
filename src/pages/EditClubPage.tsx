@@ -11,6 +11,7 @@ export const EditClubPage = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { user } = useAuthStore();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [club, setClub] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 

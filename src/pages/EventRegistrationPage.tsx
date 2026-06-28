@@ -28,6 +28,7 @@ export const EventRegistrationPage = () => {
     const { eventId } = useParams<{ eventId: string }>();
     const navigate = useNavigate();
     const { user } = useAuthStore();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [event, setEvent] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [alreadyRegistered, setAlreadyRegistered] = useState(false);
@@ -95,6 +96,7 @@ export const EventRegistrationPage = () => {
 
             toast.success('Registration Successful!');
             navigate(`/events/${eventId}`);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error(error);
             toast.error(error.message || 'Registration failed.');
@@ -109,7 +111,7 @@ export const EventRegistrationPage = () => {
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
                 <div className="h-48 w-full bg-gray-200 relative">
                     {event.poster_url ? (
-                        <img src={event.poster_url} alt={event.title} className="w-full h-full object-cover" />
+                        <img loading="lazy" decoding="async" src={event.poster_url} alt={event.title} className="w-full h-full object-cover" />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center bg-brand-50">
                             <Calendar className="h-16 w-16 text-brand-200" />

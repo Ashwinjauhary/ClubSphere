@@ -26,6 +26,7 @@ export const EventManagementTab = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/immutability
         fetchEvents();
     }, []);
 
@@ -44,6 +45,7 @@ export const EventManagementTab = () => {
         } else {
             const eventsWithClub = data?.map(event => ({
                 ...event,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 club_name: (event.clubs as any)?.name || 'Unknown Club'
             })) || [];
             setEvents(eventsWithClub);
@@ -52,6 +54,7 @@ export const EventManagementTab = () => {
     };
 
     const updateEventStatus = async (eventId: string, newStatus: string, reason?: string) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const updateData: any = { status: newStatus };
         if (newStatus === 'rejected' && reason) {
             updateData.rejection_reason = reason;

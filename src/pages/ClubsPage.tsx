@@ -28,6 +28,7 @@ export const ClubsPage = () => {
     const { role } = useAuthStore();
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/immutability
         fetchClubs();
     }, []);
 

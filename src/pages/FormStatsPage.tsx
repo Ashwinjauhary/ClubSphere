@@ -13,14 +13,18 @@ export const FormStatsPage = () => {
     const { id: formId } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
-    const [form, setForm] = useState<any>(null);
-    const [responses, setResponses] = useState<any[]>([]);
-    const [stats, setStats] = useState<any>({});
+     
+    const [form, setForm] = useState<Record<string, unknown>>(null);
+     
+    const [responses, setResponses] = useState<Record<string, unknown>[]>([]);
+     
+    const [stats, setStats] = useState<Record<string, unknown>>({});
     const [activeTab, setActiveTab] = useState<'analytics' | 'responses'>('analytics');
     const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
         if (formId) loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [formId]);
 
     const loadData = async () => {
@@ -50,12 +54,15 @@ export const FormStatsPage = () => {
         }
     };
 
-    const calculateStats = (questions: any[], resps: any[]) => {
-        const result: any = {};
+     
+    const calculateStats = (questions: Record<string, unknown>[], resps: Record<string, unknown>[]) => {
+         
+        const result: Record<string, unknown> = {};
 
         questions.forEach(q => {
             if (q.type === 'rating' || q.type === 'single_choice' || q.type === 'multiple_choice') {
-                const counts: any = {};
+                 
+                const counts: Record<string, unknown> = {};
                 // Initialize counts from options if available
                 if (q.options) q.options.forEach((opt: string) => counts[opt] = 0);
                 if (q.type === 'rating') [1, 2, 3, 4, 5].forEach(i => counts[i] = 0);
@@ -86,11 +93,13 @@ export const FormStatsPage = () => {
     const exportToExcel = () => {
         if (!responses.length) return;
         const flatData = responses.map(r => {
-            const row: any = {
+             
+            const row: Record<string, unknown> = {
                 Submitted: new Date(r.submitted_at).toLocaleString(),
                 Email: r.respondent_email || 'Anonymous'
             };
-            form.questions.forEach((q: any) => {
+             
+            form.questions.forEach((q: Record<string, unknown>) => {
                 row[q.label] = Array.isArray(r.answers[q.id]) ? r.answers[q.id].join(', ') : r.answers[q.id];
             });
             return row;
@@ -106,7 +115,8 @@ export const FormStatsPage = () => {
         const searchLower = searchTerm.toLowerCase();
         return (
             r.respondent_email?.toLowerCase().includes(searchLower) ||
-            Object.values(r.answers).some((ans: any) =>
+             
+            Object.values(r.answers).some((ans: Record<string, unknown>) =>
                 String(ans).toLowerCase().includes(searchLower)
             )
         );
@@ -167,7 +177,9 @@ export const FormStatsPage = () => {
                 {/* Analytics Tab */}
                 {activeTab === 'analytics' && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {form.questions.map((q: any) => {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-explicit-any
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-explicit-any
+                        {form.questions.map((q: Record<string, unknown>) => {
                             const data = stats[q.id];
                             if (!data) return null;
 
@@ -202,7 +214,9 @@ export const FormStatsPage = () => {
                                                             paddingAngle={5}
                                                             dataKey="value"
                                                         >
-                                                            {data.chartData.map((_: any, index: number) => (
+                                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-explicit-any
+                                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-explicit-any
+                                                            {data.chartData.map((_: Record<string, unknown>, index: number) => (
                                                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                                             ))}
                                                         </Pie>
@@ -258,7 +272,9 @@ export const FormStatsPage = () => {
                                         </div>
 
                                         <div className="space-y-4">
-                                            {form.questions.map((q: any) => {
+                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-explicit-any
+                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-explicit-any
+                                            {form.questions.map((q: Record<string, unknown>) => {
                                                 const answer = response.answers[q.id];
                                                 if (!answer) return null;
 

@@ -82,6 +82,7 @@ export const ClubsWallPage = () => {
 
     useEffect(() => {
         fetchPosts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user]);
 
     const fetchPosts = async () => {
@@ -99,6 +100,7 @@ export const ClubsWallPage = () => {
 
             if (error) throw error;
 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const enrichedPosts = await Promise.all(data.map(async (post: any) => {
                 const { count: likesCount } = await supabase
                     .from('post_likes')
@@ -193,8 +195,7 @@ export const ClubsWallPage = () => {
                 .eq('post_id', postId)
                 .order('created_at', { ascending: true });
 
-            // @ts-ignore
-            setComments(data || []);
+            setComments((data as unknown as Comment[]) || []);
         } catch (error) {
             console.error('Error fetching comments:', error);
         } finally {
@@ -279,8 +280,8 @@ export const ClubsWallPage = () => {
 
             setViewingUser({
                 ...profileData,
-                // @ts-ignore
-                memberships: membershipData || []
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                memberships: (membershipData as any) || []
             });
 
         } catch (error) {
@@ -350,7 +351,7 @@ export const ClubsWallPage = () => {
                                 {/* Header */}
                                 <div className="p-5 flex items-center space-x-3">
                                     {post.clubs.logo_url ? (
-                                        <img src={post.clubs.logo_url} alt={post.clubs.name} className="h-10 w-10 rounded-full object-cover border border-gray-100" />
+                                        <img loading="lazy" decoding="async" src={post.clubs.logo_url} alt={post.clubs.name} className="h-10 w-10 rounded-full object-cover border border-gray-100" />
                                     ) : (
                                         <div className="h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center">
                                             <Users className="h-5 w-5 text-gray-400" />
@@ -373,7 +374,7 @@ export const ClubsWallPage = () => {
                                 {/* Image */}
                                 {post.image_url && (
                                     <div className="w-full h-80 bg-gray-100 cursor-pointer" onClick={() => setActivePostId(post.id)}>
-                                        <img src={post.image_url} alt={post.title} className="w-full h-full object-cover" />
+                                        <img loading="lazy" decoding="async" src={post.image_url} alt={post.title} className="w-full h-full object-cover" />
                                     </div>
                                 )}
 
@@ -441,7 +442,7 @@ export const ClubsWallPage = () => {
                                                     )}
                                                 >
                                                     {c.profiles?.avatar_url ? (
-                                                        <img src={c.profiles.avatar_url} alt={c.profiles.full_name} className="h-full w-full object-cover" />
+                                                        <img loading="lazy" decoding="async" src={c.profiles.avatar_url} alt={c.profiles.full_name} className="h-full w-full object-cover" />
                                                     ) : (
                                                         <Users className="h-3 w-3 text-gray-400" />
                                                     )}
@@ -510,9 +511,9 @@ export const ClubsWallPage = () => {
                                 <div className="h-24 bg-gradient-to-r from-brand-500 to-purple-600"></div>
                                 <div className="px-6 pb-6">
                                     <div className="relative -mt-10 mb-4 flex justify-between items-end">
-                                        <div className="h-20 w-20 rounded-full ring-4 ring-white bg-white overflow-hidden flex items-center justify-center bg-gray-100">
+                                        <div className="h-20 w-20 rounded-full ring-4 ring-white bg-white overflow-hidden flex items-center justify-center">
                                             {viewingUser.avatar_url ? (
-                                                <img src={viewingUser.avatar_url} alt={viewingUser.full_name} className="h-full w-full object-cover" />
+                                                <img loading="lazy" decoding="async" src={viewingUser.avatar_url} alt={viewingUser.full_name} className="h-full w-full object-cover" />
                                             ) : (
                                                 <Users className="h-8 w-8 text-gray-400" />
                                             )}
@@ -541,7 +542,7 @@ export const ClubsWallPage = () => {
                                                 {viewingUser.memberships.map((m, idx) => (
                                                     <div key={idx} className="flex items-center gap-2 text-sm text-gray-700 bg-gray-50 p-2 rounded-lg">
                                                         {m.clubs.logo_url ? (
-                                                            <img src={m.clubs.logo_url} className="h-5 w-5 rounded-full object-cover" />
+                                                            <img loading="lazy" decoding="async" src={m.clubs.logo_url} className="h-5 w-5 rounded-full object-cover" />
                                                         ) : <Shield className="h-4 w-4 text-gray-400" />}
                                                         {m.clubs.name}
                                                     </div>

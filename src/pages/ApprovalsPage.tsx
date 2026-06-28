@@ -4,9 +4,35 @@ import { Button } from '../components/ui/Button';
 import { supabase } from '../lib/supabase';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import { generateReportPDF } from '../services/pdfService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SkeletonList } from '../components/ui/Skeleton';
+import { generateReportPDF } from '../utils/reportUtils';
+import type { GeneratedReport } from '../types';
+
+
+interface ProposalRound {
+    round_name: string;
+    description: string;
+    duration: string;
+}
+
+interface RegistrationField {
+    label: string;
+    required: boolean;
+}
+
+interface CustomSection {
+    title: string;
+    content: string;
+}
+
+interface ProposalData {
+    objectives?: string[];
+    structure_rounds?: ProposalRound[];
+    rules?: string[];
+    registration_fields?: RegistrationField[];
+    custom_sections?: CustomSection[];
+}
 
 interface PendingEvent {
     id: string;
@@ -17,6 +43,7 @@ interface PendingEvent {
     description?: string;
     poster_url?: string;
     clubs: { name: string } | null;
+    proposal_data?: ProposalData;
 }
 
 interface PendingPost {
@@ -30,15 +57,26 @@ interface PendingPost {
     author: { full_name: string } | null;
 }
 
+interface PendingReport {
+    id: string;
+    events: { title: string; clubs: { name: string } | null } | null;
+    submitted_by_user: { full_name: string } | null;
+    highlights?: string;
+    challenges?: string;
+    content?: string;
+    attendee_count?: number;
+    generated_content?: unknown;
+}
+
 export const ApprovalsPage = () => {
     const [events, setEvents] = useState<PendingEvent[]>([]);
     const [posts, setPosts] = useState<PendingPost[]>([]);
     const [loading, setLoading] = useState(true);
-    const [reports, setReports] = useState<any[]>([]);
+    const [reports, setReports] = useState<PendingReport[]>([]);
     const [activeTab, setActiveTab] = useState<'events' | 'posts' | 'reports'>('events');
     const [selectedEvent, setSelectedEvent] = useState<PendingEvent | null>(null);
     const [selectedPost, setSelectedPost] = useState<PendingPost | null>(null);
-    const [selectedReport, setSelectedReport] = useState<any | null>(null);
+    const [selectedReport, setSelectedReport] = useState<PendingReport | null>(null);
 
     useEffect(() => {
         fetchPendingItems();
@@ -58,8 +96,7 @@ export const ApprovalsPage = () => {
                 .eq('status', 'pending');
 
             if (eventsError) throw eventsError;
-            // @ts-ignore
-            setEvents(eventsData || []);
+            setEvents(eventsData as unknown as PendingEvent[]);
 
             // Fetch Posts
             const { data: postsData, error: postsError } = await supabase
@@ -72,8 +109,7 @@ export const ApprovalsPage = () => {
                 .eq('status', 'pending');
 
             if (postsError) throw postsError;
-            // @ts-ignore
-            setPosts(postsData || []);
+            setPosts(postsData as unknown as PendingPost[]);
 
             // Fetch Reports
             const { data: reportsData, error: reportsError } = await supabase
@@ -86,7 +122,7 @@ export const ApprovalsPage = () => {
                 .eq('approval_status', 'pending_approval');
 
             if (reportsError) throw reportsError;
-            setReports(reportsData || []);
+            setReports(reportsData as unknown as PendingReport[]);
 
         } catch (error) {
             console.error('Error fetching approvals:', error);
@@ -120,7 +156,7 @@ export const ApprovalsPage = () => {
     const handleReportAction = async (id: string, action: 'approve' | 'reject') => {
         try {
             const newStatus = action === 'approve' ? 'approved' : 'rejected';
-            const updates: any = {
+            const updates: Record<string, unknown> = {
                 approval_status: newStatus,
                 approved_at: new Date().toISOString()
             };
@@ -161,7 +197,7 @@ export const ApprovalsPage = () => {
                 {tabs.map((tab) => (
                     <button
                         key={tab.id}
-                        onClick={() => setActiveTab(tab.id as any)}
+                        onClick={() => setActiveTab(tab.id as 'events' | 'posts' | 'reports')}
                         className={`
                             relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 outline-none flex items-center gap-2
                             ${activeTab === tab.id ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'}
@@ -300,24 +336,24 @@ export const ApprovalsPage = () => {
                                 </div>
 
                                 {/* Structured Proposal Data */}
-                                {(selectedEvent as any).proposal_data && (
+                                {selectedEvent.proposal_data && (
                                     <div className="grid grid-cols-1 gap-6">
-                                        {(selectedEvent as any).proposal_data.objectives?.length > 0 && (
+                                        {(selectedEvent.proposal_data.objectives?.length ?? 0) > 0 && (
                                             <div>
                                                 <h4 className="font-bold text-sm uppercase text-gray-500 tracking-wider mb-2">Objectives</h4>
                                                 <ul className="list-disc pl-5 space-y-1 text-sm text-gray-700">
-                                                    {(selectedEvent as any).proposal_data.objectives.map((obj: string, i: number) => (
+                                                    {selectedEvent.proposal_data.objectives?.map((obj: string, i: number) => (
                                                         <li key={i}>{obj}</li>
                                                     ))}
                                                 </ul>
                                             </div>
                                         )}
 
-                                        {(selectedEvent as any).proposal_data.structure_rounds?.length > 0 && (
+                                        {(selectedEvent.proposal_data.structure_rounds?.length ?? 0) > 0 && (
                                             <div>
                                                 <h4 className="font-bold text-sm uppercase text-gray-500 tracking-wider mb-2">Structure & Rounds</h4>
                                                 <div className="space-y-3">
-                                                    {(selectedEvent as any).proposal_data.structure_rounds.map((round: any, i: number) => (
+                                                    {selectedEvent.proposal_data.structure_rounds?.map((round: ProposalRound, i: number) => (
                                                         <div key={i} className="pl-4 border-l-2 border-brand-200">
                                                             <p className="font-bold text-gray-900 text-sm">{round.round_name}</p>
                                                             <p className="text-gray-600 text-xs mt-1">{round.description}</p>
@@ -328,22 +364,22 @@ export const ApprovalsPage = () => {
                                             </div>
                                         )}
 
-                                        {(selectedEvent as any).proposal_data.rules?.length > 0 && (
+                                        {(selectedEvent.proposal_data.rules?.length ?? 0) > 0 && (
                                             <div>
                                                 <h4 className="font-bold text-sm uppercase text-gray-500 tracking-wider mb-2">Rules & Regulations</h4>
                                                 <ul className="list-decimal pl-5 space-y-1 text-sm text-gray-700">
-                                                    {(selectedEvent as any).proposal_data.rules.map((rule: string, i: number) => (
+                                                    {selectedEvent.proposal_data.rules?.map((rule: string, i: number) => (
                                                         <li key={i}>{rule}</li>
                                                     ))}
                                                 </ul>
                                             </div>
                                         )}
 
-                                        {(selectedEvent as any).proposal_data.registration_fields?.length > 0 && (
+                                        {(selectedEvent.proposal_data.registration_fields?.length ?? 0) > 0 && (
                                             <div>
                                                 <h4 className="font-bold text-sm uppercase text-gray-500 tracking-wider mb-2">Custom Registration Fields</h4>
                                                 <div className="flex flex-wrap gap-2">
-                                                    {(selectedEvent as any).proposal_data.registration_fields.map((field: any, i: number) => (
+                                                    {selectedEvent.proposal_data.registration_fields?.map((field: RegistrationField, i: number) => (
                                                         <span key={i} className="px-2 py-1 bg-blue-50 text-blue-700 border border-blue-100 rounded text-xs font-medium">
                                                             {field.label} {field.required ? '*' : ''}
                                                         </span>
@@ -353,10 +389,10 @@ export const ApprovalsPage = () => {
                                         )}
 
                                         {/* Custom Sections */}
-                                        {(selectedEvent as any).proposal_data.custom_sections?.length > 0 && (
+                                        {(selectedEvent.proposal_data.custom_sections?.length ?? 0) > 0 && (
                                             <>
                                                 <hr className="border-gray-100 my-2" />
-                                                {(selectedEvent as any).proposal_data.custom_sections.map((section: any, i: number) => (
+                                                {selectedEvent.proposal_data.custom_sections?.map((section: CustomSection, i: number) => (
                                                     <div key={i}>
                                                         <h4 className="font-bold text-sm uppercase text-gray-500 tracking-wider mb-2">{section.title}</h4>
                                                         <p className="text-gray-700 text-sm whitespace-pre-wrap">{section.content}</p>
@@ -421,7 +457,7 @@ export const ApprovalsPage = () => {
                                 </div>
                             </div>
                             <div className="flex justify-end gap-3 mt-8 pt-6 border-t">
-                                <Button variant="outline" onClick={() => generateReportPDF(selectedReport.events?.title, selectedReport.generated_content, [])}>
+                                <Button variant="outline" onClick={() => generateReportPDF(selectedReport.events?.title || 'Event Report', selectedReport.generated_content as GeneratedReport)}>
                                     Preview PDF
                                 </Button>
                                 <Button variant="ghost" onClick={() => handleReportAction(selectedReport.id, 'reject')} className="text-red-600 hover:bg-red-50">Reject</Button>

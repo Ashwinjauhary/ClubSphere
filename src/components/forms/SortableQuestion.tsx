@@ -3,6 +3,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Trash2 } from 'lucide-react';
 import { Controller } from 'react-hook-form';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const SortableQuestion = ({ index, field, remove, register, control, watch }: any) => {
     const {
         attributes,

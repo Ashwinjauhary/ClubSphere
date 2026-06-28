@@ -36,7 +36,7 @@ interface ClubMembership {
 }
 
 export const ProfilePage = () => {
-    const { user } = useAuthStore();
+    const { user, checkUser } = useAuthStore();
     const [profile, setProfile] = useState<Profile | null>(null);
     const [memberships, setMemberships] = useState<ClubMembership[]>([]);
     const [managedClub, setManagedClub] = useState<{ id: string, name: string } | null>(null);
@@ -63,6 +63,7 @@ export const ProfilePage = () => {
         if (user) {
             fetchProfileData();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user]);
 
     const fetchProfileData = async () => {
@@ -79,8 +80,7 @@ export const ProfilePage = () => {
 
             if (profileError) throw profileError;
             if (profileData) {
-                // @ts-ignore
-                setProfile(profileData);
+                setProfile(profileData as Profile);
                 setFullName(profileData.full_name || '');
                 setRollNo(profileData.roll_number || '');
                 setAvatarUrl(profileData.avatar_url || '');
@@ -105,8 +105,7 @@ export const ProfilePage = () => {
                 .eq('user_id', user.id);
 
             if (memberError) console.error('Error fetching memberships:', memberError);
-            // @ts-ignore
-            setMemberships(memberData || []);
+            setMemberships(memberData as unknown as ClubMembership[]);
 
             // 3. Fetch Managed Club (if Admin)
             if (profileData.role === 'admin') {
@@ -134,7 +133,7 @@ export const ProfilePage = () => {
             if (!user) return;
 
             // Build update object based on role
-            const updates: any = {
+            const updates: Record<string, unknown> = {
                 full_name: fullName,
                 avatar_url: avatarUrl,
                 updated_at: new Date().toISOString(),
@@ -162,6 +161,16 @@ export const ProfilePage = () => {
 
             if (error) throw error;
 
+            // Also update Auth metadata so the sidebar picks it up immediately
+            await supabase.auth.updateUser({
+                data: {
+                    full_name: fullName,
+                    avatar_url: avatarUrl,
+                }
+            });
+
+            await checkUser();
+
             toast.success('Profile updated successfully!');
             fetchProfileData();
 
@@ -187,7 +196,7 @@ export const ProfilePage = () => {
                     <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
                         <div className="relative">
                             {avatarUrl ? (
-                                <img src={avatarUrl} alt="Avatar" className="w-32 h-32 rounded-full object-cover border-4 border-gray-100 shadow-sm" />
+                                <img loading="lazy" decoding="async" src={avatarUrl} alt="Avatar" className="w-32 h-32 rounded-full object-cover border-4 border-gray-100 shadow-sm" />
                             ) : (
                                 <div className="w-32 h-32 rounded-full bg-brand-100 flex items-center justify-center border-4 border-white shadow-sm">
                                     <User className="w-16 h-16 text-brand-500" />
@@ -339,7 +348,7 @@ export const ProfilePage = () => {
                                         memberships.map(m => (
                                             <div key={m.id} className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
                                                 {m.clubs.logo_url ? (
-                                                    <img src={m.clubs.logo_url} alt={m.clubs.name} className="h-10 w-10 rounded-full object-cover flex-shrink-0 border border-gray-200" />
+                                                    <img loading="lazy" decoding="async" src={m.clubs.logo_url} alt={m.clubs.name} className="h-10 w-10 rounded-full object-cover flex-shrink-0 border border-gray-200" />
                                                 ) : (
                                                     <div className="h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0 text-lg">
                                                         {m.clubs.name.charAt(0)}

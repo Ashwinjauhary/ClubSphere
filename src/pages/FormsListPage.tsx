@@ -62,13 +62,14 @@ export const FormsListPage = () => {
             if (error) throw error;
 
             // Format data to include response count
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const formatted = data.map((f: any) => ({
                 ...f,
                 _count: { responses: f.feedback_responses[0]?.count || 0 }
             }));
 
             setForms(formatted);
-        } catch (error) {
+        } catch {
             console.error('Error fetching forms:', error);
             toast.error('Failed to load forms');
         } finally {
@@ -84,7 +85,7 @@ export const FormsListPage = () => {
             if (error) throw error;
             setForms(forms.filter(f => f.id !== id));
             toast.success('Form deleted successfully');
-        } catch (error) {
+        } catch {
             console.error('Error deleting form:', error);
             toast.error('Failed to delete form');
         }
@@ -102,7 +103,7 @@ export const FormsListPage = () => {
                 }
             });
             setQrDataUrl(dataUrl);
-        } catch (error) {
+        } catch {
             console.error('Error generating QR code:', error);
             toast.error('Failed to generate QR code');
         }
@@ -175,7 +176,7 @@ export const FormsListPage = () => {
                                                     const { error } = await supabase.from('feedback_forms').update({ is_active: newStatus }).eq('id', form.id);
                                                     if (error) throw error;
                                                     toast.success(newStatus ? 'Form published' : 'Form unpublished');
-                                                } catch (err) {
+                                                } catch {
                                                     toast.error('Failed to update status');
                                                     // Revert
                                                     setForms(forms.map(f => f.id === form.id ? { ...f, is_active: !newStatus } : f));
@@ -268,7 +269,7 @@ export const FormsListPage = () => {
                         {/* QR Code */}
                         <div className="bg-gray-50 rounded-xl p-6 mb-6 flex justify-center">
                             {qrDataUrl ? (
-                                <img src={qrDataUrl} alt="QR Code" className="w-48 h-48" />
+                                <img loading="lazy" decoding="async" src={qrDataUrl} alt="QR Code" className="w-48 h-48" />
                             ) : (
                                 <Loader2 className="h-12 w-12 animate-spin text-brand-600" />
                             )}

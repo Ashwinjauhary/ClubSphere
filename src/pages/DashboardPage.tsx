@@ -24,6 +24,7 @@ export const DashboardPage = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/immutability
         fetchDashboardStats();
     }, []);
 
@@ -138,9 +139,6 @@ export const DashboardPage = () => {
                         <h3 className="text-4xl font-black text-gray-900 mt-2">{stats.totalClubs}</h3>
                     </div>
 
-                    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-blue-600 w-3/4 rounded-full"></div>
-                    </div>
                 </motion.div>
 
                 {/* Total Users */}
@@ -159,9 +157,6 @@ export const DashboardPage = () => {
                         <h3 className="text-3xl font-bold text-gray-900 mt-1">{stats.totalMembers}</h3>
                     </div>
 
-                    <div className="mt-4 flex items-center text-xs text-green-600 bg-green-50 w-fit px-2 py-1 rounded-full">
-                        <TrendingUp className="h-3 w-3 mr-1" /> +12% this week
-                    </div>
                 </motion.div>
 
                 {/* Quick Actions */}

@@ -2,9 +2,13 @@ import { type UseFormRegister, type Control, Controller } from 'react-hook-form'
 import { Upload, X } from 'lucide-react';
 
 interface SettingsTabProps {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     register: UseFormRegister<any>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     control: Control<any>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     watch: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     setValue: any;
 }
 
@@ -43,6 +47,7 @@ export const SettingsTab = ({ register, control, watch, setValue }: SettingsTabP
             const publicUrl = await uploadFile(file, 'form-uploads', 'headers');
             setValue('header_image_url', publicUrl);
             toast.success("Header image uploaded!");
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
             toast.error("Failed to upload image. Please try again.");
         } finally {
@@ -62,7 +67,7 @@ export const SettingsTab = ({ register, control, watch, setValue }: SettingsTabP
                     <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md relative hover:bg-gray-50 transition-colors">
                         {headerImage ? (
                             <div className="relative w-full">
-                                <img src={headerImage} alt="Header" className="h-48 w-full object-cover rounded-md" />
+                                <img loading="lazy" decoding="async" src={headerImage} alt="Header" className="h-48 w-full object-cover rounded-md" />
                                 <button
                                     type="button"
                                     onClick={() => setValue('header_image_url', '')}

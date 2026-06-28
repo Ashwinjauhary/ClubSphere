@@ -44,6 +44,7 @@ export const ClubTeamManagementPage = () => {
 
     useEffect(() => {
         fetchClubData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
     const fetchClubData = async () => {

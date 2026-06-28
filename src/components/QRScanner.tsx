@@ -72,6 +72,7 @@ export const QRScanner = ({ onScan, onClose }: QRScannerProps) => {
                         }
                     }
                 }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } catch (err: any) {
                 console.error("Error starting scanner:", err);
                 let errorMessage = "Failed to access camera. ";
@@ -97,6 +98,7 @@ export const QRScanner = ({ onScan, onClose }: QRScannerProps) => {
                 scannerRef.current.stop().catch(err => console.error("Failed to stop scanner", err));
             }
         };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const onScanSuccess = async (decodedText: string) => {
@@ -123,6 +125,7 @@ export const QRScanner = ({ onScan, onClose }: QRScannerProps) => {
                 }
             }, 2000);
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error(error);
             setScanResult('error');

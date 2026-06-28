@@ -11,6 +11,7 @@ export const EventScannerPage = () => {
 
     // State
     const [eventTitle, setEventTitle] = useState('');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [scannedLogs, setScannedLogs] = useState<any[]>([]); // Recent scans
     const [stats, setStats] = useState({ total_registered: 0, checked_in: 0 });
     const [showScanner, setShowScanner] = useState(false);
@@ -22,6 +23,7 @@ export const EventScannerPage = () => {
             fetchRecentLogs();
             fetchStats();
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
     const fetchEventInfo = async () => {
@@ -155,6 +157,7 @@ export const EventScannerPage = () => {
 
             // Note: The scanner component handles the "Success" UI feedback itself based on promise resolution
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error(error);
             throw error; // Pass back to scanner for "Error" UI
@@ -204,6 +207,7 @@ export const EventScannerPage = () => {
                     <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Recent Activity</h3>
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 divide-y divide-gray-100">
                         {scannedLogs.length > 0 ? (
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             scannedLogs.map((log: any) => {
                                 const profile = log.event_registrations?.profiles;
                                 const displayName = profile?.full_name || profile?.email || 'Unknown';

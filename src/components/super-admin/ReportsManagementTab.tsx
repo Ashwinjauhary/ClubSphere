@@ -10,6 +10,7 @@ interface Report {
     attendee_count: number;
     highlights: string;
     challenges: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ai_feedback: any;
     created_at: string;
     event_title?: string;
@@ -24,6 +25,7 @@ export const ReportsManagementTab = () => {
     const [selectedReport, setSelectedReport] = useState<Report | null>(null);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/immutability
         fetchReports();
     }, []);
 
@@ -43,8 +45,11 @@ export const ReportsManagementTab = () => {
         } else {
             const reportsWithDetails = data?.map(report => ({
                 ...report,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 event_title: (report.events as any)?.title || 'Unknown Event',
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 club_name: (report.events as any)?.clubs?.name || 'Unknown Club',
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 submitter_name: (report.profiles as any)?.full_name || 'Unknown'
             })) || [];
             setReports(reportsWithDetails);

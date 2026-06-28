@@ -41,7 +41,7 @@ export const RegisterPage = () => {
             await signUp(data.email, data.password, data.full_name);
             toast.success('Account created successfully!');
             navigate('/dashboard');
-        } catch (error) {
+        } catch {
             toast.error('Registration failed');
         } finally {
             setIsLoading(false);

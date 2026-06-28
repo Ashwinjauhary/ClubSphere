@@ -1,4 +1,4 @@
-// @ts-ignore
+
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -49,8 +49,7 @@ export const ReportsPage = () => {
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
-            // @ts-ignore
-            setReports(data || []);
+            setReports((data as unknown as Report[]) || []);
         } catch (error) {
             console.error('Error fetching reports:', error);
         } finally {
@@ -61,8 +60,7 @@ export const ReportsPage = () => {
     const handleDownload = (report: Report) => {
         if (!report.generated_content) return;
         const title = report.events?.title || "Report";
-        // @ts-ignore
-        generateReportPDF(title, report.generated_content, report.report_images);
+        generateReportPDF(title, report.generated_content);
     };
 
     const container = {

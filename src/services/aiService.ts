@@ -1,165 +1,50 @@
-// This service now connects to Sambanova AI (OpenAI Compatible) with Multi-Key Rotation
 import type { AIAnalysisResult } from '../types';
-
-// API Key Pools - 3 keys per service for rotation
-const API_KEY_POOLS = {
-    events: [
-        import.meta.env.VITE_SAMBANOVA_EVENTS_KEY_1,
-        import.meta.env.VITE_SAMBANOVA_EVENTS_KEY_2,
-        import.meta.env.VITE_SAMBANOVA_EVENTS_KEY_3
-    ].filter(Boolean),
-    reports: [
-        import.meta.env.VITE_SAMBANOVA_REPORTS_KEY_1,
-        import.meta.env.VITE_SAMBANOVA_REPORTS_KEY_2,
-        import.meta.env.VITE_SAMBANOVA_REPORTS_KEY_3
-    ].filter(Boolean),
-    forms: [
-        import.meta.env.VITE_SAMBANOVA_FORMS_KEY_1,
-        import.meta.env.VITE_SAMBANOVA_FORMS_KEY_2,
-        import.meta.env.VITE_SAMBANOVA_FORMS_KEY_3
-    ].filter(Boolean),
-    quiz: [
-        import.meta.env.VITE_SAMBANOVA_QUIZ_KEY_1,
-        import.meta.env.VITE_SAMBANOVA_QUIZ_KEY_2,
-        import.meta.env.VITE_SAMBANOVA_QUIZ_KEY_3
-    ].filter(Boolean)
-};
-
-// Validate at least one key exists for each service
-Object.entries(API_KEY_POOLS).forEach(([service, keys]) => {
-    if (keys.length === 0) {
-        console.warn(`No API keys configured for ${service} service. Please add keys to .env`);
-    } else {
-        console.log(`${service} service: ${keys.length} API key(s) configured`);
-    }
-});
-
-const BASE_URL = "https://api.sambanova.ai/v1/chat/completions";
-
-// Service-specific models optimized for their tasks (using available Sambanova models)
-const SERVICE_MODELS = {
-    events: "Qwen3-235B",                       // Best for creative & detailed event generation (235B - most powerful)
-    reports: "Meta-Llama-3.3-70B-Instruct",     // Best for analytical & structured reports (70B - balanced)
-    forms: "Meta-Llama-3.1-8B-Instruct",        // Stable and fast for form generation
-    quiz: "Meta-Llama-3.3-70B-Instruct"         // High accuracy for technical questions
-};
+import { supabase } from '../lib/supabase';
 
 type ServiceType = 'events' | 'reports' | 'forms' | 'quiz';
 
-// Generic Helper for Sambanova Calls
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-// Track current key index for each service (round-robin rotation)
-const keyIndexTracker: Record<ServiceType, number> = {
-    events: 0,
-    reports: 0,
-    forms: 0,
-    quiz: 0 // Initialize quiz key tracker
-};
-
-async function callSambaNovaAPI(
+/**
+ * Calls the Groq AI proxy Edge Function.
+ * The Edge Function securely handles the API keys, load balancing, model selection, and failover.
+ */
+async function callGroqProxy(
     systemPrompt: string,
     userPrompt: string,
     serviceType: ServiceType = 'events',
-    temperature: number = 0.5,
-    maxRetries: number = 3
+    temperature: number = 0.7,
+    maxTokens?: number
 ): Promise<string> {
-    const messages = [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-    ];
-
-    // Use service-specific model
-    const modelName = SERVICE_MODELS[serviceType];
-
-    // Model-specific stop tokens
-    const stopTokens = modelName.includes("DeepSeek")
-        ? ["<｜end▁of▁sentence｜>"]  // DeepSeek stop token
-        : ["<|eot_id|>", "<|end_of_text|>"];  // Llama/Qwen stop tokens
-
-    const requestBody = {
-        model: modelName,
-        messages: messages,
-        temperature: temperature,
-        top_p: 0.1,
-        stop: stopTokens,
-        max_tokens: serviceType === 'events' ? 2000 : 1000  // More tokens for creative event generation
-    };
-
-    const keyPool = API_KEY_POOLS[serviceType];
-    if (keyPool.length === 0) {
-        throw new Error(`No API keys available for ${serviceType} service`);
-    }
-
-    let attempt = 0;
-    let lastError: Error | null = null;
-
-    while (attempt < maxRetries) {
-        // Get current key from pool (round-robin)
-        const currentKeyIndex = keyIndexTracker[serviceType] % keyPool.length;
-        const currentKey = keyPool[currentKeyIndex];
-
-        try {
-            console.log(`[${serviceType}] Using ${modelName} with key #${currentKeyIndex + 1} (Attempt ${attempt + 1}/${maxRetries})`);
-
-            const response = await fetch(BASE_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${currentKey}`
-                },
-                body: JSON.stringify(requestBody)
-            });
-
-            if (response.status === 429) {
-                console.warn(`[${serviceType}] Rate limit hit on key #${currentKeyIndex + 1}. Rotating to next key...`);
-
-                // Rotate to next key
-                keyIndexTracker[serviceType] = (keyIndexTracker[serviceType] + 1) % keyPool.length;
-
-                attempt++;
-                const waitTime = 1000 * Math.pow(1.5, attempt);
-                await sleep(waitTime);
-                continue;
-            }
-
-            if (!response.ok) {
-                const err = await response.text();
-                throw new Error(`Sambanova API Error: ${response.status} - ${err}`);
-            }
-
-            const data = await response.json();
-
-            if (data.choices && data.choices[0] && data.choices[0].message) {
-                // Success! Rotate to next key for next request (load balancing)
-                keyIndexTracker[serviceType] = (keyIndexTracker[serviceType] + 1) % keyPool.length;
-                return data.choices[0].message.content.trim();
-            } else {
-                throw new Error("Invalid Sambanova Response Structure");
-            }
-
-        } catch (error) {
-            console.warn(`[${serviceType}] Call failed on key #${currentKeyIndex + 1}:`, error);
-            lastError = error as Error;
-
-            // Rotate to next key on error
-            keyIndexTracker[serviceType] = (keyIndexTracker[serviceType] + 1) % keyPool.length;
-
-            attempt++;
-            if (attempt >= maxRetries) break;
-            await sleep(1000 * attempt);
+    console.log(`[AI Service] Calling proxy for ${serviceType}`);
+    
+    const { data, error } = await supabase.functions.invoke('groq-proxy', {
+        body: {
+            service: serviceType,
+            systemPrompt,
+            userPrompt,
+            temperature,
+            maxTokens
         }
+    });
+
+    if (error) {
+        throw new Error(`Proxy Invocation Error: ${error.message}`);
     }
 
-    throw lastError || new Error(`Unable to connect to AI after ${maxRetries} attempts across all available keys.`);
+    if (data?.error) {
+        throw new Error(`Groq AI Error: ${data.error}`);
+    }
+
+    if (!data?.text) {
+        throw new Error("Invalid response from proxy: Missing text content");
+    }
+
+    return data.text;
 }
 
 // Helper to clean and parse AI JSON response
-const cleanAndParseJSON = (text: string): any => {
-    // 1. Remove markdown code blocks
+const cleanAndParseJSON = (text: string): unknown => {
     let clean = text.replace(/```json/g, '').replace(/```/g, '').trim();
 
-    // 2. Find the index of the first '[' or '{'
     const firstBracket = clean.indexOf('[');
     const firstBrace = clean.indexOf('{');
 
@@ -172,27 +57,23 @@ const cleanAndParseJSON = (text: string): any => {
         start = firstBrace;
     }
 
-    // 3. Find the index of the last ']' or '}'
     const lastBracket = clean.lastIndexOf(']');
     const lastBrace = clean.lastIndexOf('}');
-    let end = Math.max(lastBracket, lastBrace);
+    const end = Math.max(lastBracket, lastBrace);
 
-    // 4. Extract the substring if valid start/end found
     if (start !== -1 && end !== -1 && end > start) {
         clean = clean.substring(start, end + 1);
     } else {
-        // Fallback: if no brackets found, it might be heavily malformed, but let's try strict mode or just fail gracefully later
         console.warn("No JSON brackets found in response:", text.substring(0, 50) + "...");
     }
 
     try {
-        // Remove valid trailing commas (e.g., [1, 2,] -> [1, 2])
         clean = clean.replace(/,(\s*[\]}])/g, '$1');
         return JSON.parse(clean);
-    } catch (e) {
+    } catch {
         console.warn("Initial JSON Parse Failed, retrying sanitizer...", clean.substring(0, 100));
-        // Fallback: Try to escape unescaped control characters within strings
-        const sanitized = clean.replace(/[\u0000-\u0019]+/g, "");
+        // eslint-disable-next-line no-control-regex
+        const sanitized = clean.replace(/[\x00-\x19]+/g, "");
         try {
             return JSON.parse(sanitized);
         } catch (e2) {
@@ -233,8 +114,8 @@ export const analyzeReportWithAI = async (reportText: string): Promise<AIAnalysi
     No markdown formatting. Pure JSON.
     `;
 
-    const text = await callSambaNovaAPI(systemPrompt, userPrompt, 'reports');
-    return cleanAndParseJSON(text);
+    const text = await callGroqProxy(systemPrompt, userPrompt, 'reports');
+    return cleanAndParseJSON(text) as AIAnalysisResult;
 };
 
 export const generateEventDescription = async (
@@ -258,7 +139,15 @@ export const generateEventDescription = async (
     Return ONLY the plain text description. Do not include a title or markdown wrapper like "Here is the description".
     `;
 
-    return await callSambaNovaAPI(systemPrompt, userPrompt, 'events');
+    return await callGroqProxy(systemPrompt, userPrompt, 'events');
+};
+
+export const enhanceEventDescription = async (currentDescription: string, tone: string = 'professional'): Promise<{ enhancedDescription: string }> => {
+    console.log("Enhancing event description...");
+    const systemPrompt = `You are a professional editor. Rewrite the description with a ${tone} tone.`;
+    const userPrompt = `Enhance this description: "${currentDescription}". Return ONLY JSON: {"enhancedDescription": "..."}`;
+    const text = await callGroqProxy(systemPrompt, userPrompt, 'events');
+    return cleanAndParseJSON(text) as { enhancedDescription: string };
 };
 
 export const generateClubBio = async (
@@ -278,14 +167,14 @@ export const generateClubBio = async (
     Return ONLY the plain text bio.
     `;
 
-    return await callSambaNovaAPI(systemPrompt, userPrompt, 'events');
+    return await callGroqProxy(systemPrompt, userPrompt, 'events');
 };
 
 export const generateFeedbackForm = async (
     eventTitle: string,
     eventType: string,
     topic: string
-): Promise<any[]> => {
+): Promise<unknown[]> => {
     console.log("Generating feedback form questions for:", eventTitle);
     const systemPrompt = "You are an expert survey designer for university events.";
     const userPrompt = `
@@ -306,13 +195,13 @@ export const generateFeedbackForm = async (
     Ensure IDs are unique strings. No markdown code blocks. Pure JSON.
     `;
 
-    const text = await callSambaNovaAPI(systemPrompt, userPrompt, 'forms');
-    return cleanAndParseJSON(text);
+    const text = await callGroqProxy(systemPrompt, userPrompt, 'forms');
+    return cleanAndParseJSON(text) as unknown[];
 };
 
 export const generateFormSchema = async (
     userPrompt: string
-): Promise<{ title: string; description: string; theme: string; settings: any; questions: any[]; isFallback?: boolean }> => {
+): Promise<{ title: string; description: string; theme: string; settings: Record<string, unknown>; questions: unknown[]; isFallback?: boolean }> => {
     console.log("Generating full form schema for:", userPrompt);
     const systemPrompt = "You are an expert form builder. You must output ONLY valid JSON. Do not deviate. Do not loop.";
     const userPromptText = `
@@ -344,19 +233,20 @@ export const generateFormSchema = async (
     `;
 
     try {
-        const text = await callSambaNovaAPI(systemPrompt, userPromptText, 'forms', 0.7, 3);
-        return { ...cleanAndParseJSON(text), isFallback: false };
-    } catch (e) {
+        const text = await callGroqProxy(systemPrompt, userPromptText, 'forms', 0.7);
+        const parsed = cleanAndParseJSON(text);
+        return { ...(parsed as Record<string, unknown>), isFallback: false } as { title: string; description: string; theme: string; settings: Record<string, unknown>; questions: unknown[]; isFallback: boolean };
+    } catch {
         console.warn("AI Form Gen failed, using Smart Fallback");
 
         const p = userPrompt.toLowerCase();
-        let schema = {
+        const schema = {
             title: "New Form",
             description: "Please fill out this form.",
             theme: "classic-blue",
-            isFallback: false,
+            isFallback: true,
             settings: { limit_one_response_per_user: false, accepting_responses: true, thank_you_message: "Thank you!" },
-            questions: [] as any[]
+            questions: [] as unknown[]
         };
 
         if (p.includes("feedback") || p.includes("survey") || p.includes("review")) {
@@ -384,12 +274,11 @@ export const generateFormSchema = async (
                 { id: "c3", type: "textarea", label: "Message", required: true }
             ];
         } else {
-            // DYNAMIC FALLBACK: Try to extract fields from prompt
             let chunks = userPrompt.split(/[\n]|\s{2,}|\t|•/).map(l => l.trim()).filter(l => l.length > 2);
             if (chunks.length < 3) {
                 chunks = userPrompt.split(/[\n,;]|\s{2,}|\t|•/).map(l => l.trim()).filter(l => l.length > 2);
             }
-            const extractedQuestions: any[] = [];
+            const extractedQuestions: unknown[] = [];
 
             chunks.forEach((line, idx) => {
                 if (line.length > 140) return;
@@ -397,7 +286,7 @@ export const generateFormSchema = async (
 
                 const lower = line.toLowerCase();
                 let type = "text";
-                let options: string[] | undefined = undefined;
+                let options: string[] | undefined;
 
                 if (lower.includes("email")) type = "email";
                 else if (lower.includes("date") || lower.includes("dob")) type = "date";
@@ -416,12 +305,12 @@ export const generateFormSchema = async (
                 else if (lower.includes("experience") || lower.includes("why") || lower.includes("message") || lower.includes("short answer")) type = "textarea";
 
                 if (!line.includes("?")) {
-                    let label = line.replace(/[:*•-]/g, "").trim();
+                    const label = line.replace(/[:*•-]/g, "").trim();
                     if (label.toLowerCase().startsWith("include")) return;
                     extractedQuestions.push({
                         id: `auto_${idx}`,
                         type,
-                        label: label,
+                        label: label || "Question",
                         required: true,
                         options
                     });
@@ -443,7 +332,7 @@ export const generateFormSchema = async (
             }
         }
 
-        return { ...schema, isFallback: true };
+        return schema;
     }
 };
 
@@ -478,27 +367,24 @@ export const suggestPOMapping = async (
     Do not include markdown.
     `;
 
-    const text = await callSambaNovaAPI(systemPrompt, userPrompt, 'events');
-    return cleanAndParseJSON(text);
+    const text = await callGroqProxy(systemPrompt, userPrompt, 'events');
+    return cleanAndParseJSON(text) as Record<string, boolean>;
 };
 
-
-// Helper to manage event history
 const getEventHistory = (clubName: string): string[] => {
     try {
         const history = localStorage.getItem(`ai_event_history_${clubName}`);
         return history ? JSON.parse(history) : [];
-    } catch (e) { return []; }
+    } catch { return []; }
 };
 
-const saveEventHistory = (clubName: string, newEvents: any[]) => {
+const saveEventHistory = (clubName: string, newEvents: Array<{ title: string; [key: string]: unknown }>) => {
     try {
         const history = getEventHistory(clubName);
-        const newTitles = newEvents.map((e: any) => e.title);
-        // Keep last 50 events to avoid unlimited growth
+        const newTitles = newEvents.map((e) => e.title);
         const updated = [...new Set([...history, ...newTitles])].slice(-50);
         localStorage.setItem(`ai_event_history_${clubName}`, JSON.stringify(updated));
-    } catch (e) { console.warn("Failed to save event history", e); }
+    } catch (_e) { console.warn("Failed to save event history", _e); }
 };
 
 export const generateEventIdeas = async (
@@ -506,7 +392,7 @@ export const generateEventIdeas = async (
     clubCategory: string,
     clubDescription: string,
     customPrompt?: string
-): Promise<any[]> => {
+): Promise<unknown[]> => {
     const randomSeed = Math.floor(Math.random() * 1000000);
     const existingEvents = getEventHistory(clubName);
 
@@ -529,7 +415,6 @@ export const generateEventIdeas = async (
     const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     const forbiddenLetter = letters[Math.floor(Math.random() * letters.length)];
 
-    // Updated prompt for conciseness
     const systemPrompt = `You are a creative director. Brainstorm UNIQUE and UNCONVENTIONAL event ideas. 
     You are FORBIDDEN from using these overused words/titles: ${bannedTerms.join(", ")}.
     Be unpredictable but CONCISE. Output must be valid, complete JSON. Do not cut off.`;
@@ -578,8 +463,7 @@ export const generateEventIdeas = async (
     `;
 
     try {
-        // Increased max_tokens to ensuring completion
-        const text = await callSambaNovaAPI(systemPrompt, userPrompt, 'events', 1.0, 3);
+        const text = await callGroqProxy(systemPrompt, userPrompt, 'events', 1.0, 3000);
         const events = cleanAndParseJSON(text);
 
         if (Array.isArray(events)) {
@@ -589,18 +473,15 @@ export const generateEventIdeas = async (
         throw new Error("Invalid response format");
     } catch (error) {
         console.error("AI Generation Failed:", error);
-        throw error; // Re-throw to let the UI handle it (show error toast instead of fake data)
+        throw error; 
     }
 };
 
-export const generateDailyQuizQuestions = async (
-    topic: string,
-    difficulty: string = "Mixed"
-): Promise<any[]> => {
-    console.log("Generating daily quiz questions for:", topic);
+export const generateQuizQuestions = async (topic: string, count: number = 5, difficulty: string = 'medium'): Promise<{ questions: unknown[] }> => {
+    console.log("Generating quiz questions for:", topic);
     const systemPrompt = "You are a computer science professor creating a daily quiz.";
     const userPrompt = `
-    Generate 10 multiple-choice questions for a BCA (Bachelor of Computer Applications) student.
+    Generate ${count} multiple-choice questions for a student.
     
     Topic: ${topic}
     Difficulty: ${difficulty}
@@ -623,6 +504,6 @@ export const generateDailyQuizQuestions = async (
     3. No markdown. Pure JSON.
     `;
 
-    const text = await callSambaNovaAPI(systemPrompt, userPrompt, 'quiz', 0.7);
-    return cleanAndParseJSON(text);
+    const text = await callGroqProxy(systemPrompt, userPrompt, 'quiz', 0.7);
+    return { questions: cleanAndParseJSON(text) as unknown[] };
 };

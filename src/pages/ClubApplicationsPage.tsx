@@ -31,6 +31,7 @@ export const ClubApplicationsPage = () => {
     useEffect(() => {
         if (!user) return;
         fetchApplications();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user]);
 
     const fetchApplications = async () => {
@@ -54,6 +55,7 @@ export const ClubApplicationsPage = () => {
             if (error) throw error;
 
             // Transform data to match interface (handling arrays from joins)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const formattedData = (data || []).map((app: any) => ({
                 ...app,
                 profiles: Array.isArray(app.profiles) ? app.profiles[0] : app.profiles,

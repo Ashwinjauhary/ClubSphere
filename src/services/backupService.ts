@@ -48,6 +48,7 @@ export const fetchFullBackup = async () => {
     }
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const downloadBackup = (data: any) => {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const fileName = `clubsphere_backup_${new Date().toISOString().split('T')[0]}.json`;

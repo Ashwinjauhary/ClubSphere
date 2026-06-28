@@ -322,6 +322,7 @@ export const ModernSidebar = ({
                         }}
                     >
                         <Avatar
+                            src={user?.user_metadata?.avatar_url || ''}
                             sx={{
                                 width: 36,
                                 height: 36,

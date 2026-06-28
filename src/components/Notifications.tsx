@@ -21,6 +21,7 @@ export const Notifications = () => {
 
     useEffect(() => {
         if (!user) return;
+         
         fetchNotifications();
 
         const subscription = supabase
@@ -39,6 +40,7 @@ export const Notifications = () => {
         return () => {
             subscription.unsubscribe();
         };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user]);
 
     const fetchNotifications = async () => {

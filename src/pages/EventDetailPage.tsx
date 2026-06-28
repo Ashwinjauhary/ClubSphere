@@ -32,6 +32,7 @@ export const EventDetailPage = () => {
     const [loading, setLoading] = useState(true);
     const [isRegistered, setIsRegistered] = useState(false);
     const [registrationCount, setRegistrationCount] = useState(0);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [ticketData, setTicketData] = useState<any>(null);
 
     useEffect(() => {
@@ -42,6 +43,7 @@ export const EventDetailPage = () => {
                 fetchRegistrationCount();
             }
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id, user]);
 
     const fetchEventDetails = async () => {
@@ -53,8 +55,8 @@ export const EventDetailPage = () => {
                 .eq('id', id)
                 .single();
             if (error) throw error;
-            // @ts-ignore
-            setEvent(data);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            setEvent(data as any);
         } catch (error) {
             console.error('Error fetching event details:', error);
             navigate('/events');
@@ -118,7 +120,7 @@ export const EventDetailPage = () => {
                 <div className="absolute inset-0 overflow-hidden">
                     {event.poster_url ? (
                         <>
-                            <img src={event.poster_url} alt="Background" className="w-full h-full object-cover opacity-30 blur-3xl scale-110" />
+                            <img loading="lazy" decoding="async" src={event.poster_url} alt="Background" className="w-full h-full object-cover opacity-30 blur-3xl scale-110" />
                             <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-gray-900/80 to-gray-50" />
                         </>
                     ) : (
@@ -139,7 +141,7 @@ export const EventDetailPage = () => {
                         >
                             <div className="rounded-2xl overflow-hidden shadow-2xl border-4 border-white/10 bg-white/5 backdrop-blur-sm relative group">
                                 {event.poster_url ? (
-                                    <img
+                                    <img loading="lazy" decoding="async"
                                         src={event.poster_url}
                                         alt={event.title}
                                         className="w-full h-auto object-contain block" // Ensure original aspect ratio

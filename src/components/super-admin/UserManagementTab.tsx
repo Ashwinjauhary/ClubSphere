@@ -19,6 +19,7 @@ export const UserManagementTab = () => {
     const [roleFilter, setRoleFilter] = useState<string>('all');
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/immutability
         fetchUsers();
     }, []);
 

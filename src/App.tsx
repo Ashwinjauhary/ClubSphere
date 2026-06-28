@@ -6,6 +6,7 @@ import { SEO } from './components/SEO';
 import { useEffect, lazy, Suspense } from 'react';
 import { useAuthStore } from './store/authStore';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { CircularProgress, Box } from '@mui/material';
 
 // Eager load Landing Page for best FCP
@@ -54,6 +55,7 @@ const EventMediaPage = lazy(() => import('./pages/EventMediaPage').then(module =
 const AIEventManagerPage = lazy(() => import('./pages/AIEventManagerPage').then(module => ({ default: module.AIEventManagerPage })));
 const DailyQuizPage = lazy(() => import('./pages/DailyQuizPage').then(module => ({ default: module.DailyQuizPage })));
 const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage').then(module => ({ default: module.LeaderboardPage })));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then(module => ({ default: module.NotFoundPage })));
 
 // Loading Screen
 const LoadingScreen = () => (
@@ -64,14 +66,6 @@ const LoadingScreen = () => (
 
 function App() {
   const checkUser = useAuthStore((state) => state.checkUser);
-
-  // Synchronous check for recovery hash to prevent LandingPage race condition
-  const hash = window.location.hash;
-  if (hash && hash.includes('type=recovery') && !window.location.pathname.includes('/reset-password')) {
-    // Redirect to reset password page - preserving the hash
-    window.location.href = '/reset-password' + hash;
-    return null;
-  }
 
   useEffect(() => {
     checkUser();
@@ -90,7 +84,18 @@ function App() {
     };
   }, [checkUser]);
 
+  // Synchronous check for recovery hash to prevent LandingPage race condition
+  const hash = window.location.hash;
+  if (hash && hash.includes('type=recovery') && !window.location.pathname.includes('/reset-password')) {
+    // Redirect to reset password page - preserving the hash
+    // eslint-disable-next-line react-hooks/immutability
+    window.location.href = '/reset-password' + hash;
+    return null;
+  }
+
+
   return (
+    <ErrorBoundary>
     <Router>
       <Toaster position="top-right" richColors toastOptions={{ className: 'mt-14 sm:mt-0' }} />
       <ScrollToTop />
@@ -156,10 +161,14 @@ function App() {
                 <Route path="/leaderboard" element={<LeaderboardPage />} />
               </Route>
             </Route>
+
+            {/* 404 Catch-All */}
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>
       </div>
     </Router>
+    </ErrorBoundary>
   );
 }
 

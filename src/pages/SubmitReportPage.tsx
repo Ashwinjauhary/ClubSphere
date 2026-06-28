@@ -12,7 +12,7 @@ import { motion } from 'framer-motion';
 export const SubmitReportPage = () => {
     const navigate = useNavigate();
     const { user, managedClubId } = useAuthStore();
-    const [events, setEvents] = useState<any[]>([]);
+    const [events, setEvents] = useState<Record<string, unknown>[]>([]);
     const [selectedEvent, setSelectedEvent] = useState('');
     const [uploading, setUploading] = useState(false);
     const [fileUrl, setFileUrl] = useState<string | null>(null);
@@ -23,6 +23,7 @@ export const SubmitReportPage = () => {
     useEffect(() => {
         if (!user) return;
         fetchPendingReportEvents();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user, managedClubId]);
 
     const fetchPendingReportEvents = async () => {
@@ -67,9 +68,9 @@ export const SubmitReportPage = () => {
         }
     };
 
-    const onSubmit = async (data: any) => {
+    const onSubmit = async (data: Record<string, unknown>) => {
         if (!selectedEvent) return alert('Please select an event');
-        const eventDetails = events.find(e => e.id === selectedEvent);
+        const eventDetails = events.find(e => e.id === selectedEvent) as Record<string, unknown>;
         if (!eventDetails) return alert('Event details not found');
 
         try {

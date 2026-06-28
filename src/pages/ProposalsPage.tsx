@@ -25,6 +25,7 @@ export const ProposalsPage = () => {
         if (user) {
             fetchProposals();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user]);
 
     const fetchProposals = async () => {
@@ -40,8 +41,7 @@ export const ProposalsPage = () => {
                     .order('created_at', { ascending: false });
 
                 if (error) throw error;
-                // @ts-ignore
-                setEvents(data || []);
+                setEvents((data as unknown as Event[]) || []);
             }
         } catch (error) {
             console.error('Error fetching proposals:', error);

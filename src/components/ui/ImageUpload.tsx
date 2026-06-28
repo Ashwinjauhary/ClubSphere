@@ -83,7 +83,7 @@ export const ImageUpload = ({
             <div className="flex items-center gap-4">
                 {value ? (
                     <div className="relative group rounded-xl overflow-hidden border border-gray-200 w-32 h-32 flex-shrink-0 bg-gray-50">
-                        <img
+                        <img loading="lazy" decoding="async"
                             src={value}
                             alt="Uploaded"
                             className="w-full h-full object-cover"

@@ -37,7 +37,7 @@ export const LoginPage = () => {
             await signIn(data.email, data.password);
             toast.success('Welcome back!');
             navigate('/dashboard');
-        } catch (error) {
+        } catch {
             toast.error('Invalid credentials');
         } finally {
             setIsLoading(false);

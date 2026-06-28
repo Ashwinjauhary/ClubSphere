@@ -27,6 +27,7 @@ export const GalleryManagementPage = () => {
     useEffect(() => {
         if (!id) return;
         fetchImages();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
     const fetchImages = async () => {
@@ -220,7 +221,7 @@ export const GalleryManagementPage = () => {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {images.map((img) => (
                     <div key={img.id} className="group relative aspect-square bg-gray-100 rounded-lg overflow-hidden border border-gray-200 shadow-sm">
-                        <img
+                        <img loading="lazy" decoding="async"
                             src={img.image_url}
                             alt={img.caption || 'Gallery image'}
                             className="h-full w-full object-cover"

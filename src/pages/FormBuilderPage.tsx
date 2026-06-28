@@ -82,6 +82,7 @@ export const FormBuilderPage = () => {
         if (!isNew && formId) {
             fetchForm();
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [formId]);
 
     const fetchForm = async () => {
@@ -94,6 +95,7 @@ export const FormBuilderPage = () => {
             if (error) throw error;
             if (data) {
                 // Normalize options in existing questions to fix any corrupted data
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const normalizedQuestions = data.questions.map((q: any) => ({
                     ...q,
                     options: q.options ? normalizeOptions(q.options) : q.options
@@ -104,8 +106,8 @@ export const FormBuilderPage = () => {
                     description: data.description,
                     questions: normalizedQuestions,
                     theme: data.theme || 'classic-blue',
-                    // @ts-ignore - Handle legacy data gracefully
-                    settings: data.settings || {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    settings: (data.settings as any) || {
                         limit_one_response_per_user: false,
                         accepting_responses: true,
                     }
@@ -121,6 +123,7 @@ export const FormBuilderPage = () => {
         }
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleDragEnd = (event: any) => {
         const { active, over } = event;
         if (active.id !== over.id) {
@@ -131,8 +134,10 @@ export const FormBuilderPage = () => {
     };
 
     // Helper to normalize options - ensures they're always strings, not objects
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const normalizeOptions = (options: any): string[] => {
         if (!options || !Array.isArray(options)) return [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return options.map((opt: any) => {
             if (typeof opt === 'string') return opt;
             if (typeof opt === 'object' && opt !== null) {
@@ -149,6 +154,7 @@ export const FormBuilderPage = () => {
         try {
             const { title, description, questions, theme, settings, isFallback } = await generateFormSchema(prompt);
 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const formattedQuestions = questions.map((q: any) => ({
                 ...q,
                 id: Math.random().toString(36).substring(2, 9) + Date.now().toString(36), // Safe ID generator

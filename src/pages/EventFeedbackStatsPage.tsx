@@ -12,12 +12,16 @@ export const EventFeedbackStatsPage = () => {
     const { id: eventId } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
-    const [form, setForm] = useState<any>(null);
-    const [responses, setResponses] = useState<any[]>([]);
-    const [aggregates, setAggregates] = useState<any>({});
+     
+    const [form, setForm] = useState<Record<string, unknown>>(null);
+     
+    const [responses, setResponses] = useState<Record<string, unknown>[]>([]);
+     
+    const [aggregates, setAggregates] = useState<Record<string, unknown>>({});
 
     useEffect(() => {
         if (eventId) loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [eventId]);
 
     const loadData = async () => {
@@ -56,8 +60,10 @@ export const EventFeedbackStatsPage = () => {
         }
     };
 
-    const processStats = (questions: any[], responseList: any[]) => {
-        const stats: any = {};
+     
+    const processStats = (questions: Record<string, unknown>[], responseList: Record<string, unknown>[]) => {
+         
+        const stats: Record<string, unknown> = {};
 
         questions.forEach(q => {
             if (q.type === 'rating') {
@@ -81,7 +87,8 @@ export const EventFeedbackStatsPage = () => {
                     distribution: Object.entries(dist).map(([k, v]) => ({ name: `${k} Stars`, value: v }))
                 };
             } else if (q.type === 'single_choice' || q.type === 'multiple_choice') {
-                const counts: any = {};
+                 
+                const counts: Record<string, unknown> = {};
                 q.options?.forEach((opt: string) => counts[opt] = 0);
 
                 responseList.forEach(r => {
@@ -113,8 +120,10 @@ export const EventFeedbackStatsPage = () => {
 
         // Flatten data for CSV
         const flatData = responses.map(r => {
-            const row: any = { Date: new Date(r.created_at).toLocaleDateString() };
-            form.questions.forEach((q: any) => {
+             
+            const row: Record<string, unknown> = { Date: new Date(r.created_at).toLocaleDateString() };
+             
+            form.questions.forEach((q: Record<string, unknown>) => {
                 row[q.label] = Array.isArray(r.responses[q.id]) ? r.responses[q.id].join(', ') : r.responses[q.id];
             });
             return row;
@@ -158,7 +167,9 @@ export const EventFeedbackStatsPage = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {form.questions.map((q: any) => {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-explicit-any
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-explicit-any
+                    {form.questions.map((q: Record<string, unknown>) => {
                         const data = aggregates[q.id];
                         if (!data) return null;
 
@@ -196,7 +207,9 @@ export const EventFeedbackStatsPage = () => {
                                                     paddingAngle={5}
                                                     dataKey="value"
                                                 >
-                                                    {data.data.map((_: any, index: number) => (
+                                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-explicit-any
+                                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-explicit-any
+                                                    {data.data.map((_: Record<string, unknown>, index: number) => (
                                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                                     ))}
                                                 </Pie>
