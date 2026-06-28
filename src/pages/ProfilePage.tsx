@@ -133,7 +133,7 @@ export const ProfilePage = () => {
             if (!user) return;
 
             // Build update object based on role
-            const updates: Record<string, unknown> = {
+            const updates: any = {
                 full_name: fullName,
                 avatar_url: avatarUrl,
                 updated_at: new Date().toISOString(),

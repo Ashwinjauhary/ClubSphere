@@ -33,7 +33,7 @@ export interface AIEventIdea {
     objectives?: string[];
     structure_rounds?: AIEventRound[];
     rules?: string[];
-    registration_fields?: unknown[];
+    registration_fields?: any[];
 }
 
 export const AIEventManagerPage = () => {

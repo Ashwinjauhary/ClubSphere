@@ -13,11 +13,11 @@ export const EventFeedbackStatsPage = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
      
-    const [form, setForm] = useState<Record<string, unknown>>(null);
+    const [form, setForm] = useState<any>(null);
      
-    const [responses, setResponses] = useState<Record<string, unknown>[]>([]);
+    const [responses, setResponses] = useState<any[]>([]);
      
-    const [aggregates, setAggregates] = useState<Record<string, unknown>>({});
+    const [aggregates, setAggregates] = useState<any>({});
 
     useEffect(() => {
         if (eventId) loadData();
@@ -61,9 +61,9 @@ export const EventFeedbackStatsPage = () => {
     };
 
      
-    const processStats = (questions: Record<string, unknown>[], responseList: Record<string, unknown>[]) => {
+    const processStats = (questions: any[], responseList: any[]) => {
          
-        const stats: Record<string, unknown> = {};
+        const stats: any = {};
 
         questions.forEach(q => {
             if (q.type === 'rating') {
@@ -88,7 +88,7 @@ export const EventFeedbackStatsPage = () => {
                 };
             } else if (q.type === 'single_choice' || q.type === 'multiple_choice') {
                  
-                const counts: Record<string, unknown> = {};
+                const counts: any = {};
                 q.options?.forEach((opt: string) => counts[opt] = 0);
 
                 responseList.forEach(r => {
@@ -121,9 +121,9 @@ export const EventFeedbackStatsPage = () => {
         // Flatten data for CSV
         const flatData = responses.map(r => {
              
-            const row: Record<string, unknown> = { Date: new Date(r.created_at).toLocaleDateString() };
+            const row: any = { Date: new Date(r.created_at).toLocaleDateString() };
              
-            form.questions.forEach((q: Record<string, unknown>) => {
+            form.questions.forEach((q: any) => {
                 row[q.label] = Array.isArray(r.responses[q.id]) ? r.responses[q.id].join(', ') : r.responses[q.id];
             });
             return row;
@@ -169,7 +169,7 @@ export const EventFeedbackStatsPage = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-explicit-any
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-explicit-any
-                    {form.questions.map((q: Record<string, unknown>) => {
+                    {form.questions.map((q: any) => {
                         const data = aggregates[q.id];
                         if (!data) return null;
 
@@ -209,7 +209,7 @@ export const EventFeedbackStatsPage = () => {
                                                 >
                                                     // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-explicit-any
                                                     // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-explicit-any
-                                                    {data.data.map((_: Record<string, unknown>, index: number) => (
+                                                    {data.data.map((_: any, index: number) => (
                                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                                     ))}
                                                 </Pie>

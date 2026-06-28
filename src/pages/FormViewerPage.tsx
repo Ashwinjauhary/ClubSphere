@@ -55,10 +55,10 @@ export const FormViewerPage = () => {
     const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm();
 
     // Helper to normalize options - ensures they're always strings for rendering
-    const normalizeOption = (opt: unknown): string => {
+    const normalizeOption = (opt: any): string => {
         if (typeof opt === 'string') return opt;
         if (typeof opt === 'object' && opt !== null) {
-            const o = opt as Record<string, unknown>; return (o.label as string) || (o.value as string) || String(opt);
+            const o = opt as any; return (o.label as string) || (o.value as string) || String(opt);
         }
         return String(opt);
     };
@@ -88,7 +88,7 @@ export const FormViewerPage = () => {
                 ...data,
                 questions: data.questions.map((q: FormQuestion) => ({
                     ...q,
-                    options: q.options ? q.options.map((opt: unknown) => normalizeOption(opt)) : q.options
+                    options: q.options ? q.options.map((opt: any) => normalizeOption(opt)) : q.options
                 }))
             };
 
@@ -129,7 +129,7 @@ export const FormViewerPage = () => {
         }
     };
 
-    const onSubmit = async (formData: Record<string, unknown>) => {
+    const onSubmit = async (formData: any) => {
         if (!form) return;
 
         // Final check for log in requirements
@@ -272,7 +272,7 @@ export const FormViewerPage = () => {
                             {q.type === 'dropdown' && (
                                 <select {...register(q.id, { required: q.required })} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm p-3 border">
                                     <option value="">Select an option</option>
-                                    {(q.options || []).map((opt: unknown, idx: number) => {
+                                    {(q.options || []).map((opt: any, idx: number) => {
                                         const optValue = normalizeOption(opt);
                                         return <option key={`${q.id}-opt-${idx}`} value={optValue}>{optValue}</option>;
                                     })}
@@ -301,7 +301,7 @@ export const FormViewerPage = () => {
 
                             {q.type === 'single_choice' && (
                                 <div className="space-y-2">
-                                    {(q.options || []).map((opt: unknown, idx: number) => {
+                                    {(q.options || []).map((opt: any, idx: number) => {
                                         const optValue = normalizeOption(opt);
                                         return (
                                             <label key={`${q.id}-opt-${idx}`} className="flex items-center space-x-3">
@@ -320,7 +320,7 @@ export const FormViewerPage = () => {
 
                             {(q.type === 'multiple_choice' || q.type === 'checkboxes') && (
                                 <div className="space-y-2">
-                                    {(q.options || []).map((opt: unknown, idx: number) => {
+                                    {(q.options || []).map((opt: any, idx: number) => {
                                         const optValue = normalizeOption(opt);
                                         return (
                                             <label key={`${q.id}-opt-${idx}`} className="flex items-center space-x-3">

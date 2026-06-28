@@ -12,7 +12,7 @@ import { motion } from 'framer-motion';
 export const SubmitReportPage = () => {
     const navigate = useNavigate();
     const { user, managedClubId } = useAuthStore();
-    const [events, setEvents] = useState<Record<string, unknown>[]>([]);
+    const [events, setEvents] = useState<any[]>([]);
     const [selectedEvent, setSelectedEvent] = useState('');
     const [uploading, setUploading] = useState(false);
     const [fileUrl, setFileUrl] = useState<string | null>(null);
@@ -68,9 +68,9 @@ export const SubmitReportPage = () => {
         }
     };
 
-    const onSubmit = async (data: Record<string, unknown>) => {
+    const onSubmit = async (data: any) => {
         if (!selectedEvent) return alert('Please select an event');
-        const eventDetails = events.find(e => e.id === selectedEvent) as Record<string, unknown>;
+        const eventDetails = events.find(e => e.id === selectedEvent) as any;
         if (!eventDetails) return alert('Event details not found');
 
         try {

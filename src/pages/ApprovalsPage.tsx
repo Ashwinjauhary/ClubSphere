@@ -65,7 +65,7 @@ interface PendingReport {
     challenges?: string;
     content?: string;
     attendee_count?: number;
-    generated_content?: unknown;
+    generated_content?: any;
 }
 
 export const ApprovalsPage = () => {
@@ -156,7 +156,7 @@ export const ApprovalsPage = () => {
     const handleReportAction = async (id: string, action: 'approve' | 'reject') => {
         try {
             const newStatus = action === 'approve' ? 'approved' : 'rejected';
-            const updates: Record<string, unknown> = {
+            const updates: any = {
                 approval_status: newStatus,
                 approved_at: new Date().toISOString()
             };

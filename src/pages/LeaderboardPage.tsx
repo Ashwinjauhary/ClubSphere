@@ -4,7 +4,7 @@ import { Loader2, Medal, Crown, Zap } from 'lucide-react';
 
 export const LeaderboardPage = () => {
     const [loading, setLoading] = useState(true);
-    const [users, setUsers] = useState<Record<string, unknown>[]>([]);
+    const [users, setUsers] = useState<any[]>([]);
     const [period, setPeriod] = useState<'weekly' | 'all_time'>('weekly');
 
     useEffect(() => {

@@ -14,11 +14,11 @@ export const FormStatsPage = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
      
-    const [form, setForm] = useState<Record<string, unknown>>(null);
+    const [form, setForm] = useState<any>(null);
      
-    const [responses, setResponses] = useState<Record<string, unknown>[]>([]);
+    const [responses, setResponses] = useState<any[]>([]);
      
-    const [stats, setStats] = useState<Record<string, unknown>>({});
+    const [stats, setStats] = useState<any>({});
     const [activeTab, setActiveTab] = useState<'analytics' | 'responses'>('analytics');
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -55,14 +55,14 @@ export const FormStatsPage = () => {
     };
 
      
-    const calculateStats = (questions: Record<string, unknown>[], resps: Record<string, unknown>[]) => {
+    const calculateStats = (questions: any[], resps: any[]) => {
          
-        const result: Record<string, unknown> = {};
+        const result: any = {};
 
         questions.forEach(q => {
             if (q.type === 'rating' || q.type === 'single_choice' || q.type === 'multiple_choice') {
                  
-                const counts: Record<string, unknown> = {};
+                const counts: any = {};
                 // Initialize counts from options if available
                 if (q.options) q.options.forEach((opt: string) => counts[opt] = 0);
                 if (q.type === 'rating') [1, 2, 3, 4, 5].forEach(i => counts[i] = 0);
@@ -94,12 +94,12 @@ export const FormStatsPage = () => {
         if (!responses.length) return;
         const flatData = responses.map(r => {
              
-            const row: Record<string, unknown> = {
+            const row: any = {
                 Submitted: new Date(r.submitted_at).toLocaleString(),
                 Email: r.respondent_email || 'Anonymous'
             };
              
-            form.questions.forEach((q: Record<string, unknown>) => {
+            form.questions.forEach((q: any) => {
                 row[q.label] = Array.isArray(r.answers[q.id]) ? r.answers[q.id].join(', ') : r.answers[q.id];
             });
             return row;
@@ -116,7 +116,7 @@ export const FormStatsPage = () => {
         return (
             r.respondent_email?.toLowerCase().includes(searchLower) ||
              
-            Object.values(r.answers).some((ans: Record<string, unknown>) =>
+            Object.values(r.answers).some((ans: any) =>
                 String(ans).toLowerCase().includes(searchLower)
             )
         );
@@ -179,7 +179,7 @@ export const FormStatsPage = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-explicit-any
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-explicit-any
-                        {form.questions.map((q: Record<string, unknown>) => {
+                        {form.questions.map((q: any) => {
                             const data = stats[q.id];
                             if (!data) return null;
 
@@ -216,7 +216,7 @@ export const FormStatsPage = () => {
                                                         >
                                                             // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-explicit-any
                                                             // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-explicit-any
-                                                            {data.chartData.map((_: Record<string, unknown>, index: number) => (
+                                                            {data.chartData.map((_: any, index: number) => (
                                                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                                             ))}
                                                         </Pie>
@@ -274,7 +274,7 @@ export const FormStatsPage = () => {
                                         <div className="space-y-4">
                                             // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-explicit-any
                                             // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-explicit-any
-                                            {form.questions.map((q: Record<string, unknown>) => {
+                                            {form.questions.map((q: any) => {
                                                 const answer = response.answers[q.id];
                                                 if (!answer) return null;
 
