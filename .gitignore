@@ -40,3 +40,6 @@ build/
 # Misc
 .turbo
 .vercel
+
+.vercel
+.env*.local
