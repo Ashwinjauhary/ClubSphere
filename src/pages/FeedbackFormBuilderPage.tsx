@@ -8,6 +8,7 @@ import { Input } from '../components/ui/Input';
 import { Plus, Trash2, Sparkles, Save, ArrowLeft } from 'lucide-react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
 
 const questionSchema = z.object({
     id: z.string(),
@@ -42,7 +43,7 @@ export const FeedbackFormBuilderPage = () => {
         resolver: zodResolver(formSchema),
         defaultValues: {
             title: 'Event Feedback',
-            description: 'Please search your thoughts on the event.',
+            description: 'Please share your thoughts on the event.',
             questions: [
                 { id: Math.random().toString(36).substring(2, 9), type: 'rating', label: 'Overall Experience', required: true }
             ]
@@ -66,7 +67,7 @@ export const FeedbackFormBuilderPage = () => {
             replace(formattedQuestions);
         } catch (error) {
             console.error(error);
-            alert("AI Generation failed. Please try again.");
+            toast.error("AI Generation failed. Please try again.");
         } finally {
             setGenerating(false);
         }
@@ -104,12 +105,12 @@ export const FeedbackFormBuilderPage = () => {
             }
 
             console.log('Form saved successfully:', insertedData);
-            alert("Feedback Form Published Successfully!");
+            toast.success("Feedback Form Published Successfully!");
             navigate(`/events/${eventId}`);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error('Error saving form:', error);
-            alert(`Failed to save form: ${error?.message || 'Unknown error'}`);
+            toast.error(`Failed to save form: ${error?.message || 'Unknown error'}`);
         }
     };
 

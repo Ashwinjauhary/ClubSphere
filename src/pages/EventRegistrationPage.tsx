@@ -56,11 +56,11 @@ export const EventRegistrationPage = () => {
                 if (user) {
                     // Check if already registered
                     const { data: reg } = await supabase
-                        .from('participants')
+                        .from('event_registrations')
                         .select('id')
                         .eq('event_id', eventId)
                         .eq('user_id', user.id)
-                        .single();
+                        .maybeSingle();
                     if (reg) setAlreadyRegistered(true);
                 }
             }
@@ -80,7 +80,8 @@ export const EventRegistrationPage = () => {
             // Generate unique QR code hash for scanning
             const qrCodeHash = crypto.randomUUID();
 
-            const { error } = await supabase.from('participants').insert({
+            // 1. Insert participant details
+            const { error: partError } = await supabase.from('participants').insert({
                 event_id: event.id,
                 user_id: user.id,
                 full_name: data.fullName,
@@ -88,11 +89,20 @@ export const EventRegistrationPage = () => {
                 department: data.department,
                 section: data.section,
                 team_code: teamCode,
-                qr_code_hash: qrCodeHash, // Add QR code hash for scanning
                 role: 'Participant' // Default
             });
 
-            if (error) throw error;
+            if (partError) throw partError;
+
+            // 2. Insert event registration with QR code
+            const { error: regError } = await supabase.from('event_registrations').insert({
+                event_id: event.id,
+                user_id: user.id,
+                qr_code_hash: qrCodeHash,
+                status: 'registered'
+            });
+
+            if (regError) throw regError;
 
             toast.success('Registration Successful!');
             navigate(`/events/${eventId}`);

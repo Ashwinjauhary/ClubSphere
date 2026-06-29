@@ -296,12 +296,21 @@ export const ModernSidebar = ({
                             {renderSectionHeader('Super Admin')}
                             {renderLink('/super-admin', Shield, 'Super Admin Panel')}
 
+                            {renderSectionHeader('Admin Operations')}
+                            {renderLink('/approvals', CheckSquare, 'Approvals')}
+                            {renderLink('/proposals', FileText, 'Proposals')}
+                            {renderLink('/applications', ClipboardList, 'Applications')}
+                            {renderLink('/clubs/new', Plus, 'Create Club')}
+                            {renderLink('/forms', FileText, 'Forms')}
+                            {renderLink('/reports', ClipboardList, 'Reports')}
+                            {renderLink('/members', Users, 'Team')}
+                            {renderLink('/clubs', Users, 'Manage Clubs')}
+
                             {renderSectionHeader('General Access')}
                             {renderLink('/dashboard', LayoutDashboard, 'Dashboard')}
                             {renderLink('/daily-quiz', BrainCircuit, 'Daily Quiz')}
                             {renderLink('/leaderboard', Trophy, 'Leaderboard')}
                             {renderLink('/events', Calendar, 'Events')}
-                            {renderLink('/clubs', Users, 'Clubs')}
                             {renderLink('/wall', Users, 'Clubs Wall')}
                             {renderLink('/analytics', BarChart, 'Analytics')}
                         </>

@@ -177,8 +177,7 @@ export const FormStatsPage = () => {
                 {/* Analytics Tab */}
                 {activeTab === 'analytics' && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-explicit-any
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-explicit-any
+                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                         {form.questions.map((q: any) => {
                             const data = stats[q.id];
                             if (!data) return null;
@@ -214,8 +213,7 @@ export const FormStatsPage = () => {
                                                             paddingAngle={5}
                                                             dataKey="value"
                                                         >
-                                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-explicit-any
-                                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-explicit-any
+                                                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                                             {data.chartData.map((_: any, index: number) => (
                                                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                                             ))}
@@ -272,8 +270,7 @@ export const FormStatsPage = () => {
                                         </div>
 
                                         <div className="space-y-4">
-                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-explicit-any
-                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-explicit-any
+                                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                             {form.questions.map((q: any) => {
                                                 const answer = response.answers[q.id];
                                                 if (!answer) return null;

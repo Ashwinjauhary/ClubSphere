@@ -70,16 +70,22 @@ export const FormViewerPage = () => {
 
     const fetchForm = async () => {
         try {
-            const { data, error } = await supabase
+            // First try to fetch form by ID (RLS handles visibility - creators can see their own drafts)
+            let { data, error } = await supabase
                 .from('forms')
                 .select('*')
                 .eq('id', formId)
-                .eq('is_published', true)
                 .maybeSingle();
 
             if (error) throw error;
             if (!data) {
-                setError('Form invalid or not published.');
+                setError('Form not found or not available.');
+                return;
+            }
+
+            // If form is not published and user is not the creator, block access
+            if (!data.is_published && (!user || data.created_by !== user.id)) {
+                setError('This form is not yet published.');
                 return;
             }
 

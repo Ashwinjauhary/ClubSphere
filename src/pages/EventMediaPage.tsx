@@ -20,7 +20,7 @@ interface MediaAsset {
 }
 
 export const EventMediaPage = () => {
-    const { eventId } = useParams<{ eventId: string }>();
+    const { id: eventId } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { user, role } = useAuthStore();
     const [media, setMedia] = useState<MediaAsset[]>([]);

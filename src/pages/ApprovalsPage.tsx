@@ -124,7 +124,7 @@ export const ApprovalsPage = () => {
             if (reportsError) throw reportsError;
             setReports(reportsData as unknown as PendingReport[]);
 
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error fetching approvals:', error);
         } finally {
             setLoading(false);

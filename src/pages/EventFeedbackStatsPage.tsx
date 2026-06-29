@@ -5,6 +5,7 @@ import { Button } from '../components/ui/Button';
 import { Loader2, ArrowLeft, Download } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, PieChart as RePieChart, Pie, Cell } from 'recharts';
 import * as XLSX from 'xlsx';
+import { toast } from 'sonner';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
@@ -54,7 +55,7 @@ export const EventFeedbackStatsPage = () => {
 
         } catch (error) {
             console.error(error);
-            alert("Failed to load statistics.");
+            toast.error("Failed to load statistics.");
         } finally {
             setLoading(false);
         }
@@ -167,8 +168,7 @@ export const EventFeedbackStatsPage = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-explicit-any
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-explicit-any
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                     {form.questions.map((q: any) => {
                         const data = aggregates[q.id];
                         if (!data) return null;
@@ -207,8 +207,7 @@ export const EventFeedbackStatsPage = () => {
                                                     paddingAngle={5}
                                                     dataKey="value"
                                                 >
-                                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-explicit-any
-                                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-explicit-any
+                                                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                                     {data.data.map((_: any, index: number) => (
                                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                                     ))}

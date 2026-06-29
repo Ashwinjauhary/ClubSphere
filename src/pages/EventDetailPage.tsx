@@ -68,7 +68,7 @@ export const EventDetailPage = () => {
     const checkRegistrationAndProfile = async () => {
         if (!user || !id) return;
         const { data } = await supabase
-            .from('participants')
+            .from('event_registrations')
             .select('*')
             .eq('event_id', id)
             .eq('user_id', user.id)
@@ -86,7 +86,7 @@ export const EventDetailPage = () => {
     const fetchRegistrationCount = async () => {
         if (!id) return;
         const { count } = await supabase
-            .from('participants')
+            .from('event_registrations')
             .select('*', { count: 'exact', head: true })
             .eq('event_id', id);
         setRegistrationCount(count || 0);

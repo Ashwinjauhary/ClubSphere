@@ -60,8 +60,13 @@ export const EventScannerPage = () => {
                 .select(`
                     id,
                     scanned_at,
-                    registration_id
+                    event_registrations!inner (
+                        id,
+                        user_id,
+                        event_id
+                    )
                 `)
+                .eq('event_registrations.event_id', id)
                 .order('scanned_at', { ascending: false })
                 .limit(50); // Get more initially, we'll filter
 
@@ -71,32 +76,32 @@ export const EventScannerPage = () => {
                 return;
             }
 
-            // Step 2: Get registration details from participants table
-            const registrationIds = attendanceRecords.map(a => a.registration_id);
-            const { data: registrations, error: regError } = await supabase
+            // Step 2: Get user names from participants table
+            const userIds = attendanceRecords.map((a: any) => a.event_registrations.user_id);
+            const { data: participants, error: partError } = await supabase
                 .from('participants')
-                .select('id, event_id, user_id, full_name')
-                .in('id', registrationIds)
+                .select('user_id, full_name')
+                .in('user_id', userIds)
                 .eq('event_id', id);
 
-            if (regError) throw regError;
-            if (!registrations || registrations.length === 0) {
-                setScannedLogs([]);
-                return;
+            if (partError) throw partError;
+            
+            const participantsMap = new Map();
+            if (participants) {
+                participants.forEach(p => participantsMap.set(p.user_id, p.full_name));
             }
 
-            // Step 3: Merge data (participants already has full_name)
+            // Step 3: Merge data
             const logsWithDetails = attendanceRecords
-                .map(attendance => {
-                    const registration = registrations.find(r => r.id === attendance.registration_id);
-                    if (!registration) return null;
-
+                .map((attendance: any) => {
+                    const fullName = participantsMap.get(attendance.event_registrations.user_id) || 'Unknown';
+                    
                     return {
                         id: attendance.id,
                         scanned_at: attendance.scanned_at,
                         event_registrations: {
                             profiles: {
-                                full_name: registration.full_name || 'Unknown',
+                                full_name: fullName,
                                 email: ''
                             }
                         }
@@ -121,10 +126,10 @@ export const EventScannerPage = () => {
         // 4. Log attendance
 
         try {
-            // Step 1: Lookup Registration in participants table
+            // Step 1: Lookup Registration in event_registrations table
             const { data: registration, error } = await supabase
-                .from('participants')
-                .select('id, event_id, user_id, qr_code_hash, role')
+                .from('event_registrations')
+                .select('id, event_id, user_id, qr_code_hash')
                 .eq('qr_code_hash', decodedText)
                 .single();
 

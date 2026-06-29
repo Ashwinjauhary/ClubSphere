@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { supabase } from '../lib/supabase';
+import { useAuthStore } from '../store/authStore';
 import { generateFormSchema } from '../services/aiService';
 import { Button } from '../components/ui/Button';
 import {
@@ -43,6 +44,7 @@ interface FormValues {
 export const FormBuilderPage = () => {
     const { id: formId } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const { user } = useAuthStore();
     const [generating, setGenerating] = useState(false);
     const isNew = !formId || formId === 'new';
     const [loading, setLoading] = useState(!isNew);
@@ -195,7 +197,7 @@ export const FormBuilderPage = () => {
             // ... rest of submit logic
             let error;
             if (isNew) {
-                const { error: insertError } = await supabase.from('forms').insert([{ ...payload, is_published: isPublished }]);
+                const { error: insertError } = await supabase.from('forms').insert([{ ...payload, is_published: isPublished, created_by: user?.id }]);
                 error = insertError;
             } else {
                 const { error: updateError } = await supabase.from('forms').update({ ...payload, is_published: isPublished }).eq('id', formId);
@@ -237,7 +239,7 @@ export const FormBuilderPage = () => {
                                 <Settings className="h-4 w-4" /> Settings
                             </button>
                         </div>
-                        <Button variant="outline" onClick={() => window.open(`/forms/public/${formId}`, '_blank')} className="w-full sm:w-auto mt-2 sm:mt-0">
+                        <Button variant="outline" onClick={() => window.open(`/f/${formId}`, '_blank')} className="w-full sm:w-auto mt-2 sm:mt-0">
                             <Eye className="h-4 w-4 mr-2" /> Preview
                         </Button>
                     </div>

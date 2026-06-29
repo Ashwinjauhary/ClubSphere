@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
     // In a real app, check user session here. 
     // For now, we rely on the mock role in store.
-    const { role, loading } = useAuthStore();
+    const { user, role, loading } = useAuthStore();
 
     if (loading) {
         return (
@@ -19,8 +19,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) 
         );
     }
 
-    // If no role (not logged in), redirect to login
-    if (!role) {
+    // If no user or role (not logged in), redirect to login
+    if (!user || !role) {
         return <Navigate to="/login" replace />;
     }
 
