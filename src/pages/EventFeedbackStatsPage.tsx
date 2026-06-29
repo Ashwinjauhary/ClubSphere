@@ -33,6 +33,8 @@ export const EventFeedbackStatsPage = () => {
                 .select('*')
                 .eq('event_id', eventId)
                 .eq('is_active', true)
+                .order('created_at', { ascending: false })
+                .limit(1)
                 .maybeSingle();
 
             if (formError) throw formError;

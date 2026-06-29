@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { QRScanner } from '../components/QRScanner';
-import { ArrowLeft, CheckCircle, Search } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Search, Download } from 'lucide-react';
 import { format } from 'date-fns';
 
 export const EventScannerPage = () => {
@@ -80,7 +80,7 @@ export const EventScannerPage = () => {
             const userIds = attendanceRecords.map((a: any) => a.event_registrations.user_id);
             const { data: participants, error: partError } = await supabase
                 .from('participants')
-                .select('user_id, full_name')
+                .select('user_id, full_name, roll_number, department, section')
                 .in('user_id', userIds)
                 .eq('event_id', id);
 
@@ -88,13 +88,14 @@ export const EventScannerPage = () => {
             
             const participantsMap = new Map();
             if (participants) {
-                participants.forEach(p => participantsMap.set(p.user_id, p.full_name));
+                participants.forEach(p => participantsMap.set(p.user_id, p));
             }
 
             // Step 3: Merge data
             const logsWithDetails = attendanceRecords
                 .map((attendance: any) => {
-                    const fullName = participantsMap.get(attendance.event_registrations.user_id) || 'Unknown';
+                    const p = participantsMap.get(attendance.event_registrations.user_id) || {};
+                    const fullName = p.full_name || 'Unknown';
                     
                     return {
                         id: attendance.id,
@@ -102,7 +103,9 @@ export const EventScannerPage = () => {
                         event_registrations: {
                             profiles: {
                                 full_name: fullName,
-                                email: ''
+                                roll_number: p.roll_number || '',
+                                department: p.department || '',
+                                section: p.section || ''
                             }
                         }
                     };
@@ -156,6 +159,14 @@ export const EventScannerPage = () => {
 
             if (attendanceError) throw attendanceError;
 
+            // Step 3: Update registration status to attended
+            const { error: updateError } = await supabase
+                .from('event_registrations')
+                .update({ status: 'attended' })
+                .eq('id', registration.id);
+
+            if (updateError) throw updateError;
+
             // Refresh UI
             fetchStats();
             fetchRecentLogs();
@@ -166,6 +177,53 @@ export const EventScannerPage = () => {
         } catch (error: any) {
             console.error(error);
             throw error; // Pass back to scanner for "Error" UI
+        }
+    };
+
+    const exportToCSV = async () => {
+        if (!id) return;
+        try {
+            const { data, error } = await supabase
+                .from('event_attendance')
+                .select(`
+                    scanned_at,
+                    event_registrations!inner (
+                        user_id,
+                        event_id
+                    )
+                `)
+                .eq('event_registrations.event_id', id)
+                .order('scanned_at', { ascending: true });
+                
+            if (error || !data) throw error;
+            
+            const userIds = data.map((d: any) => d.event_registrations.user_id);
+            const { data: parts } = await supabase
+                .from('participants')
+                .select('user_id, full_name, roll_number, department, section')
+                .in('user_id', userIds)
+                .eq('event_id', id);
+                
+            const pMap = new Map();
+            if (parts) {
+                parts.forEach(p => pMap.set(p.user_id, p));
+            }
+            
+            let csv = 'Name,Roll Number,Department,Section,Check-in Time\n';
+            data.forEach((log: any) => {
+                const p = pMap.get(log.event_registrations.user_id) || {};
+                csv += `"${p.full_name || 'Unknown'}","${p.roll_number || ''}","${p.department || ''}","${p.section || ''}","${new Date(log.scanned_at).toLocaleString()}"\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${eventTitle || 'attendance'}.csv`;
+            a.click();
+        } catch (e) {
+            console.error('Error exporting CSV:', e);
+            alert('Failed to export CSV');
         }
     };
 
@@ -209,32 +267,52 @@ export const EventScannerPage = () => {
 
                 {/* Recent Activity */}
                 <div>
-                    <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Recent Activity</h3>
+                    <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider">Recent Activity</h3>
+                        {stats.checked_in > 0 && (
+                            <button
+                                onClick={exportToCSV}
+                                className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 px-3 py-1.5 rounded-full"
+                            >
+                                <Download className="h-3 w-3" />
+                                Export CSV
+                            </button>
+                        )}
+                    </div>
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 divide-y divide-gray-100">
                         {scannedLogs.length > 0 ? (
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             scannedLogs.map((log: any) => {
                                 const profile = log.event_registrations?.profiles;
-                                const displayName = profile?.full_name || profile?.email || 'Unknown';
+                                const displayName = profile?.full_name || 'Unknown';
+                                const roll = profile?.roll_number;
+                                const deptSec = [profile?.department, profile?.section].filter(Boolean).join(' - ');
 
                                 return (
-                                    <div key={log.id || log.scanned_at} className="p-4 flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-                                                <CheckCircle className="h-4 w-4 text-green-600" />
+                                    <div key={log.id || log.scanned_at} className="p-4 flex flex-col gap-2">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+                                                    <CheckCircle className="h-4 w-4 text-green-600" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-bold text-gray-900">
+                                                        {displayName}
+                                                    </p>
+                                                    <p className="text-xs text-gray-500">
+                                                        {format(new Date(log.scanned_at), 'h:mm:ss a')}
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p className="text-sm font-bold text-gray-900">
-                                                    {displayName}
-                                                </p>
-                                                <p className="text-xs text-gray-500">
-                                                    {format(new Date(log.scanned_at), 'h:mm:ss a')}
-                                                </p>
-                                            </div>
+                                            <span className="text-xs font-semibold bg-green-50 text-green-700 px-2 py-1 rounded-full">
+                                                Verified
+                                            </span>
                                         </div>
-                                        <span className="text-xs font-semibold bg-green-50 text-green-700 px-2 py-1 rounded-full">
-                                            Verified
-                                        </span>
+                                        {(roll || deptSec) && (
+                                            <div className="pl-11 text-xs text-gray-600 flex flex-wrap gap-x-4 gap-y-1">
+                                                {roll && <span><span className="font-semibold text-gray-400">Roll:</span> {roll}</span>}
+                                                {deptSec && <span><span className="font-semibold text-gray-400">Dept:</span> {deptSec}</span>}
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             })

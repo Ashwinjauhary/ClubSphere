@@ -32,14 +32,7 @@ export const FeedbackFormBuilderPage = () => {
     const [generating, setGenerating] = useState(false);
     const [eventTitle, setEventTitle] = useState('');
 
-    // Fetch event details for AI context
-    useEffect(() => {
-        if (!eventId) return;
-        supabase.from('events').select('title').eq('id', eventId).single()
-            .then(({ data }) => { if (data) setEventTitle(data.title); });
-    }, [eventId]);
-
-    const { register, control, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<FormValues>({
+    const { register, control, handleSubmit, setValue, reset, watch, formState: { errors, isSubmitting } } = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             title: 'Event Feedback',
@@ -49,6 +42,33 @@ export const FeedbackFormBuilderPage = () => {
             ]
         }
     });
+
+    // Fetch event details and existing form for AI context and pre-filling
+    useEffect(() => {
+        if (!eventId) return;
+        
+        // Fetch Event Title
+        supabase.from('events').select('title').eq('id', eventId).single()
+            .then(({ data }) => { if (data) setEventTitle(data.title); });
+
+        // Fetch Existing Form
+        supabase.from('feedback_forms')
+            .select('*')
+            .eq('event_id', eventId)
+            .eq('is_active', true)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+            .then(({ data }) => {
+                if (data) {
+                    reset({
+                        title: data.title,
+                        description: data.description || '',
+                        questions: data.questions
+                    });
+                }
+            });
+    }, [eventId, reset]);
 
     const { fields, append, remove, replace } = useFieldArray({
         control,
@@ -82,6 +102,13 @@ export const FeedbackFormBuilderPage = () => {
                 questions: data.questions,
                 is_active: true
             });
+
+            // Deactivate any existing active forms for this event
+            await supabase
+                .from('feedback_forms')
+                .update({ is_active: false })
+                .eq('event_id', eventId)
+                .eq('is_active', true);
 
             const { data: insertedData, error } = await supabase
                 .from('feedback_forms')

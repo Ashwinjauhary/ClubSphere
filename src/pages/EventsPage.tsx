@@ -4,6 +4,7 @@ import { Button } from '../components/ui/Button';
 import { Calendar as CalendarIcon, Filter, X, List } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SkeletonList } from '../components/ui/Skeleton';
 import { PageHeader } from '../components/ui/PageHeader';
@@ -43,11 +44,16 @@ export const EventsPage = () => {
                     clubs ( name )
                 `)
                 .eq('status', 'approved')
-                .order('start_time', { ascending: true });
+                .order('created_at', { ascending: false });
 
             if (error) throw error;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            setEvents((data as any) || []);
+            const activeEvents = ((data as any) || []).filter((event: any) => {
+                const isPast = new Date(event.end_time) < new Date();
+                const isCompleted = event.status === 'completed';
+                return !isPast && !isCompleted;
+            });
+            setEvents(activeEvents);
         } catch (error) {
             console.error('Error fetching events:', error);
         } finally {
@@ -77,20 +83,27 @@ export const EventsPage = () => {
                     <motion.div
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="flex gap-2"
+                        className="flex gap-2 relative z-50"
                     >
-                        <Button variant="outline" size="sm" className="glass border-0 hover:bg-white/50 text-gray-700">
+                        <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="glass border-0 hover:bg-white/50 text-gray-700 cursor-pointer"
+                            onClick={() => toast.info('Filter functionality coming soon!')}
+                        >
                             <Filter className="mr-2 h-4 w-4" />
                             Filter
                         </Button>
-                        <div className="bg-gray-100/50 p-1 rounded-lg flex backdrop-blur-sm">
+                        <div className="bg-gray-100/50 p-1 rounded-lg flex backdrop-blur-sm cursor-pointer">
                             <button
+                                type="button"
                                 onClick={() => setViewMode('list')}
                                 className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-brand-600' : 'text-gray-500 hover:text-gray-700'}`}
                             >
                                 <List className="h-4 w-4" />
                             </button>
                             <button
+                                type="button"
                                 onClick={() => setViewMode('calendar')}
                                 className={`p-2 rounded-md transition-all ${viewMode === 'calendar' ? 'bg-white shadow-sm text-brand-600' : 'text-gray-500 hover:text-gray-700'}`}
                             >
@@ -113,7 +126,7 @@ export const EventsPage = () => {
                         variants={container}
                         initial="hidden"
                         animate="show"
-                        className="columns-1 sm:columns-2 lg:columns-3 gap-6 space-y-6"
+                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
                     >
                         <AnimatePresence>
                             {events.map(event => (
@@ -122,7 +135,7 @@ export const EventsPage = () => {
                                     variants={item}
                                     layout
                                     onClick={() => setSelectedEvent(event)}
-                                    className="cursor-pointer group break-inside-avoid mb-6"
+                                    className="cursor-pointer group mb-2"
                                 >
                                     <div className="transition-transform duration-300 group-hover:-translate-y-2">
                                         <EventCard

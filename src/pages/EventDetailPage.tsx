@@ -34,10 +34,12 @@ export const EventDetailPage = () => {
     const [registrationCount, setRegistrationCount] = useState(0);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [ticketData, setTicketData] = useState<any>(null);
+    const [hasFeedback, setHasFeedback] = useState(false);
 
     useEffect(() => {
         if (id) {
             fetchEventDetails();
+            checkFeedbackForm();
             if (user) {
                 checkRegistrationAndProfile();
                 fetchRegistrationCount();
@@ -45,6 +47,16 @@ export const EventDetailPage = () => {
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id, user]);
+
+    const checkFeedbackForm = async () => {
+        const { data } = await supabase
+            .from('feedback_forms')
+            .select('id')
+            .eq('event_id', id)
+            .eq('is_active', true)
+            .maybeSingle();
+        setHasFeedback(!!data);
+    };
 
     const fetchEventDetails = async () => {
         try {
@@ -327,13 +339,15 @@ export const EventDetailPage = () => {
                         )}
 
                         {/* Student Post-Event Actions */}
-                        {(!user || role === 'student') && isPast && (
-                            <div className="bg-brand-50 rounded-2xl p-6 border border-brand-100">
+                        {(!user || role === 'student') && (isPast || hasFeedback) && (
+                            <div className="bg-brand-50 rounded-2xl p-6 border border-brand-100 mt-6">
                                 <h4 className="font-bold text-brand-900 mb-4">Event Actions</h4>
                                 <div className="space-y-3">
-                                    <Button onClick={() => navigate(`/events/${id}/feedback`)} variant="outline" className="w-full border-brand-200 text-brand-700 bg-white hover:bg-brand-50">
-                                        <MessageSquare className="h-4 w-4 mr-2" /> Give Feedback
-                                    </Button>
+                                    {hasFeedback && (
+                                        <Button onClick={() => navigate(`/events/${id}/feedback`)} variant="outline" className="w-full border-brand-200 text-brand-700 bg-white hover:bg-brand-50">
+                                            <MessageSquare className="h-4 w-4 mr-2" /> Give Feedback
+                                        </Button>
+                                    )}
                                     <Button onClick={() => navigate(`/events/${id}/media`)} variant="outline" className="w-full border-blue-200 text-blue-700 bg-white hover:bg-blue-50">
                                         <ImageIcon className="h-4 w-4 mr-2" /> View Gallery
                                     </Button>
